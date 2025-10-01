@@ -1,6 +1,7 @@
 package spring_boot.project_swp.controller;
 
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -23,7 +24,7 @@ public class LoginController {
 
     @PostMapping("/login")
 //login = email, pass
-    public ApiResponse<UserLoginResponse> login(@RequestBody UserLoginRequest request) {
+    public ApiResponse<UserLoginResponse> login(@Valid @RequestBody UserLoginRequest request) {
         return userService.login(request);
     }
 
