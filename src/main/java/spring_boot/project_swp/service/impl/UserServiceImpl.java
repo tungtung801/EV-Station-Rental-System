@@ -1,4 +1,4 @@
-package spring_boot.project_swp.service;
+package spring_boot.project_swp.service.impl;
 
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -9,6 +9,8 @@ import spring_boot.project_swp.dto.respone.UserLoginResponse;
 import spring_boot.project_swp.entity.Role;
 import spring_boot.project_swp.entity.User;
 import spring_boot.project_swp.repository.UserRepository;
+import spring_boot.project_swp.service.RoleService;
+import spring_boot.project_swp.service.UserService;
 
 import java.time.LocalDate;
 import java.util.List;

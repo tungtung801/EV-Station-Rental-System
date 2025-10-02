@@ -1,9 +1,10 @@
-package spring_boot.project_swp.service;
+package spring_boot.project_swp.service.impl;
 
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import spring_boot.project_swp.entity.Role;
 import spring_boot.project_swp.repository.RoleRepository;
+import spring_boot.project_swp.service.RoleService;
 
 import java.util.Optional;
 import java.util.List;
