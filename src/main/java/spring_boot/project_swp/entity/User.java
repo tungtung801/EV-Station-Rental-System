@@ -19,7 +19,7 @@ public class User {
     @Column(name = "UserId")
     private int userId;
 
-    @Column(name = "FullName", nullable = false, length = 100)
+    @Column(name = "FullName", nullable = false, length = 100, columnDefinition = "NVARCHAR(100)")
     private String fullName;
 
     @Column(name = "Email", nullable = false, unique = true, length = 100)
