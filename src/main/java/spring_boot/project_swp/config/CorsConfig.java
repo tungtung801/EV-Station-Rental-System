@@ -14,7 +14,7 @@ public class CorsConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         // Add the specific frontend URL your friend is using
-        config.addAllowedOrigin("https://144fbc4c6c4e.ngrok-free.app/");
+        config.addAllowedOrigin("https://8ec4f31024c6.ngrok-free.app/");
 
         config.addAllowedOrigin("https://kesha-subartesian-bowen.ngrok-free.dev/");
 
