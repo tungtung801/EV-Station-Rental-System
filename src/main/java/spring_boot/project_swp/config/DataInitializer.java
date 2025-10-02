@@ -40,7 +40,7 @@ public class DataInitializer implements CommandLineRunner {
             user1.setFullName("Admin");
             user1.setEmail("admin@gmail.com");
             user1.setPhoneNumber("0123456789");
-            user1.setPassword("123");
+            user1.setPassword("Admin@123");
             user1.setCreatedAt(LocalDate.now());
             user1.setAccountStatus("active");
             user1.setRole(roleService.findByRoleName("admin").get());

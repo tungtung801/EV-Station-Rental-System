@@ -9,8 +9,8 @@ import lombok.Data;
 @Data
 public class UserRegistrationDto {
     @NotBlank(message = "Full name is required")
-    @Size(max = 30, message = "Full name must be at most 30 characters long")
-    @Pattern(regexp = "^[a-zA-Z\\s]+$", message = "Full name can only contain letters and spaces")
+    @Size(max = 50, message = "Full name must be at most 30 characters long")
+    @Pattern(regexp = "^[\\p{L}\\p{M}\\s]+$", message = "Full name can only contain letters and spaces")
     private String fullName;
 
     @NotBlank(message = "Email is required")
