@@ -68,6 +68,26 @@ public class ForgotPassController {
         return new ResponseEntity<>("OTP sent to your email address", HttpStatus.OK);
     }
 
+    @PostMapping("/verify-otp")
+    public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String otp = request.get("otp");
+
+        if (email == null || otp == null) {
+            return new ResponseEntity<>("Email and OTP are required", HttpStatus.BAD_REQUEST);
+        }
+
+        OtpData otpData = otpStorage.get(email);
+        if (otpData == null) {
+            return new ResponseEntity<>("No OTP request found", HttpStatus.BAD_REQUEST);
+        }
+
+        if (!otpData.isValid(otp)) {
+            return new ResponseEntity<>("Invalid or expired OTP", HttpStatus.BAD_REQUEST);
+        }
+
+        return new ResponseEntity<>("OTP verified successfully", HttpStatus.OK);
+    }
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
