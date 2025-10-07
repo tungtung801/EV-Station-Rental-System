@@ -5,13 +5,11 @@ import org.springframework.stereotype.Repository;
 import spring_boot.project_swp.entity.Location;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface LocationRepository extends JpaRepository<Location, Integer> {
-    public Optional<Location> findByLocationId(Integer locationId);
 
-    public Optional<Location> findByLocationName(String locationName);
+    public Location findByLocationName(String locationName);
 
     public List<Location> findByLocationType(String locationType);
 

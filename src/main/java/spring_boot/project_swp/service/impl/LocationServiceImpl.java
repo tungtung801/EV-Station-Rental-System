@@ -1,86 +1,79 @@
 package spring_boot.project_swp.service.impl;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.experimental.FieldDefaults;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import spring_boot.project_swp.dto.request.LocationAddingRequest;
 import spring_boot.project_swp.dto.request.LocationUpdateRequest;
-import spring_boot.project_swp.dto.respone.LocationUpdateResponse;
+import spring_boot.project_swp.dto.respone.LocationResponse;
 import spring_boot.project_swp.entity.Location;
+import spring_boot.project_swp.mapper.LocationMapper;
 import spring_boot.project_swp.repository.LocationRepository;
 import spring_boot.project_swp.service.LocationService;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Service
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class LocationServiceImpl implements LocationService {
-
-    @Autowired
-    LocationRepository locationRepository;
+    private final LocationRepository locationRepository;
+    private final LocationMapper locationMapper;
 
     @Override
-    public Location addLocation(LocationAddingRequest location) {
-        Optional<Location> existLocation = locationRepository.findByLocationName(location.getLocationName());
-        if (existLocation.isPresent()) {
-            return null;
-        } else {
-            Location newLocation = new Location();
-            newLocation.setLocationName(location.getLocationName());
-            newLocation.setLocationType(location.getLocationType());
-            newLocation.setActive(true);
-            newLocation.setCreatedAt(LocalDate.now());
-            return locationRepository.save(newLocation);
+    public Location addLocation(LocationAddingRequest request) {
+        if (request.getLocationName() == null || request.getLocationName().trim().isEmpty()) {
+            throw new IllegalArgumentException("LocationName is required");
         }
+        if (request.getLocationType() == null || request.getLocationType().trim().isEmpty()) {
+            throw new IllegalArgumentException("LocationType is required");
+        }
+
+        if (locationRepository.findByLocationName(request.getLocationName()) != null) {
+            throw new IllegalArgumentException("Location already exists");
+        }
+
+        Location newLocation = locationMapper.toLocation(request);
+        newLocation.setActive(true);
+        newLocation.setCreatedAt(LocalDate.now());
+        return locationRepository.save(newLocation);
     }
 
     @Override
-    public LocationUpdateResponse updateLocation(Integer locationId, LocationUpdateRequest request) {
-        Location existLocation = locationRepository.findByLocationId(locationId).orElseThrow(()
-                -> new RuntimeException("Location not found"));
-        existLocation.setLocationName(request.getLocationName());
-        existLocation.setLocationType(request.getLocationType());
-        existLocation.setAddress(request.getAddress());
-        existLocation.setLatitude(request.getLatitude());
-        existLocation.setLongitude(request.getLongitude());
-        existLocation.setRadius(request.getRadius());
-
-        Integer parentLocationId = request.getParentLocationId();
-        if (parentLocationId.equals(locationId)) {
-            throw new RuntimeException("A location cannot be its own parent.");
-        } else {
-            Location newParentLocation = locationRepository.findByLocationId(parentLocationId).orElseThrow(()
-                    -> new RuntimeException("Parent location not found"));
-            existLocation.setParent(newParentLocation);
+    // luong hoat dọng:
+    // Client -> Controller 1 json -> mapstruct map json đó về obj -> update các field cần thiet, update luon ca parent -> map vè lại responseDTO trả về -> Client chuỗi json
+    public LocationResponse updateLocation(int locationId, LocationUpdateRequest request) {
+        Location existtingLocation = getLocationById(locationId);
+        if (existtingLocation == null) {
+            throw new IllegalArgumentException("Location does not exist");
         }
+        // Lay thong tin cap nhat moi tu request roi map vao location hien tai dang can update thong qua mapper voi locationId
+        locationMapper.updateLocationFromRequest(request, existtingLocation);
 
-        Location updatedLocation = locationRepository.save(existLocation);
-        LocationUpdateResponse response = new LocationUpdateResponse();
-        response.setLocationId(updatedLocation.getLocationId());
-        response.setLocationName(updatedLocation.getLocationName());
-        response.setLocationType(updatedLocation.getLocationType());
-        response.setAddress(updatedLocation.getAddress());
-        response.setLatitude(updatedLocation.getLatitude());
-        response.setLongitude(updatedLocation.getLongitude());
-        response.setRadius(updatedLocation.getRadius());
-        if (updatedLocation.getParent() != null) {
-            response.setParentLocationId(updatedLocation.getParent().getLocationId());
-        } else {
-            response.setParentLocationId(null);
+        //xu li parent
+        if(request.getParentLocationId() != null) {
+            Location parentLocation = getLocationById(request.getParentLocationId());
+            if (parentLocation == null) {
+                throw new IllegalArgumentException("Parent location does not exist");
+            }
+            existtingLocation.setParent(parentLocation);
         }
-
-        return response;
+        Location updatedLocation = locationRepository.save(existtingLocation);
+        return locationMapper.toLocationResponse(updatedLocation);
     }
 
 
     @Override
-    public Optional<Location> getLocationById(Integer id) {
-        return locationRepository.findByLocationId(id);
+    public Location getLocationById(int locationId) {
+        return locationRepository.findById(locationId).get();
+    }
+
+
+    @Override
+    public Location getLocationByName(String locationName) {
+        if (locationName == null || locationName.trim().isEmpty()) {
+            throw new IllegalArgumentException("LocationName is required");
+        }
+        return null;
     }
 
     @Override
@@ -89,7 +82,7 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public void deleteLocation(Integer locationId) {
+    public void deleteLocation(int locationId) {
 
     }
 

@@ -3,23 +3,25 @@ package spring_boot.project_swp.service;
 import org.springframework.stereotype.Service;
 import spring_boot.project_swp.dto.request.LocationAddingRequest;
 import spring_boot.project_swp.dto.request.LocationUpdateRequest;
-import spring_boot.project_swp.dto.respone.LocationUpdateResponse;
+import spring_boot.project_swp.dto.respone.LocationResponse;
 import spring_boot.project_swp.entity.Location;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public interface LocationService {
     public Location addLocation(LocationAddingRequest request);
 
-    public LocationUpdateResponse updateLocation(Integer locationId, LocationUpdateRequest location);
+    public LocationResponse updateLocation(int locationId, LocationUpdateRequest location);
 
-    public Optional<Location> getLocationById(Integer locationId);
+    public Location getLocationById(int locationId);
+
+
+    public Location getLocationByName(String locationName);
 
     public List<Location> getAllLocations();
 
-    public void deleteLocation(Integer locationId);
+    public void deleteLocation(int locationId);
 
     public Location addParentLocation(int parentId, Location location);
 

@@ -20,12 +20,4 @@ public class LocationAddingRequest {
     @NotBlank(message = "Location type is required")
     @Pattern(regexp = "^[\\p{L}\\s]{2,50}$")
     String locationType; // Thành pho, quận, huyện, xã, phường, thị trấn
-
-//    @NotBlank(message = "Location Address is required")
-//    @Pattern(regexp = "^[\\p{L}0-9\\s,.\\-()/&]{5,255}$")
-//    String address;
-
-//    BigDecimal latitude;
-//    BigDecimal longitude;
-//    BigDecimal radius;
 }

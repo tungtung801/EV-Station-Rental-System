@@ -6,14 +6,19 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class UserLoginResponse {
-    int userId;
-    String fullName;
-    String email;
-    String phoneNumber;
-    String roleName;
+public class LocationResponse {
+    int locationId;
+    String locationName;
+    String locationType;
+    String address;
+    BigDecimal latitude;
+    BigDecimal longitude;
+    BigDecimal radius;
+    Integer parentLocationId;
 }

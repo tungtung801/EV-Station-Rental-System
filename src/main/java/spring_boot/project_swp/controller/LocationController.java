@@ -22,16 +22,16 @@ public class LocationController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<?> updateLocation(@PathVariable Integer id, @RequestBody LocationUpdateRequest request) {
+    public ResponseEntity<?> updateLocation(@PathVariable int id, @RequestBody LocationUpdateRequest request) {
         return new ResponseEntity<>(locationService.updateLocation(id, request), HttpStatus.OK);
     }
 
-    @GetMapping("/getById/{locationId}")
+    @GetMapping("/get/getById/{locationId}")
     public ResponseEntity<?> getLocationById(@PathVariable Integer locationId) {
         return new ResponseEntity<>(locationService.getLocationById(locationId), HttpStatus.OK);
     }
 
-    @GetMapping("/getAll")
+    @GetMapping("/get/getAll")
     public ResponseEntity<?> getAllLocations() {
         return new ResponseEntity<>(locationService.getAllLocations(), HttpStatus.OK);
     }

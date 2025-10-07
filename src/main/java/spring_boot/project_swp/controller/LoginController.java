@@ -5,11 +5,13 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import spring_boot.project_swp.dto.request.UserLoginRequest;
-import spring_boot.project_swp.dto.respone.ApiResponse;
-import spring_boot.project_swp.dto.respone.UserLoginResponse;
 import spring_boot.project_swp.service.UserService;
 
 @RestController
@@ -21,8 +23,8 @@ public class LoginController {
 
     @PostMapping("/login")
 //login = email, pass
-    public ApiResponse<UserLoginResponse> login(@Valid @RequestBody UserLoginRequest request) {
-        return userService.login(request);
+    public ResponseEntity<?> login(@Valid @RequestBody UserLoginRequest request) {
+        return new ResponseEntity<>(userService.login(request), HttpStatus.OK);
     }
 
     @PostMapping("/logout")
