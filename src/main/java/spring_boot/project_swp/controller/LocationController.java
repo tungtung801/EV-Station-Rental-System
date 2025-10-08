@@ -35,4 +35,9 @@ public class LocationController {
     public ResponseEntity<?> getAllLocations() {
         return new ResponseEntity<>(locationService.getAllLocations(), HttpStatus.OK);
     }
+
+    @PostMapping("/delete/{locationId}")
+    public ResponseEntity<?> deleteLocation(@PathVariable int locationId) {
+        return new ResponseEntity<>(locationService.deleteLocation(locationId), HttpStatus.OK);
+    }
 }

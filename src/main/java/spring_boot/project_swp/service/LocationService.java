@@ -21,9 +21,10 @@ public interface LocationService {
 
     public List<Location> getAllLocations();
 
-    public void deleteLocation(int locationId);
+    public LocationResponse deleteLocation(int locationId);
 
-    public Location addParentLocation(int parentId, Location location);
+    public List<Location> getParentLocation(Location location);
 
+    public List<Location> getChildLocation(Location location);
 
 }

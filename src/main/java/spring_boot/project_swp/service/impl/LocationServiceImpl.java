@@ -11,6 +11,7 @@ import spring_boot.project_swp.repository.LocationRepository;
 import spring_boot.project_swp.service.LocationService;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -50,7 +51,7 @@ public class LocationServiceImpl implements LocationService {
         locationMapper.updateLocationFromRequest(request, existtingLocation);
 
         //xu li parent
-        if(request.getParentLocationId() != null) {
+        if (request.getParentLocationId() != null) {
             Location parentLocation = getLocationById(request.getParentLocationId());
             if (parentLocation == null) {
                 throw new IllegalArgumentException("Parent location does not exist");
@@ -64,7 +65,7 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public Location getLocationById(int locationId) {
-        return locationRepository.findById(locationId).get();
+        return locationRepository.findById(locationId).orElseThrow(() -> new IllegalArgumentException("Location does not exist"));
     }
 
 
@@ -82,12 +83,46 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public void deleteLocation(int locationId) {
+    public LocationResponse deleteLocation(int locationId) {
+        Location location = getLocationById(locationId);
+        if (location != null) {
+            if (location.getLocationType().equalsIgnoreCase("Thành phố")) {
+                // Phải xóa các location con ph thuộc trước
+                List<Location> children = getChildLocation(location);
 
+                if (children != null) {
+                    for (Location child : children) {
+                        child.setActive(false);
+                        locationRepository.save(child); // soft delete cho con.
+                    }
+
+                    location.setActive(false);
+                    locationRepository.save(location);
+                }
+            } else {
+                List<Location> children = getChildLocation(location);
+
+                if (children.isEmpty()) {
+                    locationRepository.delete(location); // neu dang la location cha va ko co con thi xoa thang
+                }
+            }
+        }
+        return locationMapper.toLocationResponse(location);
     }
 
     @Override
-    public Location addParentLocation(int parentId, Location location) {
-        return null;
+    public List<Location> getParentLocation(Location location) {
+        List<Location> parentLocations = new ArrayList<>();
+        parentLocations.add(location.getParent());
+        return parentLocations;
+    }
+
+    @Override
+    public List<Location> getChildLocation(Location location) {
+        List<Location> childLocations = new ArrayList<>();
+        for (Location child : location.getChildren()) {
+            childLocations.add(child);
+        }
+        return childLocations;
     }
 }

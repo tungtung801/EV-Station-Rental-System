@@ -15,9 +15,9 @@ public interface LocationRepository extends JpaRepository<Location, Integer> {
 
     public List<Location> findAllByIsActiveTrue();
 
-    public List<Location> findByParentIsNotNull(); // TÌM LOCATION CON
-
-    public List<Location> findByParentIsNull(); // TÌM LOCATION CHA
+//    public List<Location> findByParentIsNotNull(); // TÌM LOCATION CON
+//
+//    public List<Location> findByParentIsNull(); // TÌM LOCATION CHA
 
     public List<Location> findByParentLocationIdAndLocationType(Integer parentLocationId, String locationType);
 
