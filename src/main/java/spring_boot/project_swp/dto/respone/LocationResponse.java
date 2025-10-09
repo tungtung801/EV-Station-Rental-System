@@ -16,7 +16,6 @@ public class LocationResponse {
     int locationId;
     String locationName;
     String locationType;
-    String address;
     BigDecimal latitude;
     BigDecimal longitude;
     BigDecimal radius;

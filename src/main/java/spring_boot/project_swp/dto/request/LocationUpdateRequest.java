@@ -15,7 +15,6 @@ import java.math.BigDecimal;
 public class LocationUpdateRequest {
     String locationName;
     String locationType;
-    String address;
 
     BigDecimal latitude;
     BigDecimal longitude;

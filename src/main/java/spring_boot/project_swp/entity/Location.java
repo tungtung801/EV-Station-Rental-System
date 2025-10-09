@@ -40,20 +40,17 @@ public class Location {
     @Column(name = "Radius", precision = 5, scale = 2)
     BigDecimal radius;
 
-    @Column(name = "Address", nullable = true, length = 255, columnDefinition = "NVARCHAR(255)")
-    String address;
-
     @Column(name = "IsActive", nullable = false)
     boolean isActive;
 
     @Column(name = "CreatedAt", nullable = false)
     LocalDate createdAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "ParentLocationId")
     Location parent;
 
-    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
     @JsonIgnore // Thêm annotation để tránh vòng lặp vô hạn khi serialize
     List<Location> children = new ArrayList<>();
 
