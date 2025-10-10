@@ -36,8 +36,23 @@ public class LocationController {
         return new ResponseEntity<>(locationService.getAllLocations(), HttpStatus.OK);
     }
 
+    @GetMapping("/get/getCities")
+    public ResponseEntity<?> getCities() {
+        return new ResponseEntity<>(locationService.getCities(), HttpStatus.OK);
+    }
+
+    @GetMapping("/get/getDistricts/{cityId}")
+    public ResponseEntity<?> getDistricts(@PathVariable Integer cityId) {
+        return new ResponseEntity<>(locationService.getDistrictsByCityId(cityId), HttpStatus.OK);
+    }
+    @GetMapping("/get/getWards/{districtId}")
+    public ResponseEntity<?> getWards(@PathVariable Integer districtId) {
+        return new ResponseEntity<>(locationService.getWardByDistrictId(districtId), HttpStatus.OK);
+    }
+
     @PostMapping("/delete/{locationId}")
     public ResponseEntity<?> deleteLocation(@PathVariable int locationId) {
         return new ResponseEntity<>(locationService.deleteLocation(locationId), HttpStatus.OK);
     }
+
 }

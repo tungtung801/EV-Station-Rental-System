@@ -16,15 +16,17 @@ public interface LocationService {
 
     public Location getLocationById(int locationId);
 
-
     public Location getLocationByName(String locationName);
 
     public List<Location> getAllLocations();
 
     public LocationResponse deleteLocation(int locationId);
 
-    public List<Location> getParentLocation(Location location);
-
     public List<Location> getChildLocation(Location location);
 
+    public List<Location> getCities();
+
+    public List<Location> getDistrictsByCityId(Integer cityId);
+
+    public List<Location> getWardByDistrictId(Integer districtId);
 }

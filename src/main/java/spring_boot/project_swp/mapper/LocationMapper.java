@@ -17,15 +17,11 @@ public interface LocationMapper {
     @Mapping(source = "parent.locationId", target = "parentLocationId")
     LocationResponse toLocationResponse(Location location);
 
-//    // For update location response
-//    @Mapping(source = "parent.locationId", target = "parentLocationId")
-//    LocationUpdateResponse toLocationUpdateResponse(Location location);
-
     // For updating existing location
     @Mapping(target = "locationId", ignore = true)
     @Mapping(target = "active", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "parent", ignore = true) // Handle separately in service
+    @Mapping(target = "parent", ignore = true)
     @Mapping(target = "children", ignore = true)
     void updateLocationFromRequest(LocationUpdateRequest request, @MappingTarget Location location);
 }

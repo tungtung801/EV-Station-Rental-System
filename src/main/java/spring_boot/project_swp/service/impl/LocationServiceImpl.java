@@ -25,6 +25,8 @@ public class LocationServiceImpl implements LocationService {
         if (request.getLocationName() == null || request.getLocationName().trim().isEmpty()) {
             throw new IllegalArgumentException("LocationName is required");
         }
+
+        // ====== LƯU Ý: TYPE GHI TIENG ANH (City / District / Ward, ... )
         if (request.getLocationType() == null || request.getLocationType().trim().isEmpty()) {
             throw new IllegalArgumentException("LocationType is required");
         }
@@ -111,18 +113,34 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public List<Location> getParentLocation(Location location) {
-        List<Location> parentLocations = new ArrayList<>();
-        parentLocations.add(location.getParent());
-        return parentLocations;
-    }
-
-    @Override
     public List<Location> getChildLocation(Location location) {
         List<Location> childLocations = new ArrayList<>();
         for (Location child : location.getChildren()) {
             childLocations.add(child);
         }
         return childLocations;
+    }
+
+    // ====== PHỤC VỤ TÍNH NĂNG SEARCH CHO NGƯỜI DÙNG ==================================
+    // ====== LƯU Ý: TYPE GHI TIENG ANH (City / District / Ward, ... )
+    @Override
+    public List<Location> getCities() {
+        return locationRepository.findByLocationTypeAndIsActiveTrueOrderByLocationNameAsc("City");
+    }
+
+    @Override
+    public List<Location> getDistrictsByCityId(Integer cityId) {
+        if(cityId == null){
+            throw new IllegalArgumentException("CityId is required for filtering");
+        }
+        return locationRepository.findByParent_LocationIdAndLocationTypeAndIsActiveTrueOrderByLocationNameAsc(cityId,  "District");
+    }
+
+    @Override
+    public List<Location> getWardByDistrictId(Integer districtId) {
+        if(districtId == null){
+            throw new IllegalArgumentException("DistrictId is required for filtering");
+        }
+        return locationRepository.findByParent_LocationIdAndLocationTypeAndIsActiveTrueOrderByLocationNameAsc(districtId, "Ward");
     }
 }
