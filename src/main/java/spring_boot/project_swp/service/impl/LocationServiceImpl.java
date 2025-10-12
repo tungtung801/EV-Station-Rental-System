@@ -64,12 +64,10 @@ public class LocationServiceImpl implements LocationService {
         return locationMapper.toLocationResponse(updatedLocation);
     }
 
-
     @Override
     public Location getLocationById(int locationId) {
         return locationRepository.findById(locationId).orElseThrow(() -> new IllegalArgumentException("Location does not exist"));
     }
-
 
     @Override
     public Location getLocationByName(String locationName) {
@@ -82,6 +80,11 @@ public class LocationServiceImpl implements LocationService {
     @Override
     public List<Location> getAllLocations() {
         return locationRepository.findAll();
+    }
+
+    @Override
+    public List<Location> getAllLocationsIsActiveTrue() {
+        return locationRepository.findByIsActiveIsTrue();
     }
 
     @Override

@@ -1,0 +1,50 @@
+package spring_boot.project_swp.entity;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.FieldDefaults;
+
+import java.math.BigDecimal;
+
+@Entity
+@Table(name = "Stations")
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class Station {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "StationId")
+    Integer stationId;
+
+    @Column(name = "StationName", length = 100, columnDefinition = "nvarchar(100)", nullable = false)
+    String stationName;
+
+    @Column(name = "Address", length = 255, columnDefinition = "nvarchar(255)", nullable = false)
+    String address;
+
+    @Column(name = "Latitude", precision = 10, scale = 2)
+    BigDecimal latitude;
+
+    @Column(name = "Longitude", precision = 10, scale = 2)
+    BigDecimal longitude;
+
+    @Column(name = "TotalDocks", columnDefinition = "int")
+    int totalDocks;
+
+    @Column(name = "AvailableDocks", columnDefinition = "int")
+    int availableDocks;
+
+    @Column(name = "IsActive", nullable = false)
+    boolean isActive;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "LocationId")
+    @JsonIgnore
+    Location location;
+}

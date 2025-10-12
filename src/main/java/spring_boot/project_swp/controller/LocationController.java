@@ -10,7 +10,7 @@ import spring_boot.project_swp.dto.request.LocationUpdateRequest;
 import spring_boot.project_swp.service.LocationService;
 
 @RestController
-@RequestMapping("/api/locations")
+@RequestMapping("/api/location")
 @AllArgsConstructor
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
 public class LocationController {

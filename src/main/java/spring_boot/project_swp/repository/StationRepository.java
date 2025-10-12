@@ -1,0 +1,16 @@
+package spring_boot.project_swp.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import spring_boot.project_swp.dto.respone.StationResponse;
+import spring_boot.project_swp.entity.Station;
+
+import java.util.List;
+
+@Repository
+public interface StationRepository extends JpaRepository<Station, Integer> {
+    public List<Station> findByIsActiveIsTrue();
+    public List<Station> findByIsActiveIsFalse();
+    public Station findStationByStationId(Integer id);
+    public Station findStationByStationName(String name);
+}

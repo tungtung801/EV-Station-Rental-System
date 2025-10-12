@@ -54,4 +54,6 @@ public class Location {
     @JsonIgnore // Thêm annotation để tránh vòng lặp vô hạn khi serialize
     List<Location> children = new ArrayList<>();
 
+    @OneToMany(mappedBy = "location", fetch = FetchType.EAGER)
+    List<Station> stations = new ArrayList<>();
 }

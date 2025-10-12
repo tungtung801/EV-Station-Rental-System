@@ -20,6 +20,8 @@ public interface LocationService {
 
     public List<Location> getAllLocations();
 
+    public List<Location> getAllLocationsIsActiveTrue();
+
     public LocationResponse deleteLocation(int locationId);
 
     public List<Location> getChildLocation(Location location);
@@ -29,4 +31,5 @@ public interface LocationService {
     public List<Location> getDistrictsByCityId(Integer cityId);
 
     public List<Location> getWardByDistrictId(Integer districtId);
+
 }
