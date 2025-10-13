@@ -45,6 +45,5 @@ public class Station {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "LocationId")
-    @JsonIgnore
     Location location;
 }

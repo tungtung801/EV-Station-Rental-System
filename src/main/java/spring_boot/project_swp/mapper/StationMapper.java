@@ -6,7 +6,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import spring_boot.project_swp.dto.request.StationAddingRequest;
 import spring_boot.project_swp.dto.request.StationUpdateRequest;
-import spring_boot.project_swp.dto.respone.StationResponse;
+import spring_boot.project_swp.dto.response.StationResponse;
 import spring_boot.project_swp.entity.Location;
 import spring_boot.project_swp.entity.Station;
 

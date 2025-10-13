@@ -1,4 +1,4 @@
-package spring_boot.project_swp.dto.respone;
+package spring_boot.project_swp.dto.response;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

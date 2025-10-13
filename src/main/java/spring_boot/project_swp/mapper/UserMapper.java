@@ -3,7 +3,7 @@ package spring_boot.project_swp.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import spring_boot.project_swp.dto.request.UserLoginRequest;
-import spring_boot.project_swp.dto.respone.UserLoginResponse;
+import spring_boot.project_swp.dto.response.UserLoginResponse;
 import spring_boot.project_swp.entity.User;
 
 @Mapper(componentModel = "spring")

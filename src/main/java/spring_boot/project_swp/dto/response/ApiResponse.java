@@ -1,4 +1,4 @@
-package spring_boot.project_swp.dto.respone;
+package spring_boot.project_swp.dto.response;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

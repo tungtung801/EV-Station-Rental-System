@@ -5,7 +5,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import spring_boot.project_swp.dto.request.LocationAddingRequest;
 import spring_boot.project_swp.dto.request.LocationUpdateRequest;
-import spring_boot.project_swp.dto.respone.LocationResponse;
+import spring_boot.project_swp.dto.response.LocationResponse;
 import spring_boot.project_swp.entity.Location;
 
 @Mapper(componentModel = "spring")
