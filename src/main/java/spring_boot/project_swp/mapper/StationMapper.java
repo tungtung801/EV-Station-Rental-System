@@ -7,6 +7,7 @@ import org.mapstruct.MappingTarget;
 import spring_boot.project_swp.dto.request.StationAddingRequest;
 import spring_boot.project_swp.dto.request.StationUpdateRequest;
 import spring_boot.project_swp.dto.respone.StationResponse;
+import spring_boot.project_swp.dto.respone.VehicleResponse;
 import spring_boot.project_swp.entity.Location;
 import spring_boot.project_swp.entity.Station;
 
@@ -45,4 +46,5 @@ public interface StationMapper {
             currentlocation = currentlocation.getParent();
         }
     }
+    VehicleResponse.StationInfo toStationInfo(Station station);
 }
