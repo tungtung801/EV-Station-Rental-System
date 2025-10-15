@@ -2,22 +2,24 @@ package spring_boot.project_swp.entity;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "Users")
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "UserId")
-    private int userId;
+    private Integer userId;
 
     @Column(name = "FullName", nullable = false, length = 100, columnDefinition = "NVARCHAR(100)")
     private String fullName;
@@ -31,13 +33,16 @@ public class User {
     @Column(name = "Password", nullable = false, length = 255)
     private String password;
 
-    @Column(name = "AccountStatus", nullable = true, length = 50)
-    private String accountStatus;
+    @Column(name = "AccountStatus", nullable = false)
+    @Builder.Default
+    private Boolean accountStatus = true;
 
-    @Column(name = "CreatedAt", nullable = false)
-    private LocalDate createdAt;
+    @CreationTimestamp
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "RoleId", nullable = false)
+    @ToString.Exclude
     private Role role;
 }

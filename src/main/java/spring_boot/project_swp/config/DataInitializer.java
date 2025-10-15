@@ -35,14 +35,12 @@ public class DataInitializer implements CommandLineRunner {
 
         }
 
-        if (userRepository.findByEmail("admin@gmail.com") == null) {
+        if (userRepository.findByEmail("admin@gmail.com").isEmpty()) {
             User user1 = new User();
             user1.setFullName("Admin");
             user1.setEmail("admin@gmail.com");
             user1.setPhoneNumber("0123456789");
             user1.setPassword("Admin@123");
-            user1.setCreatedAt(LocalDate.now());
-            user1.setAccountStatus("active");
             user1.setRole(roleService.findByRoleName("admin").get());
             userRepository.save(user1);
         }

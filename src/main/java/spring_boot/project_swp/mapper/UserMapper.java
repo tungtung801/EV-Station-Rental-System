@@ -2,23 +2,25 @@ package spring_boot.project_swp.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import spring_boot.project_swp.dto.request.UserLoginRequest;
-import spring_boot.project_swp.dto.response.UserLoginResponse;
+import spring_boot.project_swp.dto.request.user_request.UserRegistrationRequest;
+import spring_boot.project_swp.dto.response.user_response.UserLoginResponse;
+import spring_boot.project_swp.dto.response.user_response.UserResponse;
 import spring_boot.project_swp.entity.User;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {
-    @Mapping(target = "userId", ignore = true)
-    @Mapping(target = "fullName", ignore = true)
-    @Mapping(target = "phoneNumber", ignore = true)
-    @Mapping(target = "roleName", ignore = true)
-    UserLoginResponse requestToUserLoginResponse(UserLoginRequest request);
+    //for Login
+    @Mapping(source = "role.roleName", target = "roleName")
+    UserLoginResponse toUserLoginResponse(User user);
 
-    // Hoặc tốt hơn: map từ User entity
-    @Mapping(source = "user.userId", target = "userId")
-    @Mapping(source = "user.fullName", target = "fullName")
-    @Mapping(source = "user.email", target = "email")
-    @Mapping(source = "user.phoneNumber", target = "phoneNumber")
-    @Mapping(source = "user.role.roleName", target = "roleName")
-    UserLoginResponse userToUserLoginResponse(User user);
+    //for register
+    @Mapping(target = "userId", ignore = true)
+    @Mapping(target = "accountStatus", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "role", ignore = true)
+    User toUser(UserRegistrationRequest userRegistrationRequest);
+
+    //entity to dto
+    @Mapping(source = "role.roleName", target = "roleName")
+    UserResponse toUserResponse(User user);
 }
