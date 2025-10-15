@@ -25,23 +25,15 @@ public class VehicleServiceImpl implements VehicleService {
 
     @Override
     public VehicleResponse addVehicle(VehicleRequest request) {
-        // 1️⃣ Map request -> entity cơ bản (chưa có quan hệ)
-        Vehicle vehicle = vehicleMapper.toVehicle(request);
 
-        // 2️⃣ Lấy VehicleModel và Station từ DB theo ID
+        Vehicle vehicle = vehicleMapper.toVehicle(request);
         VehicleModel model = vehicleModelRepository.findById(request.getModelId())
                 .orElseThrow(() -> new RuntimeException("Vehicle model not found"));
         Station station = stationRepository.findById(request.getStationId())
                 .orElseThrow(() -> new RuntimeException("Station not found"));
-
-        // 3️⃣ Gán các quan hệ
         vehicle.setVehicleModel(model);
         vehicle.setStation(station);
-
-        // 4️⃣ Lưu vào DB
         vehicle = vehicleRepository.save(vehicle);
-
-        // 5️⃣ Trả về response
         return vehicleMapper.toVehicleRespone(vehicle);
     }
 
