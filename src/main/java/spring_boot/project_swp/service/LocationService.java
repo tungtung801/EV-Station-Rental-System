@@ -3,7 +3,7 @@ package spring_boot.project_swp.service;
 import org.springframework.stereotype.Service;
 import spring_boot.project_swp.dto.request.LocationAddingRequest;
 import spring_boot.project_swp.dto.request.LocationUpdateRequest;
-import spring_boot.project_swp.dto.respone.LocationResponse;
+import spring_boot.project_swp.dto.response.LocationResponse;
 import spring_boot.project_swp.entity.Location;
 
 import java.util.List;

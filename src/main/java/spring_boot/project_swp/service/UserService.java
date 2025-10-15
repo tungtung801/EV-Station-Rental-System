@@ -3,8 +3,8 @@ package spring_boot.project_swp.service;
 import org.springframework.stereotype.Service;
 import spring_boot.project_swp.dto.request.UserLoginRequest;
 import spring_boot.project_swp.dto.request.UserRegistrationDto;
-import spring_boot.project_swp.dto.respone.ApiResponse;
-import spring_boot.project_swp.dto.respone.UserLoginResponse;
+import spring_boot.project_swp.dto.response.ApiResponse;
+import spring_boot.project_swp.dto.response.UserLoginResponse;
 import spring_boot.project_swp.entity.User;
 
 import java.util.List;

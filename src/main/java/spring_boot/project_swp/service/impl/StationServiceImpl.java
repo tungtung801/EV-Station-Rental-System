@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import spring_boot.project_swp.dto.request.StationAddingRequest;
 import spring_boot.project_swp.dto.request.StationUpdateRequest;
-import spring_boot.project_swp.dto.respone.StationResponse;
+import spring_boot.project_swp.dto.response.StationResponse;
 import spring_boot.project_swp.entity.Location;
 import spring_boot.project_swp.entity.Station;
 import spring_boot.project_swp.mapper.LocationMapper;
@@ -13,7 +13,6 @@ import spring_boot.project_swp.repository.LocationRepository;
 import spring_boot.project_swp.repository.StationRepository;
 import spring_boot.project_swp.service.StationService;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -27,6 +26,12 @@ public class StationServiceImpl implements StationService {
     @Override
     public List<StationResponse> getAllStations() {
         return stationMapper.toStationResponseList(stationRepository.findAll());
+    }
+
+    @Override
+    public List<StationResponse> getAllStationsByLocationId(Integer locationId) {
+        List<Station> stationByLocaitonList= stationRepository.findByLocation_LocationIdAndIsActiveTrue(locationId);
+        return stationMapper.toStationResponseList(stationByLocaitonList);
     }
 
     @Override
@@ -104,5 +109,31 @@ public class StationServiceImpl implements StationService {
             station.setActive(false);
         }
         return stationMapper.toStationResponse(stationRepository.save(station));
+    }
+
+    @Override
+    public List<StationResponse> findStationsByCityId(Integer cityId) {
+        if(cityId == null){
+            throw new IllegalArgumentException("CityID is required");
+        }
+        Location location = locationRepository.findByLocationId(cityId);
+        if(location == null || !location.getLocationType().equalsIgnoreCase("City") ){
+            throw new IllegalArgumentException("CityID does not exist or Invalid type name \"City\"");
+        }
+        List<Station> stationByCityList = stationRepository.findStationsByCityId(cityId);
+        return stationMapper.toStationResponseList(stationByCityList);
+    }
+
+    @Override
+    public List<StationResponse> findStationsByDistrictId(Integer cityId, Integer districtId) {
+        if(cityId == null || districtId == null){
+            throw new IllegalArgumentException("CityID or districtID is missing");
+        }
+        Location district =  locationRepository.findByLocationId(districtId);
+        if(district == null || !district.getParent().getLocationId().equals(cityId)){
+            throw new IllegalArgumentException("The district is not belongs to the specificed city");
+        }
+        List<Station> stationByDistrictList = stationRepository.findStationsByDistrictId(districtId);
+        return stationMapper.toStationResponseList(stationByDistrictList);
     }
 }
