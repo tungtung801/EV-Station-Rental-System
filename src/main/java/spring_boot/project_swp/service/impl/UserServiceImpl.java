@@ -13,6 +13,7 @@ import spring_boot.project_swp.dto.request.UserRegistrationRequest;
 import spring_boot.project_swp.dto.response.UserLoginResponse;
 import spring_boot.project_swp.dto.response.UserRegistrationResponse;
 import spring_boot.project_swp.dto.response.UserResponse;
+import spring_boot.project_swp.dto.request.UserUpdateRequest;
 import spring_boot.project_swp.entity.User;
 import spring_boot.project_swp.exception.ConflictException;
 import spring_boot.project_swp.exception.NotFoundException;
@@ -85,24 +86,23 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponse updateUser(Integer userId, User updatedUser) {
+    public UserResponse updateUser(Integer userId, UserUpdateRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
-        if (updatedUser.getEmail() != null && !updatedUser.getEmail().equals(user.getEmail())
-                && userRepository.existsByEmailOrPhoneNumber(updatedUser.getEmail(), user.getPhoneNumber())) {
+        if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())
+                && userRepository.existsByEmailOrPhoneNumber(request.getEmail(), null)) {
             throw new ConflictException("Email already in use");
         }
 
-        if (updatedUser.getPhoneNumber() != null && !updatedUser.getPhoneNumber().equals(user.getPhoneNumber())
-                && userRepository.existsByEmailOrPhoneNumber(user.getEmail(), updatedUser.getPhoneNumber())) {
+        if (request.getPhoneNumber() != null && !request.getPhoneNumber().equals(user.getPhoneNumber())
+                && userRepository.existsByEmailOrPhoneNumber(null, request.getPhoneNumber())) {
             throw new ConflictException("Phone number already in use");
         }
 
-        if (updatedUser.getEmail() != null) user.setEmail(updatedUser.getEmail());
-        if (updatedUser.getPhoneNumber() != null) user.setPhoneNumber(updatedUser.getPhoneNumber());
-        if (updatedUser.getFullName() != null) user.setFullName(updatedUser.getFullName());
-        if (updatedUser.getPassword() != null) user.setPassword(updatedUser.getPassword());
+        if (request.getEmail() != null) user.setEmail(request.getEmail());
+        if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
+        if (request.getFullName() != null) user.setFullName(request.getFullName());
 
         User saved = userRepository.save(user);
         return userMapper.toUserResponse(saved);

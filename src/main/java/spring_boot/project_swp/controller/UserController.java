@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.support.SessionStatus;
 import spring_boot.project_swp.dto.request.UserLoginRequest;
 import spring_boot.project_swp.dto.request.UserRegistrationRequest;
+import spring_boot.project_swp.dto.request.UserUpdateRequest;
 import spring_boot.project_swp.dto.response.UserLoginResponse;
 import spring_boot.project_swp.dto.response.UserRegistrationResponse;
 import spring_boot.project_swp.dto.response.UserResponse;
@@ -22,9 +23,17 @@ import spring_boot.project_swp.service.UserService;
 public class UserController {
     UserService userService;
 
+    //------------ Get User by ID ----------
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUserById(@PathVariable Integer id) {
         UserResponse response = userService.getUserById(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    //------------ Update User ----------
+    @PutMapping("/{id}")
+    public ResponseEntity<UserResponse> updateUser(@PathVariable Integer id, @Valid @RequestBody UserUpdateRequest request) {
+        UserResponse response = userService.updateUser(id, request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

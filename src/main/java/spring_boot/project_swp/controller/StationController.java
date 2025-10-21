@@ -21,37 +21,44 @@ import spring_boot.project_swp.service.StationService;
 public class StationController {
     private final StationService stationService;
 
+    //------------ Add Station ----------
     @PostMapping("/add")
     public ResponseEntity<StationResponse> addStation(@Valid @RequestBody StationAddingRequest station) {
         return new ResponseEntity<>(stationService.addStation(station),  HttpStatus.OK);
     }
 
+    //------------ Get All Stations ----------
     @GetMapping("/get/getAll")
     public ResponseEntity<List<StationResponse>> getAllStations() {
         return new ResponseEntity<>(stationService.getAllStations(),  HttpStatus.OK);
     }
 
+    //------------ Get Stations by Location ID ----------
     @GetMapping("/get/getStationByLocation/{locationId}")
     public ResponseEntity<List<StationResponse>> getAllStationsByLocationId(@PathVariable("locationId") Integer locationId) {
         return new ResponseEntity<>(stationService.getAllStationsByLocationId(locationId),  HttpStatus.OK);
     }
 
+    //------------ Search Stations by City ID ----------
     @GetMapping("/search/by-city/{cityId}")
     public ResponseEntity<List<StationResponse>> getStationsByCityId(@PathVariable("cityId") Integer cityId) {
         return new ResponseEntity<>(stationService.findStationsByCityId(cityId),  HttpStatus.OK);
     }
 
+    //------------ Search Stations by City ID and District ID ----------
     @GetMapping("/search/by-city/{cityId}/by-district/{districtId}")
     public ResponseEntity<List<StationResponse>> getStationsByDistrictId(@PathVariable("cityId") Integer cityId
     , @PathVariable("districtId") Integer districtId) {
         return new ResponseEntity<>(stationService.findStationsByDistrictId(cityId, districtId),  HttpStatus.OK);
     }
 
+    //------------ Update Station ----------
     @PostMapping("/update/{stationId}")
     public ResponseEntity<StationResponse> updateStation(@PathVariable("stationId") Integer stationId, @RequestBody StationUpdateRequest station) {
         return new ResponseEntity<>(stationService.updateStation(stationId, station),  HttpStatus.OK);
     }
 
+    //------------ Delete Station by ID ----------
     @DeleteMapping("/{stationId}")
     public ResponseEntity<Void> deleteStationById(@PathVariable Integer stationId) {
         stationService.deleteStationById(stationId);

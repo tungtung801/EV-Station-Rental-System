@@ -23,12 +23,14 @@ import spring_boot.project_swp.service.UserService;
 public class AuthController {
     UserService userService;
 
+    //------------ Register ----------
     @PostMapping("/register")
     public ResponseEntity<UserRegistrationResponse> register(@Valid @RequestBody UserRegistrationRequest request) {
         UserRegistrationResponse response = userService.register(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    //------------ Login ----------
     @PostMapping("/login")
     public ResponseEntity<UserLoginResponse> login(@Valid @RequestBody UserLoginRequest request) {
         UserLoginResponse response = userService.login(request);

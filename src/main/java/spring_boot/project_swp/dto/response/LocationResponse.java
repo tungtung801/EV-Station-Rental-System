@@ -19,5 +19,6 @@ public class LocationResponse {
     BigDecimal latitude;
     BigDecimal longitude;
     BigDecimal radius;
-    Integer parentLocationId;
+    LocationResponse parent;
+    boolean active;
 }

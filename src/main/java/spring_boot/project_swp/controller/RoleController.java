@@ -20,26 +20,31 @@ import jakarta.validation.Valid;
 public class RoleController {
     private final RoleService roleService;
 
+    //------------ Get All Roles ----------
     @GetMapping
     public ResponseEntity<List<RoleResponse>> getAllRoles() {
         return new ResponseEntity<>(roleService.getAllRoles(), HttpStatus.OK);
     }
 
+    //------------ Get Role by ID ----------
     @GetMapping("/{roleId}")
     public ResponseEntity<RoleResponse> getRoleById(@PathVariable int roleId) {
         return new ResponseEntity<>(roleService.getRoleById(roleId), HttpStatus.OK);
     }
 
+    //------------ Add Role ----------
     @PostMapping
     public ResponseEntity<RoleResponse> addRole(@RequestBody @Valid RoleRequest request) {
         return new ResponseEntity<>(roleService.createRole(request), HttpStatus.CREATED);
     }
 
+    //------------ Update Role ----------
     @PutMapping("/{roleId}")
     public ResponseEntity<RoleResponse> updateRole(@PathVariable int roleId, @RequestBody @Valid RoleRequest request) {
         return new ResponseEntity<>(roleService.updateRole(roleId, request), HttpStatus.OK);
     }
 
+    //------------ Delete Role ----------
     @DeleteMapping("/{roleId}")
     public ResponseEntity<Void> deleteRole(@PathVariable int roleId) {
         roleService.deleteRole(roleId);

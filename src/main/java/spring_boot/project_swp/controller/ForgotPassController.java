@@ -25,18 +25,21 @@ public class ForgotPassController {
 
     final ForgotPasswordService forgotPasswordService;
 
+    //------------ Forgot Password ----------
     @PostMapping("/forgot-password")
     public ResponseEntity<MessageResponse> forgotPassword(@RequestBody @Valid ForgotPasswordRequest request) {
         forgotPasswordService.forgotPassword(request);
         return new ResponseEntity<>(MessageResponse.builder().message("OTP sent to your email address").build(), HttpStatus.OK);
     }
 
+    //------------ Verify OTP ----------
     @PostMapping("/verify-otp")
     public ResponseEntity<MessageResponse> verifyOtp(@RequestBody @Valid VerifyOtpRequest request) {
         forgotPasswordService.verifyOtp(request);
         return new ResponseEntity<>(MessageResponse.builder().message("OTP verified successfully").build(), HttpStatus.OK);
     }
 
+    //------------ Reset Password ----------
     @PostMapping("/reset-password")
     public ResponseEntity<MessageResponse> resetPassword(@RequestBody @Valid ResetPasswordRequest request) {
         forgotPasswordService.resetPassword(request);

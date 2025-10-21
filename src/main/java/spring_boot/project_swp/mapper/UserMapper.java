@@ -2,7 +2,9 @@ package spring_boot.project_swp.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import spring_boot.project_swp.dto.request.UserRegistrationRequest;
+import spring_boot.project_swp.dto.request.UserUpdateRequest;
 import spring_boot.project_swp.dto.response.UserLoginResponse;
 import spring_boot.project_swp.dto.response.UserResponse;
 import spring_boot.project_swp.entity.User;
@@ -23,4 +25,12 @@ public interface UserMapper {
     //entity to dto
     @Mapping(source = "role.roleName", target = "roleName")
     UserResponse toUserResponse(User user);
+
+    @Mapping(target = "userId", ignore = true)
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "accountStatus", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "role", ignore = true)
+    void updateUser(@MappingTarget User user, UserUpdateRequest request);
+
 }

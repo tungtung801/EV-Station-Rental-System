@@ -14,7 +14,8 @@ public interface LocationMapper {
     Location toLocation(LocationAddingRequest request);
 
     // Dung cho moi truong hop tra ve get / put /
-    @Mapping(source = "parent.locationId", target = "parentLocationId")
+    @Mapping(source = "parent", target = "parent")
+    @Mapping(source = "active", target = "active")
     LocationResponse toLocationResponse(Location location);
 
     // For updating existing location
