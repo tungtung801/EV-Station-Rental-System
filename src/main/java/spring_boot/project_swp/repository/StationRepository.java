@@ -5,13 +5,14 @@ import org.springframework.stereotype.Repository;
 import spring_boot.project_swp.entity.Station;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface StationRepository extends JpaRepository<Station, Integer> {
     public List<Station> findByIsActiveIsTrue();
     public List<Station> findByIsActiveIsFalse();
-    public Station findStationByStationId(Integer id);
-    public Station findStationByStationName(String name);
+    public Optional<Station> findStationByStationId(Integer id);
+    public Optional<Station> findStationByStationName(String name);
     public List<Station> findByLocation_LocationIdAndIsActiveTrue(Integer locationId);
     public List<Station> findByLocation_LocationIdInAndIsActiveTrue(List<Integer> locationIds);
 

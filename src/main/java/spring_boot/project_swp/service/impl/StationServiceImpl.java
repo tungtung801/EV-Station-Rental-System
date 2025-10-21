@@ -1,19 +1,22 @@
 package spring_boot.project_swp.service.impl;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
+
+import lombok.RequiredArgsConstructor;
 import spring_boot.project_swp.dto.request.StationAddingRequest;
 import spring_boot.project_swp.dto.request.StationUpdateRequest;
 import spring_boot.project_swp.dto.response.StationResponse;
 import spring_boot.project_swp.entity.Location;
 import spring_boot.project_swp.entity.Station;
+import spring_boot.project_swp.exception.ConflictException;
+import spring_boot.project_swp.exception.NotFoundException;
 import spring_boot.project_swp.mapper.LocationMapper;
 import spring_boot.project_swp.mapper.StationMapper;
 import spring_boot.project_swp.repository.LocationRepository;
 import spring_boot.project_swp.repository.StationRepository;
 import spring_boot.project_swp.service.StationService;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -37,31 +40,35 @@ public class StationServiceImpl implements StationService {
     @Override
     public StationResponse findStationById(Integer id) {
         if (id == null) {
-            throw new IllegalArgumentException("StationID is required");
+            throw new ConflictException("StationID is required");
         }
-        return stationMapper.toStationResponse(stationRepository.findStationByStationId(id));
+        Station station = stationRepository.findStationByStationId(id)
+                .orElseThrow(() -> new NotFoundException("Station does not exist"));
+        return stationMapper.toStationResponse(station);
     }
 
     @Override
-    public Station findStationByName(String name) {
-        if (name == null) {
-            throw new IllegalArgumentException("StationName is required");
+    public StationResponse findStationByName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new ConflictException("StationName is required");
         }
-        return stationRepository.findStationByStationName(name);
+        Station station = stationRepository.findStationByStationName(name)
+                .orElseThrow(() -> new NotFoundException("Station does not exist"));
+        return stationMapper.toStationResponse(station);
     }
 
     @Override
     public StationResponse addStation(StationAddingRequest request) {
         if (request.getStationName() == null || request.getStationName().trim().isEmpty()) {
-            throw new IllegalArgumentException("StationName is required");
+            throw new ConflictException("StationName is required");
         }
 
         if (request.getAddress() == null || request.getAddress().trim().isEmpty()) {
-            throw new IllegalArgumentException("Address is required");
+            throw new ConflictException("Address is required");
         }
 
-        if (stationRepository.findStationByStationName(request.getStationName()) != null) {
-            throw new IllegalArgumentException("Station already exists");
+        if (stationRepository.findStationByStationName(request.getStationName()).isPresent()) {
+            throw new ConflictException("Station already exists");
         }
 
         Station newStation = stationMapper.toStation(request);
@@ -69,10 +76,8 @@ public class StationServiceImpl implements StationService {
         newStation.setActive(true);
         newStation.setAvailableDocks(request.getTotalDocks());
 
-        Location location = locationRepository.findByLocationId(request.getLocationId());
-        if (location == null) {
-            throw new IllegalArgumentException("Location not found with id " + request.getLocationId());
-        }
+        Location location = locationRepository.findByLocationId(request.getLocationId())
+                .orElseThrow(() -> new NotFoundException("Location not found with id " + request.getLocationId()));
         newStation.setLocation(location);
 
         stationRepository.save(newStation);
@@ -82,20 +87,15 @@ public class StationServiceImpl implements StationService {
 
     @Override
     public StationResponse updateStation(Integer stationId, StationUpdateRequest request) {
-        Station station = stationRepository.findStationByStationId(stationId);
+        Station station = stationRepository.findStationByStationId(stationId)
+                .orElseThrow(() -> new NotFoundException("Station does not exist"));
 
-        if (station == null) {
-            throw new IllegalArgumentException("Station does not exist");
-        }
         stationMapper.updateStationFromRequest(request, station);
 
         if (request.getLocationId() != null) {
-            Location newLocation = locationRepository.findByLocationId(request.getLocationId());
-            if (newLocation != null) {
-                station.setLocation(newLocation);
-            } else {
-                throw new IllegalArgumentException("Location does not exist with id: " + request.getLocationId());
-            }
+            Location newLocation = locationRepository.findByLocationId(request.getLocationId())
+                    .orElseThrow(() -> new NotFoundException("Location does not exist with id: " + request.getLocationId()));
+            station.setLocation(newLocation);
         }
         Station updatedStation = stationRepository.save(station);
 
@@ -103,22 +103,21 @@ public class StationServiceImpl implements StationService {
     }
 
     @Override
-    public StationResponse deleteStationById(Integer id) {
-        Station station = stationRepository.findStationByStationId(id);
-        if (station != null) {
-            station.setActive(false);
-        }
-        return stationMapper.toStationResponse(stationRepository.save(station));
+    public void deleteStationById(Integer id) {
+        Station station = stationRepository.findStationByStationId(id)
+                .orElseThrow(() -> new NotFoundException("Station does not exist"));
+        stationRepository.delete(station);
     }
 
     @Override
     public List<StationResponse> findStationsByCityId(Integer cityId) {
         if(cityId == null){
-            throw new IllegalArgumentException("CityID is required");
+            throw new ConflictException("CityID is required");
         }
-        Location location = locationRepository.findByLocationId(cityId);
-        if(location == null || !location.getLocationType().equalsIgnoreCase("City") ){
-            throw new IllegalArgumentException("CityID does not exist or Invalid type name \"City\"");
+        Location location = locationRepository.findByLocationId(cityId)
+                .orElseThrow(() -> new NotFoundException("CityID does not exist or Invalid type name \"City\""));
+        if(!location.getLocationType().equalsIgnoreCase("City") ){
+            throw new NotFoundException("CityID does not exist or Invalid type name \"City\"");
         }
         List<Station> stationByCityList = stationRepository.findStationsByCityId(cityId);
         return stationMapper.toStationResponseList(stationByCityList);
@@ -127,11 +126,12 @@ public class StationServiceImpl implements StationService {
     @Override
     public List<StationResponse> findStationsByDistrictId(Integer cityId, Integer districtId) {
         if(cityId == null || districtId == null){
-            throw new IllegalArgumentException("CityID or districtID is missing");
+            throw new ConflictException("CityID or districtID is missing");
         }
-        Location district =  locationRepository.findByLocationId(districtId);
-        if(district == null || !district.getParent().getLocationId().equals(cityId)){
-            throw new IllegalArgumentException("The district is not belongs to the specificed city");
+        Location district =  locationRepository.findByLocationId(districtId)
+                .orElseThrow(() -> new NotFoundException("The district is not belongs to the specificed city"));
+        if(!district.getParent().getLocationId().equals(cityId)){
+            throw new NotFoundException("The district is not belongs to the specificed city");
         }
         List<Station> stationByDistrictList = stationRepository.findStationsByDistrictId(districtId);
         return stationMapper.toStationResponseList(stationByDistrictList);

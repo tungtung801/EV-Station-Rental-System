@@ -1,46 +1,46 @@
 package spring_boot.project_swp.service.impl;
 
-import lombok.AllArgsConstructor;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
-import spring_boot.project_swp.dto.request.user_request.UserLoginRequest;
-import spring_boot.project_swp.dto.request.user_request.UserRegistrationRequest;
-import spring_boot.project_swp.dto.response.user_response.UserLoginResponse;
-import spring_boot.project_swp.dto.response.user_response.UserRegistrationResponse;
-import spring_boot.project_swp.dto.response.user_response.UserResponse;
+
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import spring_boot.project_swp.dto.request.UserLoginRequest;
+import spring_boot.project_swp.dto.request.UserRegistrationRequest;
+import spring_boot.project_swp.dto.response.UserLoginResponse;
+import spring_boot.project_swp.dto.response.UserRegistrationResponse;
+import spring_boot.project_swp.dto.response.UserResponse;
 import spring_boot.project_swp.entity.User;
-import spring_boot.project_swp.exception.Print_Exception.ConflictException;
+import spring_boot.project_swp.exception.ConflictException;
+import spring_boot.project_swp.exception.NotFoundException;
 import spring_boot.project_swp.mapper.UserMapper;
 import spring_boot.project_swp.repository.UserRepository;
 import spring_boot.project_swp.service.RoleService;
 import spring_boot.project_swp.service.UserService;
-import java.util.List;
-import java.util.stream.Collectors;
+
 
 @Service
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserServiceImpl implements UserService {
 
-    private final UserRepository userRepository;
-    private final RoleService roleService;
-    private final UserMapper userMapper;
+    final UserRepository userRepository;
+    final RoleService roleService;
+    final UserMapper userMapper;
 
     @Override
-    public UserRegistrationResponse userRegistration(UserRegistrationRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new ConflictException("Email already in use");
-        }
-        if (userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
-            throw new ConflictException("Phone number already in use");
+    public UserRegistrationResponse register(UserRegistrationRequest request) {
+        if (userRepository.existsByEmailOrPhoneNumber(request.getEmail(), request.getPhoneNumber())) {
+            throw new ConflictException("Email or phone number already in use");
         }
         User user = userMapper.toUser(request);
-        user.setPassword(request.getPassword());
         user.setRole(roleService.getRoleByName("User"));
         User saved = userRepository.save(user);
-        return UserRegistrationResponse.builder()
-                .message("Registration successful")
-                .userId(saved.getUserId())
-                .email(saved.getEmail())
-                .build();
+
+        return new UserRegistrationResponse(saved.getUserId(), saved.getEmail());
     }
 
     @Override
@@ -55,29 +55,31 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<UserResponse> getAllUsers() {
-        return userRepository.findAll().stream()
-                .map(userMapper::toUserResponse)
-                .collect(Collectors.toList());
+        List<UserResponse> users = new ArrayList<>();
+        for(User user : userRepository.findAll()) {
+            users.add(userMapper.toUserResponse(user));
+        }
+        return users;
     }
 
     @Override
     public UserResponse getUserById(Integer userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ConflictException("User not found with id: " + userId));
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
         return userMapper.toUserResponse(user);
     }
 
     @Override
-    public User getUserByEmail(String email) {
+    public UserResponse getUserByEmail(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ConflictException("User not found with email: " + email));
-        return user;
+                .orElseThrow(() -> new NotFoundException("User not found with email: " + email));
+        return userMapper.toUserResponse(user);
     }
 
     @Override
     public void deleteUser(Integer userId) {
         if (!userRepository.existsById(userId)) {
-            throw new ConflictException("User not found with id: " + userId);
+            throw new NotFoundException("User not found with id: " + userId);
         }
         userRepository.deleteById(userId);
     }
@@ -85,15 +87,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse updateUser(Integer userId, User updatedUser) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ConflictException("User not found with id: " + userId));
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
         if (updatedUser.getEmail() != null && !updatedUser.getEmail().equals(user.getEmail())
-                && userRepository.existsByEmail(updatedUser.getEmail())) {
+                && userRepository.existsByEmailOrPhoneNumber(updatedUser.getEmail(), user.getPhoneNumber())) {
             throw new ConflictException("Email already in use");
         }
 
         if (updatedUser.getPhoneNumber() != null && !updatedUser.getPhoneNumber().equals(user.getPhoneNumber())
-                && userRepository.existsByPhoneNumber(updatedUser.getPhoneNumber())) {
+                && userRepository.existsByEmailOrPhoneNumber(user.getEmail(), updatedUser.getPhoneNumber())) {
             throw new ConflictException("Phone number already in use");
         }
 
@@ -106,6 +108,13 @@ public class UserServiceImpl implements UserService {
         return userMapper.toUserResponse(saved);
     }
 
+    @Override
+    public void updatePassword(String email, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("USER_NOT_FOUND"));
+        user.setPassword(newPassword);
+        userRepository.save(user);
+    }
 }
 
 

@@ -1,11 +1,18 @@
 package spring_boot.project_swp.controller;
 
 import lombok.AllArgsConstructor;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import spring_boot.project_swp.entity.Role;
+
+import spring_boot.project_swp.dto.request.RoleRequest;
+import spring_boot.project_swp.dto.response.RoleResponse;
 import spring_boot.project_swp.service.RoleService;
+
+import java.util.List;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/roles")
@@ -13,12 +20,29 @@ import spring_boot.project_swp.service.RoleService;
 public class RoleController {
     private final RoleService roleService;
 
+    @GetMapping
+    public ResponseEntity<List<RoleResponse>> getAllRoles() {
+        return new ResponseEntity<>(roleService.getAllRoles(), HttpStatus.OK);
+    }
+
+    @GetMapping("/{roleId}")
+    public ResponseEntity<RoleResponse> getRoleById(@PathVariable int roleId) {
+        return new ResponseEntity<>(roleService.getRoleById(roleId), HttpStatus.OK);
+    }
+
     @PostMapping
-    public ResponseEntity<Role> addRole(@RequestBody Role role) {
-        Role createdRole = roleService.createRole(role);
-        if (createdRole != null) {
-            return new ResponseEntity<>(createdRole, HttpStatus.CREATED);
-        }
-        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    public ResponseEntity<RoleResponse> addRole(@RequestBody @Valid RoleRequest request) {
+        return new ResponseEntity<>(roleService.createRole(request), HttpStatus.CREATED);
+    }
+
+    @PutMapping("/{roleId}")
+    public ResponseEntity<RoleResponse> updateRole(@PathVariable int roleId, @RequestBody @Valid RoleRequest request) {
+        return new ResponseEntity<>(roleService.updateRole(roleId, request), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{roleId}")
+    public ResponseEntity<Void> deleteRole(@PathVariable int roleId) {
+        roleService.deleteRole(roleId);
+        return ResponseEntity.noContent().build();
     }
 }

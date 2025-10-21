@@ -1,22 +1,24 @@
 package spring_boot.project_swp.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class EmailService {
-    @Autowired
-    private JavaMailSender mailSender;
+
+    final JavaMailSender mailSender;
 
     public void sendEmail(String to, String subject, String text) {
         SimpleMailMessage message = new SimpleMailMessage();
-//        message.setFrom("antechno2005@gmail.com");
         message.setTo(to);
         message.setSubject(subject);
         message.setText(text);
         mailSender.send(message);
-
     }
 }

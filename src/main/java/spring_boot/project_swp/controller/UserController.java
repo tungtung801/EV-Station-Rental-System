@@ -8,11 +8,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.support.SessionStatus;
-import spring_boot.project_swp.dto.request.user_request.UserLoginRequest;
-import spring_boot.project_swp.dto.request.user_request.UserRegistrationRequest;
-import spring_boot.project_swp.dto.response.user_response.UserLoginResponse;
-import spring_boot.project_swp.dto.response.user_response.UserRegistrationResponse;
-import spring_boot.project_swp.dto.response.user_response.UserResponse;
+import spring_boot.project_swp.dto.request.UserLoginRequest;
+import spring_boot.project_swp.dto.request.UserRegistrationRequest;
+import spring_boot.project_swp.dto.response.UserLoginResponse;
+import spring_boot.project_swp.dto.response.UserRegistrationResponse;
+import spring_boot.project_swp.dto.response.UserResponse;
 import spring_boot.project_swp.service.UserService;
 
 @RestController

@@ -1,60 +1,56 @@
 package spring_boot.project_swp.exception;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import spring_boot.project_swp.exception.Print_Exception.ConflictException;
-import spring_boot.project_swp.exception.Print_Exception.NotFoundException;
-
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 @RestControllerAdvice
 public class HandleException {
-    //400 Bad Error
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-                errors.put(error.getField(), error.getDefaultMessage()));
-        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
-    }
 
-    //404 Not Found
-    @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleResourceNotFound(NotFoundException ex) {
+    private Map<String, Object> createBody(HttpStatus status, String message, String error) {
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.NOT_FOUND.value());
-        body.put("error", "Not Found");
-        body.put("message", ex.getMessage());
+        body.put("status", status.value());
+        body.put("error", error);
+        body.put("message", message);
+        return body;
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
+        Map<String, String> fieldErrors = new HashMap<>();
+        for (var err : ex.getBindingResult().getFieldErrors()) {
+            fieldErrors.put(err.getField(), err.getDefaultMessage());
+        }
+        Map<String, Object> body = createBody(HttpStatus.BAD_REQUEST, "Validation failed", "Bad Request");
+        body.put("fields", fieldErrors); // thêm chi tiết các field lỗi
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNotFound(NotFoundException ex) {
+        Map<String, Object> body = createBody(HttpStatus.NOT_FOUND, ex.getMessage(), "Not Found");
         return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
     }
 
-    //409 Conflict
     @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<Map<String, Object>> handleResourceConflict(ConflictException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.CONFLICT.value());
-        body.put("error", "Conflict");
-        body.put("message", ex.getMessage());
+    public ResponseEntity<Map<String, Object>> handleConflict(ConflictException ex) {
+        Map<String, Object> body = createBody(HttpStatus.CONFLICT, ex.getMessage(), "Conflict");
         return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }
 
-    //500 Internal Server Error
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        body.put("error", "Internal Server Error");
-        body.put("message", "Đã có lỗi không mong muốn xảy ra. Vui lòng thử lại sau.");
+    public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
         ex.printStackTrace();
+        Map<String, Object> body = createBody(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Đã có lỗi không mong muốn xảy ra. Vui lòng thử lại sau.",
+                "Internal Server Error");
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
 }

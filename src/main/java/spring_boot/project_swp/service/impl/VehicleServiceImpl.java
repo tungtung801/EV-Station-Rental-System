@@ -1,19 +1,23 @@
 package spring_boot.project_swp.service.impl;
 
-import lombok.AllArgsConstructor;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.stereotype.Service;
+
+import lombok.AllArgsConstructor;
 import spring_boot.project_swp.dto.request.VehicleRequest;
-import spring_boot.project_swp.dto.respone.VehicleResponse;
+import spring_boot.project_swp.dto.response.VehicleResponse;
 import spring_boot.project_swp.entity.Station;
 import spring_boot.project_swp.entity.Vehicle;
 import spring_boot.project_swp.entity.VehicleModel;
+import spring_boot.project_swp.exception.ConflictException;
+import spring_boot.project_swp.exception.NotFoundException;
 import spring_boot.project_swp.mapper.VehicleMapper;
 import spring_boot.project_swp.repository.StationRepository;
 import spring_boot.project_swp.repository.VehicleModelRepository;
 import spring_boot.project_swp.repository.VehicleRepository;
 import spring_boot.project_swp.service.VehicleService;
-
-import java.util.List;
 
 @Service
 @AllArgsConstructor
@@ -25,52 +29,70 @@ public class VehicleServiceImpl implements VehicleService {
 
     @Override
     public VehicleResponse addVehicle(VehicleRequest request) {
+        if (vehicleRepository.findByLicensePlate(request.getLicensePlate()).isPresent()) {
+            throw new ConflictException("Vehicle with license plate " + request.getLicensePlate() + " already exists");
+        }
 
         Vehicle vehicle = vehicleMapper.toVehicle(request);
-        VehicleModel model = vehicleModelRepository.findById(request.getModelId())
-                .orElseThrow(() -> new RuntimeException("Vehicle model not found"));
-        Station station = stationRepository.findById(request.getStationId())
-                .orElseThrow(() -> new RuntimeException("Station not found"));
+        VehicleModel model = vehicleModelRepository.findByModelId(request.getModelId())
+                .orElseThrow(() -> new NotFoundException("Vehicle model not found"));
+        Station station = stationRepository.findStationByStationId(request.getStationId())
+                .orElseThrow(() -> new NotFoundException("Station not found"));
         vehicle.setVehicleModel(model);
         vehicle.setStation(station);
         vehicle = vehicleRepository.save(vehicle);
-        return vehicleMapper.toVehicleRespone(vehicle);
+        return vehicleMapper.toVehicleResponse(vehicle);
     }
 
     @Override
-    public VehicleResponse updateVehicle(int vehicleId, VehicleRequest request) {
-        Vehicle vehicle = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+    public VehicleResponse updateVehicle(int id, VehicleRequest request) {
+        Optional<Vehicle> existingVehicleOptional = vehicleRepository.findById(id);
+        if (existingVehicleOptional.isEmpty()) {
+            throw new NotFoundException("Vehicle not found with ID: " + id);
+        }
 
-        vehicleMapper.updateVehicleFromRequest(request, vehicle);
+        Vehicle existingVehicle = existingVehicleOptional.get();
 
-        VehicleModel model = vehicleModelRepository.findById(request.getModelId())
-                .orElseThrow(() -> new RuntimeException("Vehicle model not found"));
-        Station station = stationRepository.findById(request.getStationId())
-                .orElseThrow(() -> new RuntimeException("Station not found"));
+        Optional<Vehicle> vehicleWithSameLicensePlate = vehicleRepository.findByLicensePlate(request.getLicensePlate());
+        if (vehicleWithSameLicensePlate.isPresent() && vehicleWithSameLicensePlate.get().getVehicleId() != id) {
+            throw new ConflictException("Vehicle with license plate '" + request.getLicensePlate() + "' already exists.");
+        }
 
-        vehicle.setVehicleModel(model);
-        vehicle.setStation(station);
+        vehicleMapper.updateVehicleFromRequest(request, existingVehicle);
 
-        vehicleRepository.save(vehicle);
+        if (request.getModelId() != null) {
+            VehicleModel model = vehicleModelRepository.findByModelId(request.getModelId())
+                    .orElseThrow(() -> new NotFoundException("Vehicle model not found"));
+            existingVehicle.setVehicleModel(model);
+        }
 
-        return vehicleMapper.toVehicleRespone(vehicle);
+        if (request.getStationId() != null) {
+            Station station = stationRepository.findStationByStationId(request.getStationId())
+                    .orElseThrow(() -> new NotFoundException("Station not found"));
+            existingVehicle.setStation(station);
+        }
+
+        Vehicle updatedVehicle = vehicleRepository.save(existingVehicle);
+        return vehicleMapper.toVehicleResponse(updatedVehicle);
     }
 
     @Override
     public void deleteVehicle(int vehicleId) {
+        if (!vehicleRepository.existsById(vehicleId)) {
+            throw new NotFoundException("Vehicle not found");
+        }
         vehicleRepository.deleteById(vehicleId);
     }
 
     @Override
     public List<VehicleResponse> findAll() {
-    return vehicleMapper.toVehicleResponeList(vehicleRepository.findAll());
+    return vehicleMapper.toVehicleResponseList(vehicleRepository.findAll());
     }
 
     @Override
     public VehicleResponse findById(int vehicleId) {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
-        return vehicleMapper.toVehicleRespone(vehicle);
+                .orElseThrow(() -> new NotFoundException("Vehicle not found"));
+        return vehicleMapper.toVehicleResponse(vehicle);
     }
 }

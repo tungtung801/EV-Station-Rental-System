@@ -4,18 +4,21 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "Locations")
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -43,17 +46,19 @@ public class Location {
     @Column(name = "IsActive", nullable = false)
     boolean isActive;
 
-    @Column(name = "CreatedAt", nullable = false)
-    LocalDate createdAt;
+    @CreationTimestamp
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
+    LocalDateTime createdAt;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "ParentLocationId")
     Location parent;
 
-    @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY, targetEntity = Location.class)
     @JsonIgnore // Thêm annotation để tránh vòng lặp vô hạn khi serialize
     List<Location> children = new ArrayList<>();
 
-    @OneToMany(mappedBy = "location", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "location", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     List<Station> stations = new ArrayList<>();
 }

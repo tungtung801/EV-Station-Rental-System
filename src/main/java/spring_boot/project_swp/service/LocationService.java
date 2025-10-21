@@ -10,26 +10,26 @@ import java.util.List;
 
 @Service
 public interface LocationService {
-    public Location addLocation(LocationAddingRequest request);
+    public LocationResponse addLocation(LocationAddingRequest request);
 
     public LocationResponse updateLocation(int locationId, LocationUpdateRequest location);
 
-    public Location getLocationById(int locationId);
+    public LocationResponse getLocationById(int locationId);
 
-    public Location getLocationByName(String locationName);
+    public LocationResponse getLocationByName(String locationName);
 
-    public List<Location> getAllLocations();
+    public List<LocationResponse> getAllLocations();
 
-    public List<Location> getAllLocationsIsActiveTrue();
+    public List<LocationResponse> getAllLocationsIsActiveTrue();
 
     public LocationResponse deleteLocation(int locationId);
 
-    public List<Location> getChildLocation(Location location);
+    public List<LocationResponse> getChildLocation(Location location);
 
-    public List<Location> getCities();
+    public List<LocationResponse> getCities();
 
-    public List<Location> getDistrictsByCityId(Integer cityId);
+    public List<LocationResponse> getDistrictsByCityId(Integer cityId);
 
-    public List<Location> getWardByDistrictId(Integer districtId);
+    public List<LocationResponse> getWardByDistrictId(Integer districtId);
 
 }

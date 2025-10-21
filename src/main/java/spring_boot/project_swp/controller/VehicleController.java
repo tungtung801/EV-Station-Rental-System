@@ -6,7 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import spring_boot.project_swp.dto.request.VehicleRequest;
-import spring_boot.project_swp.dto.respone.VehicleResponse;
+import spring_boot.project_swp.dto.response.VehicleResponse;
 import spring_boot.project_swp.service.VehicleService;
 
 import java.util.List;

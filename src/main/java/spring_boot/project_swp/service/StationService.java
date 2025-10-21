@@ -16,13 +16,13 @@ public interface StationService {
 
     public StationResponse findStationById(Integer id);
 
-    public Station findStationByName(String name);
+    public StationResponse findStationByName(String name);
 
     public StationResponse addStation (StationAddingRequest request);
 
     public StationResponse updateStation(Integer stationId, StationUpdateRequest request);
 
-    public StationResponse deleteStationById(Integer id);
+    public void deleteStationById(Integer id);
 
     public List<StationResponse> findStationsByCityId(Integer cityId);
 

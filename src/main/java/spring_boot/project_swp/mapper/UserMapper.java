@@ -2,9 +2,9 @@ package spring_boot.project_swp.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import spring_boot.project_swp.dto.request.user_request.UserRegistrationRequest;
-import spring_boot.project_swp.dto.response.user_response.UserLoginResponse;
-import spring_boot.project_swp.dto.response.user_response.UserResponse;
+import spring_boot.project_swp.dto.request.UserRegistrationRequest;
+import spring_boot.project_swp.dto.response.UserLoginResponse;
+import spring_boot.project_swp.dto.response.UserResponse;
 import spring_boot.project_swp.entity.User;
 
 @Mapper(componentModel = "spring")

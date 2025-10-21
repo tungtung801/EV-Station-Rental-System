@@ -5,7 +5,7 @@ import org.mapstruct.Mapping;
 
 import org.mapstruct.MappingTarget;
 import spring_boot.project_swp.dto.request.VehicleRequest;
-import spring_boot.project_swp.dto.respone.VehicleResponse;
+import spring_boot.project_swp.dto.response.VehicleResponse;
 import spring_boot.project_swp.entity.Vehicle;
 
 import java.util.List;
@@ -25,8 +25,8 @@ public interface VehicleMapper {
 
     @Mapping(source = "station", target = "currentStation")
     @Mapping(source = "vehicleModel", target = "model")
-    VehicleResponse toVehicleRespone(Vehicle vehicle);
+    VehicleResponse toVehicleResponse(Vehicle vehicle);
 
-    List<VehicleResponse> toVehicleResponeList(List<Vehicle> vehicles);
+    List<VehicleResponse> toVehicleResponseList(List<Vehicle> vehicles);
 
 }

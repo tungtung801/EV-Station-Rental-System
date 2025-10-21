@@ -1,24 +1,28 @@
 package spring_boot.project_swp.service;
 
 import org.springframework.stereotype.Service;
+import spring_boot.project_swp.dto.request.RoleRequest;
+import spring_boot.project_swp.dto.response.RoleResponse;
 import spring_boot.project_swp.entity.Role;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public interface RoleService {
-    List<Role> getAllRoles();
+    List<RoleResponse> getAllRoles();
 
-    Optional<Role> findByRoleName(String roleName);
+    Optional<RoleResponse> findByRoleName(String roleName);
 
     Role getRoleByName(String roleName);
 
-    Optional<Role> findByRoleId(int roleId);
+    Optional<RoleResponse> findByRoleId(int roleId);
 
-    Role createRole(Role role);
+    RoleResponse createRole(RoleRequest request);
 
-    boolean updateRole(int roleId, Role role);
+    RoleResponse updateRole(int roleId, RoleRequest request);
 
-    void deleteRole(Role role);
+    void deleteRole(int roleId);
+
+    RoleResponse getRoleById(int roleId);
 }
 

@@ -1,9 +1,12 @@
 package spring_boot.project_swp.repository;
 
-import jdk.jfr.Registered;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 import spring_boot.project_swp.entity.Vehicle;
 
-@Registered
+import java.util.Optional;
+
+@Repository
 public interface VehicleRepository extends JpaRepository<Vehicle,Integer> {
+    Optional<Vehicle> findByLicensePlate(String licensePlate);
 }

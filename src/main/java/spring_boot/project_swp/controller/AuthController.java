@@ -10,10 +10,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import spring_boot.project_swp.dto.request.user_request.UserLoginRequest;
-import spring_boot.project_swp.dto.request.user_request.UserRegistrationRequest;
-import spring_boot.project_swp.dto.response.user_response.UserLoginResponse;
-import spring_boot.project_swp.dto.response.user_response.UserRegistrationResponse;
+import spring_boot.project_swp.dto.request.UserLoginRequest;
+import spring_boot.project_swp.dto.request.UserRegistrationRequest;
+import spring_boot.project_swp.dto.response.UserLoginResponse;
+import spring_boot.project_swp.dto.response.UserRegistrationResponse;
 import spring_boot.project_swp.service.UserService;
 
 @RestController
@@ -25,7 +25,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<UserRegistrationResponse> register(@Valid @RequestBody UserRegistrationRequest request) {
-        UserRegistrationResponse response = userService.userRegistration(request);
+        UserRegistrationResponse response = userService.register(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
