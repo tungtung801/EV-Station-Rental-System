@@ -12,6 +12,7 @@ import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "Users")
@@ -50,4 +51,20 @@ public class User {
     @JoinColumn(name = "RoleId", nullable = false)
     @ToString.Exclude
     private Role role;
+
+    public User(Long userId) {
+        this.userId = userId.intValue();
+    }
+
+    @OneToMany(mappedBy = "renter", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    private List<Rental> rentedRentals;
+
+    @OneToMany(mappedBy = "pickupStaff", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    private List<Rental> pickupStaffRentals;
+
+    @OneToMany(mappedBy = "returnStaff", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    private List<Rental> returnStaffRentals;
 }

@@ -1,8 +1,10 @@
 package spring_boot.project_swp.config;
 
 import lombok.AllArgsConstructor;
+
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+
 import spring_boot.project_swp.dto.request.RoleRequest;
 import spring_boot.project_swp.entity.Location;
 import spring_boot.project_swp.entity.Role;
@@ -13,17 +15,25 @@ import spring_boot.project_swp.entity.VehicleModel;
 import spring_boot.project_swp.repository.LocationRepository;
 import spring_boot.project_swp.repository.RoleRepository;
 import spring_boot.project_swp.repository.UserRepository;
+import spring_boot.project_swp.repository.DiscountRepository;
+import spring_boot.project_swp.entity.Discount;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 import spring_boot.project_swp.repository.VehicleModelRepository;
 import spring_boot.project_swp.repository.VehicleRepository;
 import spring_boot.project_swp.repository.StationRepository;
 import spring_boot.project_swp.service.RoleService;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Component
 @AllArgsConstructor
 public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
+private final DiscountRepository discountRepository;
     private final RoleRepository roleRepository;
     private final RoleService roleService;
     private final LocationRepository locationRepository;
@@ -48,6 +58,52 @@ public class DataInitializer implements CommandLineRunner {
 
         }
 
+        // Tạo dữ liệu giảm giá mẫu nếu chưa tồn tại
+        if (discountRepository.count() == 0) {
+            Discount sale20 = Discount.builder()
+                .code("SALE20")
+                .description("20% off trên tất cả đơn thuê")
+                .amountPercentage(new BigDecimal("20.00"))
+                .startDate(LocalDateTime.now())
+                .endDate(LocalDateTime.now().plusMonths(1))
+                .usageLimit(100)
+                .isActive(true) // Thêm dòng này
+                .build();
+
+            Discount fixed100 = Discount.builder()
+                .code("FIXED100")
+                .description("Giảm 100.000 VNĐ cho đơn thuê từ 3 ngày")
+                .amountFixed(new BigDecimal("100000"))
+                .minRentalDuration(3)
+                .startDate(LocalDateTime.now())
+                .endDate(LocalDateTime.now().plusMonths(2))
+                .isActive(true) // Thêm dòng này
+                .build();
+
+            Discount longRent = Discount.builder()
+                .code("LONGRENT")
+                .description("15% off cho thuê từ 7 ngày")
+                .amountPercentage(new BigDecimal("15.00"))
+                .minRentalDuration(7)
+                .startDate(LocalDateTime.now())
+                .endDate(LocalDateTime.now().plusMonths(1))
+                .isActive(true) // Thêm dòng này
+                .build();
+
+            Discount limited50 = Discount.builder()
+                .code("LIMITED50")
+                .description("25% off (chỉ 50 lượt)")
+                .amountPercentage(new BigDecimal("25.00"))
+                .startDate(LocalDateTime.now())
+                .endDate(LocalDateTime.now().plusWeeks(3))
+                .usageLimit(50)
+                .isActive(true) // Thêm dòng này
+                .build();
+
+            discountRepository.saveAll(List.of(sale20, fixed100, longRent, limited50));
+        }
+
+        // Tạo user admin nếu chưa tồn tại
         if (userRepository.findByEmail("admin@gmail.com").isEmpty()) {
             User user1 = new User();
             user1.setFullName("Admin");

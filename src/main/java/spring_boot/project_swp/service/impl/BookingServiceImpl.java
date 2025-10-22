@@ -14,12 +14,14 @@ import spring_boot.project_swp.dto.response.BookingResponse;
 import spring_boot.project_swp.entity.Booking;
 import spring_boot.project_swp.entity.BookingStatusEnum;
 import spring_boot.project_swp.entity.User;
+import spring_boot.project_swp.entity.UserProfile;
 import spring_boot.project_swp.entity.Vehicle;
 import spring_boot.project_swp.exception.ConflictException;
 import spring_boot.project_swp.exception.NotFoundException;
 import spring_boot.project_swp.mapper.BookingMapper;
 import spring_boot.project_swp.repository.BookingRepository;
 import spring_boot.project_swp.repository.UserRepository;
+import spring_boot.project_swp.repository.UserProfileRepository;
 import spring_boot.project_swp.repository.VehicleRepository;
 import spring_boot.project_swp.service.BookingService;
 
@@ -32,6 +34,7 @@ public class BookingServiceImpl implements BookingService {
     final BookingMapper bookingMapper;
     final UserRepository userRepository;
     final VehicleRepository vehicleRepository;
+    final UserProfileRepository userProfileRepository;
 
     @Override
     public BookingResponse createBooking(BookingRequest request) {
@@ -39,6 +42,14 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new NotFoundException("User not found"));
         Vehicle vehicle = vehicleRepository.findById(request.getVehicleId())
                 .orElseThrow(() -> new NotFoundException("Vehicle not found"));
+
+        UserProfile userProfile = userProfileRepository.findByUserUserId(user.getUserId())
+                .orElseThrow(() -> new NotFoundException("User profile not found for user: " + user.getFullName()));
+
+        if ((userProfile.getDrivingLicenseUrl() == null || userProfile.getDrivingLicenseUrl().isEmpty()) &&
+            (userProfile.getIdCardUrl() == null || userProfile.getIdCardUrl().isEmpty())) {
+            throw new ConflictException("User must upload either driving license or ID card before booking a vehicle.");
+        }
 
         // Check for overlapping bookings for the same vehicle
         List<Booking> existingBookings = bookingRepository.findAll();

@@ -2,13 +2,13 @@ package spring_boot.project_swp.service.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+
+import org.springframework.stereotype.Service;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-
-import org.springframework.stereotype.Service;
-
 import spring_boot.project_swp.dto.request.UserProfileRequest;
 import spring_boot.project_swp.dto.request.UserProfileVerificationRequest;
 import spring_boot.project_swp.dto.response.UserProfileResponse;
@@ -20,11 +20,10 @@ import spring_boot.project_swp.exception.NotFoundException;
 import spring_boot.project_swp.mapper.UserProfileMapper;
 import spring_boot.project_swp.repository.UserProfileRepository;
 import spring_boot.project_swp.repository.UserRepository;
+import spring_boot.project_swp.service.FileStorageService;
 import spring_boot.project_swp.service.UserProfileService;
 
-import spring_boot.project_swp.service.FileStorageService;
-
-import java.util.Objects;
+import java.time.LocalDateTime;
 
 // ... existing code ...
 
@@ -38,30 +37,31 @@ public class UserProfileServiceImpl implements UserProfileService {
     final UserRepository userRepository;
     final FileStorageService fileStorageService;
 
-    @Override
-    public UserProfileResponse createUserProfile(UserProfileRequest request) {
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new NotFoundException("User not found with ID: " + request.getUserId()));
-
-        if (userProfileRepository.findByUserUserId(request.getUserId()).isPresent()) {
-            throw new NotFoundException("User profile already exists for user ID: " + request.getUserId());
-        }
-
-        UserProfile userProfile = userProfileMapper.toUserProfile(request);
-        userProfile.setUser(user);
-
-        if (Objects.nonNull(request.getDrivingLicenseFile()) && !request.getDrivingLicenseFile().isEmpty()) {
-            String drivingLicenseUrl = fileStorageService.saveFile(request.getDrivingLicenseFile());
-            userProfile.setDrivingLicenseUrl(drivingLicenseUrl);
-        }
-
-        if (Objects.nonNull(request.getIdCardFile()) && !request.getIdCardFile().isEmpty()) {
-            String idCardUrl = fileStorageService.saveFile(request.getIdCardFile());
-            userProfile.setIdCardUrl(idCardUrl);
-        }
-
-        return userProfileMapper.toUserProfileResponse(userProfileRepository.save(userProfile));
-    }
+    // @Override
+    // public UserProfileResponse createUserProfile(UserProfileRequest request) {
+    //     userRepository.findById(request.getUserId())
+    //             .orElseThrow(() -> new NotFoundException("User not found with id: " + request.getUserId()));
+    //
+    //     if (userProfileRepository.findByUserId(request.getUserId()).isPresent()) {
+    //         throw new ConflictException("User profile already exists for user id: " + request.getUserId());
+    //     }
+    //
+    //     UserProfile userProfile = userProfileMapper.toEntity(request);
+    //
+    //     if (request.getDrivingLicenseFile() != null && !request.getDrivingLicenseFile().isEmpty()) {
+    //         String drivingLicenseUrl = fileStorageService.uploadFile(request.getDrivingLicenseFile());
+    //         userProfile.setDrivingLicenseUrl(drivingLicenseUrl);
+    //     }
+    //
+    //     if (request.getIdCardFile() != null && !request.getIdCardFile().isEmpty()) {
+    //         String idCardUrl = fileStorageService.uploadFile(request.getIdCardFile());
+    //         userProfile.setIdCardUrl(idCardUrl);
+    //     }
+    //
+    //     userProfile.setIsVerified(false);
+    //     userProfile.setCreatedAt(LocalDateTime.now());
+    //     return userProfileMapper.toResponse(userProfileRepository.save(userProfile));
+    // }
 
     @Override
     public UserProfileResponse getUserProfileById(Integer profileId) {
@@ -100,33 +100,32 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     @Override
-    public UserProfileResponse updateUserProfile(Integer profileId, UserProfileRequest request) {
-        UserProfile existingUserProfile = userProfileRepository.findById(profileId)
-                .orElseThrow(() -> new NotFoundException("User profile not found with ID: " + profileId));
+    public UserProfileResponse updateUserProfile(Integer userId, UserProfileRequest request) {
+        UserProfile userProfile = userProfileRepository.findByUserUserId(userId)
+            .orElseGet(() -> {
+                User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new NotFoundException("User not found with ID: " + userId));
+                UserProfile newProfile = new UserProfile();
+                newProfile.setUser(user);
+                return newProfile;
+            });
 
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new NotFoundException("User not found with ID: " + request.getUserId()));
-
-        userProfileMapper.updateUserProfileFromRequest(request, existingUserProfile);
-        existingUserProfile.setUser(user);
-
-        if (Objects.nonNull(request.getDrivingLicenseFile()) && !request.getDrivingLicenseFile().isEmpty()) {
-            if (Objects.nonNull(existingUserProfile.getDrivingLicenseUrl())) {
-                fileStorageService.deleteFile(existingUserProfile.getDrivingLicenseUrl());
-            }
+        // Handle driving license file upload
+        if (request.getDrivingLicenseFile() != null && !request.getDrivingLicenseFile().isEmpty()) {
             String drivingLicenseUrl = fileStorageService.saveFile(request.getDrivingLicenseFile());
-            existingUserProfile.setDrivingLicenseUrl(drivingLicenseUrl);
+            userProfile.setDrivingLicenseUrl(drivingLicenseUrl);
         }
 
-        if (Objects.nonNull(request.getIdCardFile()) && !request.getIdCardFile().isEmpty()) {
-            if (Objects.nonNull(existingUserProfile.getIdCardUrl())) {
-                fileStorageService.deleteFile(existingUserProfile.getIdCardUrl());
-            }
+        // Handle ID card file upload
+        if (request.getIdCardFile() != null && !request.getIdCardFile().isEmpty()) {
             String idCardUrl = fileStorageService.saveFile(request.getIdCardFile());
-            existingUserProfile.setIdCardUrl(idCardUrl);
+            userProfile.setIdCardUrl(idCardUrl);
         }
 
-        return userProfileMapper.toUserProfileResponse(userProfileRepository.save(existingUserProfile));
+        userProfileMapper.updateUserProfileFromRequest(request, userProfile);
+
+        userProfileRepository.save(userProfile);
+        return userProfileMapper.toUserProfileResponse(userProfile);
     }
 
     @Override

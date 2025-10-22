@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
 @Table(name = "Stations")
@@ -47,4 +48,10 @@ public class Station {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "LocationId")
     Location location;
+
+    @OneToMany(mappedBy = "pickupStation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Rental> pickupRentals;
+
+    @OneToMany(mappedBy = "returnStation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Rental> returnRentals;
 }

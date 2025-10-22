@@ -8,6 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
+
 @Entity
 @Table(name = "Vehicles")
 @Data
@@ -38,4 +40,11 @@ public class Vehicle {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "StationId", nullable = false)
     private Station station;
+
+    public Vehicle(Long vehicleId) {
+        this.vehicleId = vehicleId.intValue();
+    }
+
+    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Rental> rentals;
 }

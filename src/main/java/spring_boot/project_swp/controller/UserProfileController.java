@@ -32,10 +32,10 @@ public class UserProfileController {
     final UserProfileService userProfileService;
 
     //------------ Create UserProfile ----------
-    @PostMapping
-    public ResponseEntity<UserProfileResponse> createUserProfile(@ModelAttribute @Valid UserProfileRequest request) {
-        return ResponseEntity.ok(userProfileService.createUserProfile(request));
-    }
+    // @PostMapping
+    // public ResponseEntity<UserProfileResponse> createUserProfile(@ModelAttribute @Valid UserProfileRequest request) {
+    //     return ResponseEntity.ok(userProfileService.createUserProfile(request));
+    // }
 
     //------------ Get UserProfile ----------
     @GetMapping("/{profileId}")

@@ -15,9 +15,11 @@ import spring_boot.project_swp.dto.response.UserRegistrationResponse;
 import spring_boot.project_swp.dto.response.UserResponse;
 import spring_boot.project_swp.dto.request.UserUpdateRequest;
 import spring_boot.project_swp.entity.User;
+import spring_boot.project_swp.entity.UserProfile;
 import spring_boot.project_swp.exception.ConflictException;
 import spring_boot.project_swp.exception.NotFoundException;
 import spring_boot.project_swp.mapper.UserMapper;
+import spring_boot.project_swp.repository.UserProfileRepository;
 import spring_boot.project_swp.repository.UserRepository;
 import spring_boot.project_swp.service.RoleService;
 import spring_boot.project_swp.service.UserService;
@@ -31,6 +33,7 @@ public class UserServiceImpl implements UserService {
     final UserRepository userRepository;
     final RoleService roleService;
     final UserMapper userMapper;
+    final UserProfileRepository userProfileRepository;
 
     @Override
     public UserRegistrationResponse register(UserRegistrationRequest request) {
@@ -40,6 +43,10 @@ public class UserServiceImpl implements UserService {
         User user = userMapper.toUser(request);
         user.setRole(roleService.getRoleByName("User"));
         User saved = userRepository.save(user);
+
+        UserProfile userProfile = new UserProfile();
+        userProfile.setUser(saved);
+        userProfileRepository.save(userProfile);
 
         return new UserRegistrationResponse(saved.getUserId(), saved.getEmail());
     }
