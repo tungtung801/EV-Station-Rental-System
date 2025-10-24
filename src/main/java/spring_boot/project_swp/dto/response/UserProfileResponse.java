@@ -17,6 +17,8 @@ public class UserProfileResponse {
     Integer profileId;
     Integer userId;
     String userName;
+    String email;
+    String phoneNumber;
     String drivingLicenseUrl;
     String idCardUrl;
     UserProfileStatusEnum status;

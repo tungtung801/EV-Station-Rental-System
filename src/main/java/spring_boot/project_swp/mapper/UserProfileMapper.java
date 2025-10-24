@@ -20,6 +20,8 @@ public interface UserProfileMapper {
 
     @Mapping(source = "user.userId", target = "userId")
     @Mapping(source = "user.fullName", target = "userName")
+    @Mapping(source = "user.email", target = "email")
+    @Mapping(source = "user.phoneNumber", target = "phoneNumber")
     UserProfileResponse toUserProfileResponse(UserProfile userProfile);
 
     @Mapping(target = "profileId", ignore = true)
