@@ -59,9 +59,9 @@ public class UserProfileController {
     }
 
     //------------ Update UserProfile ----------
-    @PutMapping("/{profileId}")
-    public ResponseEntity<UserProfileResponse> updateUserProfile(@PathVariable Integer profileId, @ModelAttribute @Valid UserProfileRequest request) {
-        return ResponseEntity.ok(userProfileService.updateUserProfile(profileId, request));
+    @PutMapping("/{userId}")
+    public ResponseEntity<UserProfileResponse> updateUserProfile(@PathVariable Integer userId, @ModelAttribute @Valid UserProfileRequest request) {
+        return ResponseEntity.ok(userProfileService.updateUserProfile(userId, request));
     }
 
     //------------ Delete UserProfile ----------

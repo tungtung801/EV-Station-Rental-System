@@ -16,7 +16,6 @@ import org.springframework.web.multipart.MultipartFile;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserProfileRequest {
-    @NotNull(message = "User ID cannot be null")
     Integer userId;
 
     MultipartFile drivingLicenseFile;
