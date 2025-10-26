@@ -128,15 +128,23 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public void cancelBooking(Integer bookingId) {
+    public void updateBookingStatus(Integer bookingId, BookingStatusEnum status) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new NotFoundException("Booking not found"));
 
-        if (booking.getStatus().equals(BookingStatusEnum.CANCELLED)) {
-            throw new ConflictException("Booking is already cancelled");
+        if (booking.getStatus().equals(status)) {
+            throw new ConflictException("Booking is already in " + status.name() + " status");
         }
 
-        booking.setStatus(BookingStatusEnum.CANCELLED);
+        // Add specific business logic for status transitions if needed
+        if (status.equals(BookingStatusEnum.CONFIRMED) && booking.getStatus().equals(BookingStatusEnum.CANCELLED)) {
+            throw new ConflictException("Cannot confirm a cancelled booking");
+        }
+        if (status.equals(BookingStatusEnum.CANCELLED) && booking.getStatus().equals(BookingStatusEnum.CONFIRMED)) {
+            throw new ConflictException("Cannot cancel a confirmed booking");
+        }
+
+        booking.setStatus(status);
         bookingRepository.save(booking);
     }
 
