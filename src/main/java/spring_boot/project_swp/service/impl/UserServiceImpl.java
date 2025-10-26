@@ -54,6 +54,22 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public UserRegistrationResponse registerStaff(UserRegistrationRequest request) {
+        if (userRepository.existsByEmailOrPhoneNumber(request.getEmail(), request.getPhoneNumber())) {
+            throw new ConflictException("Email or phone number already in use");
+        }
+        User user = userMapper.toUser(request);
+        user.setRole(roleService.getRoleByName("staff"));
+        User saved = userRepository.save(user);
+
+        UserProfile userProfile = new UserProfile();
+        userProfile.setUser(saved);
+        userProfileRepository.save(userProfile);
+
+        return new UserRegistrationResponse(saved.getUserId(), saved.getEmail());
+    }
+
+    @Override
     public UserLoginResponse login(UserLoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ConflictException("Invalid email or password"));

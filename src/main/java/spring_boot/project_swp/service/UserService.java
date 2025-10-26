@@ -16,6 +16,9 @@ import spring_boot.project_swp.entity.User;
 public interface UserService {
     //Authentication
     UserRegistrationResponse register(UserRegistrationRequest request);
+
+    UserRegistrationResponse registerStaff(UserRegistrationRequest request);
+
     UserLoginResponse login(UserLoginRequest request);
 
     //CRUD
