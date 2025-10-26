@@ -15,6 +15,7 @@ import spring_boot.project_swp.dto.response.UserLoginResponse;
 import spring_boot.project_swp.dto.response.UserRegistrationResponse;
 import spring_boot.project_swp.dto.response.UserResponse;
 import spring_boot.project_swp.entity.User;
+import spring_boot.project_swp.service.UserProfileService;
 import spring_boot.project_swp.service.UserService;
 
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserController {
     UserService userService;
+    private final UserProfileService userProfileService;
 
     //------------ Get User by ID ----------
     @GetMapping("/{id}")
@@ -49,5 +51,11 @@ public class UserController {
     @GetMapping("/staff")
     public ResponseEntity<List<UserResponse>> getAllStaffs() {
         return new ResponseEntity<>(userService.getAllStaff(), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Integer id) {
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
     }
 }

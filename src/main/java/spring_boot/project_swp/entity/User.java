@@ -67,4 +67,7 @@ public class User {
     @OneToMany(mappedBy = "returnStaff", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     private List<Rental> returnStaffRentals;
+
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    UserProfile profile;
 }
