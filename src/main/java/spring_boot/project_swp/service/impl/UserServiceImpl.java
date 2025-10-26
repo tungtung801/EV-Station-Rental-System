@@ -87,6 +87,17 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public List<UserResponse> getAllStaff() {
+        List<UserResponse> staffs = new ArrayList<>();
+        for(User user : userRepository.findAll()) {
+            if(user.getRole().getRoleName().equalsIgnoreCase("staff")) {
+                staffs.add(userMapper.toUserResponse(user));
+            }
+        }
+        return staffs;
+    }
+
+    @Override
     public UserResponse getUserById(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));

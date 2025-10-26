@@ -17,6 +17,8 @@ import spring_boot.project_swp.dto.response.UserResponse;
 import spring_boot.project_swp.entity.User;
 import spring_boot.project_swp.service.UserService;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/users")
 @AllArgsConstructor
@@ -42,5 +44,10 @@ public class UserController {
     public ResponseEntity<UserRegistrationResponse> createStaff(@Valid @RequestBody UserRegistrationRequest request) {
         UserRegistrationResponse response = userService.registerStaff(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/staff")
+    public ResponseEntity<List<UserResponse>> getAllStaffs() {
+        return new ResponseEntity<>(userService.getAllStaff(), HttpStatus.OK);
     }
 }

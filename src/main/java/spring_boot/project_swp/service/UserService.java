@@ -21,6 +21,9 @@ public interface UserService {
 
     //CRUD
     List<UserResponse> getAllUsers();
+
+    List<UserResponse> getAllStaff();
+
     UserResponse getUserById(Integer userId);
     UserResponse getUserByEmail(String email);
     void deleteUser(Integer userId);
