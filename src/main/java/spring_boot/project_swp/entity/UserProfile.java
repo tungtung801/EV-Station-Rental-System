@@ -35,10 +35,8 @@ public class UserProfile {
     @Column(name = "IdCardUrl", length = 255)
     String idCardUrl;
 
-    @Column(name = "Status", nullable = false, length = 50)
-    @Enumerated(EnumType.STRING)
-    @Builder.Default
-    UserProfileStatusEnum status = UserProfileStatusEnum.PENDING;
+    @Column(name = "Status", nullable = true, length = 50)
+    String status;
 
     @Column(name = "Reason", columnDefinition = "NTEXT")
     String reason;

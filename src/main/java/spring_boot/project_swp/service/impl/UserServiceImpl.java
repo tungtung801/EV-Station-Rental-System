@@ -16,6 +16,7 @@ import spring_boot.project_swp.dto.response.UserResponse;
 import spring_boot.project_swp.dto.request.UserUpdateRequest;
 import spring_boot.project_swp.entity.User;
 import spring_boot.project_swp.entity.UserProfile;
+import spring_boot.project_swp.entity.UserProfileStatusEnum;
 import spring_boot.project_swp.exception.ConflictException;
 import spring_boot.project_swp.exception.NotFoundException;
 import spring_boot.project_swp.mapper.UserMapper;
@@ -23,6 +24,7 @@ import spring_boot.project_swp.repository.UserProfileRepository;
 import spring_boot.project_swp.repository.UserRepository;
 import spring_boot.project_swp.service.RoleService;
 import spring_boot.project_swp.service.UserService;
+import org.springframework.web.multipart.MultipartFile;
 
 
 @Service
@@ -121,6 +123,28 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new NotFoundException("USER_NOT_FOUND"));
         user.setPassword(newPassword);
         userRepository.save(user);
+    }
+
+    @Override
+    public void uploadDocumentImage(Integer userId, String documentType, MultipartFile file) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        UserProfile userProfile = userProfileRepository.findByUser(user)
+                .orElseThrow(() -> new NotFoundException("User profile not found for user id: " + userId));
+
+        // Logic to save the file and get its URL (this part is simplified for now)
+        // In a real application, you would save the file to a storage service (e.g., AWS S3, local disk)
+        String fileUrl = "uploads/" + file.getOriginalFilename(); // Placeholder
+
+        if ("drivingLicense".equalsIgnoreCase(documentType)) {
+            userProfile.setDrivingLicenseUrl(fileUrl);
+        } else if ("idCard".equalsIgnoreCase(documentType)) {
+            userProfile.setIdCardUrl(fileUrl);
+        }
+
+        userProfile.setStatus(UserProfileStatusEnum.PENDING.name());
+        userProfileRepository.save(userProfile);
     }
 }
 
