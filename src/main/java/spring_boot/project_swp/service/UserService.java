@@ -2,6 +2,8 @@ package spring_boot.project_swp.service;
 
 import java.util.List;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import spring_boot.project_swp.dto.request.UserLoginRequest;
 import spring_boot.project_swp.dto.request.UserRegistrationRequest;
 import spring_boot.project_swp.dto.request.UserUpdateRequest;
@@ -29,5 +31,5 @@ public interface UserService {
     void deleteUser(Integer userId);
     UserResponse updateUser(Integer userID, UserUpdateRequest request);
     void updatePassword(String email, String newPassword);
-
+    void uploadDocumentImage(Integer userId, String documentType, MultipartFile file);
 }

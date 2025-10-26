@@ -114,12 +114,14 @@ public class UserProfileServiceImpl implements UserProfileService {
         if (request.getDrivingLicenseFile() != null && !request.getDrivingLicenseFile().isEmpty()) {
             String drivingLicenseUrl = fileStorageService.saveFile(request.getDrivingLicenseFile());
             userProfile.setDrivingLicenseUrl(drivingLicenseUrl);
+            userProfile.setStatus(UserProfileStatusEnum.PENDING.name()); // Set status to PENDING
         }
 
         // Handle ID card file upload
         if (request.getIdCardFile() != null && !request.getIdCardFile().isEmpty()) {
             String idCardUrl = fileStorageService.saveFile(request.getIdCardFile());
             userProfile.setIdCardUrl(idCardUrl);
+            userProfile.setStatus(UserProfileStatusEnum.PENDING.name()); // Set status to PENDING
         }
 
         userProfileMapper.updateUserProfileFromRequest(request, userProfile);
@@ -142,7 +144,7 @@ public class UserProfileServiceImpl implements UserProfileService {
                 .orElseThrow(() -> new NotFoundException("User profile not found for user ID: " + request.getUserId()));
 
         UserProfileStatusEnum status = UserProfileStatusEnum.valueOf(request.getStatus().toUpperCase());
-        userProfile.setStatus(status);
+        userProfile.setStatus(status.name());
         userProfile.setReason(request.getReason());
         userProfileRepository.save(userProfile);
 
