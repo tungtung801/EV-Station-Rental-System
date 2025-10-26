@@ -46,7 +46,8 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public Payment findPaymentById(int paymentId) {
-        Payment payment = paymentRepository.findPaymentByPaymentId(paymentId);
+        Payment payment = paymentRepository.findPaymentByPaymentId(paymentId)
+                .orElseThrow(() -> new RuntimeException("Payment not found"));
         return payment;
     }
 
@@ -96,8 +97,8 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public boolean UpdatePayment(Payment payment) {
-        return paymentRepository.save(payment) != null;
+    public Payment UpdatePayment(Payment payment) {
+        return paymentRepository.save(payment);
     }
 
     @Override
@@ -116,7 +117,7 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentRepository.save(payment);
     }
 
-    public boolean updatePaymentAfterPaid(Payment payment) {
+    public Payment updatePaymentAfterPaid(Payment payment) {
         if(payment != null){
             payment.setStatus("Paid");
 
@@ -133,7 +134,7 @@ public class PaymentServiceImpl implements PaymentService {
         }else{
             throw new RuntimeException("Payment not found");
         }
-        return paymentRepository.save(payment) != null;
+        return paymentRepository.save(payment);
     }
 
     @Override
@@ -148,7 +149,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public Payment findPaymentByTransactionCode(String transactionCode) {
-        Payment payment = findPaymentByTransactionCode(transactionCode);
+        Payment payment =paymentRepository.findPaymentByTransactionCode(transactionCode);
         if(payment != null){
             return payment;
         }else{

@@ -11,12 +11,16 @@ import spring_boot.project_swp.entity.Payment;
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING, uses = {RentalMapper.class, UserMapper.class})
 public interface PaymentMapper {
     @Mapping(source = "rentalId", target = "rental.rentalId")
-    @Mapping(source = "userId", target = "user.userId")
+    @Mapping(source = "userId", target = "staffId.userId")
     @Mapping(target = "paymentId", ignore = true)
+    @Mapping(target = "amount", ignore = true)
+    @Mapping(target = "transactionTime", ignore = true)
+    @Mapping(target = "transactionCode", ignore = true)
+    @Mapping(target = "status", ignore = true)
     Payment toPayment(PaymentRequest paymentRequest);
 
-    @Mapping(source = "rentalId", target = "rental.rentalId")
-    @Mapping(source = "userId", target = "user.userId")
+    @Mapping(source = "rental.rentalId", target = "rentalId")
+    @Mapping(source = "staffId.userId", target = "userId")
     @Mapping(target = "paymentId", ignore = true)
     PaymentResponse toPaymentResponse(Payment payment);
 

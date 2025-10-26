@@ -20,7 +20,7 @@ public interface PaymentService {
 
     public void savePayment(Payment payment);
 
-    public boolean UpdatePayment(Payment payment);
+    public Payment UpdatePayment(Payment payment);
 
     public Payment updatePaymentStatus(int paymentId, String status);
 

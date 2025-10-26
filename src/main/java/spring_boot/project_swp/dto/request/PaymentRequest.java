@@ -1,5 +1,6 @@
 package spring_boot.project_swp.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -11,10 +12,15 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class PaymentRequest {
 
+    @NotBlank(message = "RentalId is required")
     Integer rentalId;
 
+    @NotBlank(message = "UserId is required")
     Integer userId;
 
+    @NotBlank(message = "paymentMethod is required")
     String paymentMethod;
+
+
 
 }

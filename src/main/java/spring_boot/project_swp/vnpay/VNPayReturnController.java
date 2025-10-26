@@ -78,8 +78,7 @@ public class VNPayReturnController {
                 // Cập nhật payment trong database
                 try {
                     int paymentId = Integer.parseInt(vnp_TxnRef);
-                    Payment payment = paymentService.findPaymentById(paymentId)
-                            .orElseThrow(() -> new RuntimeException("Payment not found"));
+                    Payment payment = paymentService.findPaymentById(paymentId);
 
                     payment.setStatus("COMPLETED");
                     payment.setTransactionCode(vnp_TransactionNo);
@@ -89,7 +88,7 @@ public class VNPayReturnController {
                     LocalDateTime transactionTime = LocalDateTime.parse(vnp_PayDate, formatter);
                     payment.setTransactionTime(transactionTime);
 
-                    if (paymentService.UpdatePayment(payment) == false) {
+                    if (paymentService.UpdatePayment(payment) == null) {
                         throw new RuntimeException("Failed to update payment");
                     }
 
@@ -105,8 +104,7 @@ public class VNPayReturnController {
                 // Cập nhật status thành FAILED
                 try {
                     int paymentId = Integer.parseInt(vnp_TxnRef);
-                    Payment payment = paymentService.findById(paymentId)
-                            .orElseThrow(() -> new RuntimeException("Payment not found"));
+                    Payment payment = paymentService.findPaymentById(paymentId);
 
                     payment.setStatus("FAILED");
                     paymentService.savePayment(payment);
