@@ -14,6 +14,7 @@ import spring_boot.project_swp.dto.request.UserUpdateRequest;
 import spring_boot.project_swp.dto.response.UserLoginResponse;
 import spring_boot.project_swp.dto.response.UserRegistrationResponse;
 import spring_boot.project_swp.dto.response.UserResponse;
+import spring_boot.project_swp.entity.User;
 import spring_boot.project_swp.service.UserService;
 
 @RestController
@@ -35,5 +36,11 @@ public class UserController {
     public ResponseEntity<UserResponse> updateUser(@PathVariable Integer id, @Valid @RequestBody UserUpdateRequest request) {
         UserResponse response = userService.updateUser(id, request);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/staff")
+    public ResponseEntity<UserRegistrationResponse> createStaff(@Valid @RequestBody UserRegistrationRequest request) {
+        UserRegistrationResponse response = userService.registerStaff(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 }
