@@ -13,15 +13,17 @@ public interface PaymentService {
 
     public List<PaymentResponse> findAllPaymentsMethod(String status);
 
-    public PaymentResponse findPaymentById(String paymentId);
+    public Payment findPaymentById(int paymentId);
 
     public PaymentResponse createPayment(Payment payment);
 
-    public PaymentResponse updatePaymentStatus(String paymentId, String status);
+    public Payment UpdatePayment(Payment payment);
 
-    public PaymentResponse cancelPayment(String paymentId);
+    public Payment updatePaymentStatus(int paymentId, String status);
 
-    public PaymentResponse confirmPayment(String paymentId);
+    public Payment cancelPayment(int paymentId);
 
-    public PaymentResponse findPaymentByTransactionCode(String paymentId);
+    public Payment confirmPayment(int paymentId);
+
+    public Payment findPaymentByTransactionCode(String transactionCode);
 }

@@ -5,15 +5,18 @@ import spring_boot.project_swp.entity.Payment;
 import spring_boot.project_swp.entity.User;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Integer> {
 
-    List<Payment> findPaymentByStaffId(User staffId);
+//    List<Payment> findPaymentByStaffId(User staffId);
 
-    Payment findPaymentByPaymentId(int paymentId);
+    Optional<Payment> findPaymentByPaymentId(int paymentId);
 
     List<Payment> findPaymentByStatus(String status);
 
     Payment findPaymentByRental_RentalId(int rentalId);
+
+    Payment findPaymentByTransactionCode(String transactionCode);
 
 }

@@ -1,16 +1,21 @@
 package spring_boot.project_swp.vnpay;
 
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import spring_boot.project_swp.entity.Payment;
+import spring_boot.project_swp.service.PaymentService;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 
@@ -20,6 +25,9 @@ public class VNPayReturnController {
 
     @Value("${vnpay.hashSecret}")
     private String hashSecret;
+
+    @Autowired
+    private PaymentService paymentService;
 
     @GetMapping("/vnpay_return")
     public ResponseEntity<String> handleVNPayReturn(@RequestParam Map<String, String> allParams) {
@@ -68,7 +76,34 @@ public class VNPayReturnController {
             if ("00".equals(vnp_ResponseCode)) {
                 System.out.println("Thanh toán thành công cho đơn hàng: " + allParams.get("vnp_TxnRef"));
                 // TODO: Cập nhật trạng thái đơn hàng trong database của bạn
-                return ResponseEntity.ok("Giao dịch thành công!");
+                // Cập nhật payment trong database
+                try {
+                    int paymentId = Integer.parseInt(allParams.get("vnp_TxnRef"));
+                    Payment payment = paymentService.findPaymentById(paymentId);
+                    if(payment.getPaymentMethod().equalsIgnoreCase("deposited")){
+                        payment.setStatus("DEPOSITED");
+                    }else{
+                        payment.setStatus("COMPLETED");
+                    }
+
+                    payment.setTransactionCode(allParams.get("vnp_TransactionNo"));
+
+                    // Convert vnp_PayDate từ format yyyyMMddHHmmss sang LocalDateTime
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+                    LocalDateTime transactionTime = LocalDateTime.parse(allParams.get("vnp_PayDate"), formatter);
+                    payment.setTransactionTime(transactionTime);
+
+                    if (paymentService.UpdatePayment(payment) == null) {
+                        throw new RuntimeException("Failed to update payment");
+                    }
+
+                    return ResponseEntity.ok("Giao dịch thành công!");
+                } catch (Exception e) {
+                    System.err.println("Lỗi cập nhật payment: " + e.getMessage());
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body("Lỗi cập nhật thông tin thanh toán");
+                }
+
             } else {
                 System.out.println("Thanh toán thất bại. Mã lỗi: " + vnp_ResponseCode);
                 // TODO: Cập nhật trạng thái đơn hàng trong database
