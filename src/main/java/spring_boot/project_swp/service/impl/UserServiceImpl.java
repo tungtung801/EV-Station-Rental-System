@@ -4,16 +4,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import spring_boot.project_swp.dto.request.UserLoginRequest;
 import spring_boot.project_swp.dto.request.UserRegistrationRequest;
+import spring_boot.project_swp.dto.request.UserUpdateRequest;
 import spring_boot.project_swp.dto.response.UserLoginResponse;
 import spring_boot.project_swp.dto.response.UserRegistrationResponse;
 import spring_boot.project_swp.dto.response.UserResponse;
-import spring_boot.project_swp.dto.request.UserUpdateRequest;
 import spring_boot.project_swp.entity.User;
 import spring_boot.project_swp.entity.UserProfile;
 import spring_boot.project_swp.entity.UserProfileStatusEnum;
@@ -24,7 +25,6 @@ import spring_boot.project_swp.repository.UserProfileRepository;
 import spring_boot.project_swp.repository.UserRepository;
 import spring_boot.project_swp.service.RoleService;
 import spring_boot.project_swp.service.UserService;
-import org.springframework.web.multipart.MultipartFile;
 
 
 @Service
@@ -83,7 +83,9 @@ public class UserServiceImpl implements UserService {
     public List<UserResponse> getAllUsers() {
         List<UserResponse> users = new ArrayList<>();
         for(User user : userRepository.findAll()) {
-            users.add(userMapper.toUserResponse(user));
+            if(user.getRole().getRoleName().equalsIgnoreCase("user")) {
+                users.add(userMapper.toUserResponse(user));
+            }
         }
         return users;
     }

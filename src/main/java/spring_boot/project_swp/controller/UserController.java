@@ -1,24 +1,31 @@
 package spring_boot.project_swp.controller;
 
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.support.SessionStatus;
-import spring_boot.project_swp.dto.request.UserLoginRequest;
 import spring_boot.project_swp.dto.request.UserRegistrationRequest;
 import spring_boot.project_swp.dto.request.UserUpdateRequest;
-import spring_boot.project_swp.dto.response.UserLoginResponse;
 import spring_boot.project_swp.dto.response.UserRegistrationResponse;
 import spring_boot.project_swp.dto.response.UserResponse;
-import spring_boot.project_swp.entity.User;
+import spring_boot.project_swp.service.FileStorageService;
 import spring_boot.project_swp.service.UserProfileService;
 import spring_boot.project_swp.service.UserService;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -27,6 +34,12 @@ import java.util.List;
 public class UserController {
     UserService userService;
     private final UserProfileService userProfileService;
+    private final FileStorageService fileStorageService;
+        @PostMapping("/upload-image")
+    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) {
+        String filename = fileStorageService.saveFile(file);
+        return ResponseEntity.ok(filename);
+    }
 
     //------------ Get User by ID ----------
     @GetMapping("/{id}")
@@ -46,6 +59,11 @@ public class UserController {
     public ResponseEntity<UserRegistrationResponse> createStaff(@Valid @RequestBody UserRegistrationRequest request) {
         UserRegistrationResponse response = userService.registerStaff(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+        return new ResponseEntity<>(userService.getAllUsers(), HttpStatus.OK);
     }
 
     @GetMapping("/staff")
