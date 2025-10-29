@@ -3,6 +3,7 @@ package spring_boot.project_swp.service.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -180,6 +181,11 @@ public class UserServiceImpl implements UserService {
 
         userProfile.setStatus(UserProfileStatusEnum.PENDING.name());
         userProfileRepository.save(userProfile);
+    }
+
+    public User FindUserByUserId(@NotBlank(message = "UserId is required") Integer userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
     }
 }
 

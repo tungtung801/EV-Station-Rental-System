@@ -1,5 +1,6 @@
 package spring_boot.project_swp.service.impl;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -229,5 +230,10 @@ public class RentalServiceImpl implements RentalService {
             throw new ConflictException("End time cannot be before start time");
         }
         return durationHours * pricePerHour;
+    }
+
+    public Rental getRentalByRentalId(@NotBlank(message = "RentalId is required") Integer rentalId) {
+        return rentalRepository.findById(rentalId)
+                .orElseThrow(() -> new NotFoundException("Rental not found"));
     }
 }
