@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import spring_boot.project_swp.dto.response.PaymentResponse;
 import spring_boot.project_swp.entity.Payment;
 
+
 import java.util.List;
 
 @Service
@@ -11,17 +12,23 @@ public interface PaymentService {
 
     public List<PaymentResponse> findAllPaymentsStatus();
 
-    public List<PaymentResponse> findAllPaymentsMethod(String status);
+    public List<PaymentResponse> findAllPaymentsStatus(String status);
 
-    public PaymentResponse findPaymentById(String paymentId);
+    public Payment findPaymentById(int paymentId);
 
     public PaymentResponse createPayment(Payment payment);
 
-    public PaymentResponse updatePaymentStatus(String paymentId, String status);
+    public void savePayment(Payment payment);
 
-    public PaymentResponse cancelPayment(String paymentId);
+    public Payment UpdatePayment(Payment payment);
 
-    public PaymentResponse confirmPayment(String paymentId);
+    public Payment updatePaymentStatus(int paymentId, String status);
 
-    public PaymentResponse findPaymentByTransactionCode(String paymentId);
+    public Payment cancelPayment(int paymentId);
+
+    public Payment confirmPayment(Payment paymentId);
+
+    public Payment findPaymentByTransactionCode(String transactionCode);
+
+
 }

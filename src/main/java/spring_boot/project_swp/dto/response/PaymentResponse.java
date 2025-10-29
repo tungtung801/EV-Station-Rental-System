@@ -13,6 +13,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class PaymentResponse {
     int paymentId;
+    int rentalId;
+    int userId;
     double amount;
     String paymentMethod;
     String paymentType;

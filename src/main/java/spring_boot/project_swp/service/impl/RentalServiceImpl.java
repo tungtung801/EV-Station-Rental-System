@@ -90,6 +90,11 @@ public class RentalServiceImpl implements RentalService {
                 .orElseThrow(() -> new NotFoundException("Rental not found"));
         return rentalMapper.toRentalResponse(rental);
     }
+    public Rental getRentalByRentalId(Integer rentalId) {
+        Rental rental = rentalRepository.findById(rentalId)
+                .orElseThrow(() -> new NotFoundException("Rental not found"));
+        return rental;
+    }
 
     @Override
     public List<RentalResponse> getAllRentals() {

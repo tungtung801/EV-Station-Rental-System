@@ -35,8 +35,6 @@ public class Payment {
     @Column(name = "paymentMethod", nullable = false, length = 50)
     String paymentMethod;
 
-    @Column(name = "paymentType", nullable = false)
-    String paymentType;
 
     @Column(name = "transactionTime", length = 100)
     LocalDateTime transactionTime;
