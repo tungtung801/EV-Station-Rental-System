@@ -232,8 +232,4 @@ public class RentalServiceImpl implements RentalService {
         return durationHours * pricePerHour;
     }
 
-    public Rental getRentalByRentalId(@NotBlank(message = "RentalId is required") Integer rentalId) {
-        return rentalRepository.findById(rentalId)
-                .orElseThrow(() -> new NotFoundException("Rental not found"));
-    }
 }
