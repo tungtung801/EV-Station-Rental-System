@@ -1,5 +1,7 @@
 package spring_boot.project_swp.dto.request;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import jakarta.validation.constraints.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -31,4 +33,6 @@ public class VehicleRequest {
     @NotNull(message = "Price Per Hour cannot be null")
     @Positive(message = "Price Per Hour must be positive")
     private double pricePerHour;
+
+    private MultipartFile imageFile;
 }

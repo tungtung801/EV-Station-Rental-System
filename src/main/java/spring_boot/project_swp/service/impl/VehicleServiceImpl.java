@@ -17,6 +17,7 @@ import spring_boot.project_swp.mapper.VehicleMapper;
 import spring_boot.project_swp.repository.StationRepository;
 import spring_boot.project_swp.repository.VehicleModelRepository;
 import spring_boot.project_swp.repository.VehicleRepository;
+import spring_boot.project_swp.service.FileStorageService;
 import spring_boot.project_swp.service.VehicleService;
 
 @Service
@@ -26,6 +27,7 @@ public class VehicleServiceImpl implements VehicleService {
     private final VehicleModelRepository vehicleModelRepository;
     private final StationRepository stationRepository;
     private final VehicleMapper vehicleMapper;
+    private final FileStorageService fileService;
 
     @Override
     public VehicleResponse addVehicle(VehicleRequest request) {
@@ -40,6 +42,11 @@ public class VehicleServiceImpl implements VehicleService {
                 .orElseThrow(() -> new NotFoundException("Station not found"));
         vehicle.setVehicleModel(model);
         vehicle.setStation(station);
+
+        if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
+           String imageUrl = fileService.saveFile(request.getImageFile());
+            vehicle.setImageUrl(imageUrl);
+        }
         vehicle = vehicleRepository.save(vehicle);
         return vehicleMapper.toVehicleResponse(vehicle);
     }
@@ -70,6 +77,10 @@ public class VehicleServiceImpl implements VehicleService {
             Station station = stationRepository.findStationByStationId(request.getStationId())
                     .orElseThrow(() -> new NotFoundException("Station not found"));
             existingVehicle.setStation(station);
+        }
+        if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
+            String imageUrl = fileService.saveFile(request.getImageFile());
+            existingVehicle.setImageUrl(imageUrl);
         }
 
         Vehicle updatedVehicle = vehicleRepository.save(existingVehicle);

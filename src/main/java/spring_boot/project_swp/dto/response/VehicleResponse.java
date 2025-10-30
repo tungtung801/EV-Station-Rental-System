@@ -19,6 +19,7 @@ public class VehicleResponse {
     private double pricePerHour;
     private ModelInfo model;
     private StationInfo currentStation;
+    private String imageUrl;
 
     @Data
     public static class ModelInfo {

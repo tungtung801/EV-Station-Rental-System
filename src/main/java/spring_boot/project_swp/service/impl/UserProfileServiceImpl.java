@@ -2,7 +2,6 @@ package spring_boot.project_swp.service.impl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 
@@ -23,8 +22,6 @@ import spring_boot.project_swp.repository.UserRepository;
 import spring_boot.project_swp.service.FileStorageService;
 import spring_boot.project_swp.service.UserProfileService;
 
-import java.time.LocalDateTime;
-
 // ... existing code ...
 
 @Service
@@ -36,32 +33,6 @@ public class UserProfileServiceImpl implements UserProfileService {
     final UserProfileMapper userProfileMapper;
     final UserRepository userRepository;
     final FileStorageService fileStorageService;
-
-    // @Override
-    // public UserProfileResponse createUserProfile(UserProfileRequest request) {
-    //     userRepository.findById(request.getUserId())
-    //             .orElseThrow(() -> new NotFoundException("User not found with id: " + request.getUserId()));
-    //
-    //     if (userProfileRepository.findByUserId(request.getUserId()).isPresent()) {
-    //         throw new ConflictException("User profile already exists for user id: " + request.getUserId());
-    //     }
-    //
-    //     UserProfile userProfile = userProfileMapper.toEntity(request);
-    //
-    //     if (request.getDrivingLicenseFile() != null && !request.getDrivingLicenseFile().isEmpty()) {
-    //         String drivingLicenseUrl = fileStorageService.uploadFile(request.getDrivingLicenseFile());
-    //         userProfile.setDrivingLicenseUrl(drivingLicenseUrl);
-    //     }
-    //
-    //     if (request.getIdCardFile() != null && !request.getIdCardFile().isEmpty()) {
-    //         String idCardUrl = fileStorageService.uploadFile(request.getIdCardFile());
-    //         userProfile.setIdCardUrl(idCardUrl);
-    //     }
-    //
-    //     userProfile.setIsVerified(false);
-    //     userProfile.setCreatedAt(LocalDateTime.now());
-    //     return userProfileMapper.toResponse(userProfileRepository.save(userProfile));
-    // }
 
     @Override
     public UserProfileResponse getUserProfileById(Integer profileId) {

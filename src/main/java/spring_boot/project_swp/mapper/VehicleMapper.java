@@ -15,12 +15,14 @@ public interface VehicleMapper {
     @Mapping(target = "vehicleId", ignore = true)
     @Mapping(target = "vehicleModel", ignore = true)
     @Mapping(target = "station", ignore = true)
+    @Mapping(target = "imageUrl", ignore = true)
     Vehicle toVehicle(VehicleRequest request);
 
 
     @Mapping(target = "vehicleId", ignore = true)
     @Mapping(target = "vehicleModel", ignore = true)
     @Mapping(target = "station", ignore = true)
+    @Mapping(target = "imageUrl", ignore = true)
     void updateVehicleFromRequest(VehicleRequest request, @MappingTarget Vehicle vehicle);
 
     @Mapping(source = "station", target = "currentStation")
