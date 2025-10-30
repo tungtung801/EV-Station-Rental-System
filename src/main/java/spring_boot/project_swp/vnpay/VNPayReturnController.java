@@ -6,10 +6,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import spring_boot.project_swp.entity.Payment;
 import spring_boot.project_swp.service.PaymentService;
+import spring_boot.project_swp.service.impl.PaymentServiceImpl;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -28,9 +30,11 @@ public class VNPayReturnController {
 
     @Autowired
     private PaymentService paymentService;
+    @Autowired
+    private PaymentServiceImpl paymentServiceImpl;
 
     @GetMapping("/vnpay_return")
-    public ResponseEntity<String> handleVNPayReturn(@RequestParam Map<String, String> allParams) {
+    public ResponseEntity<String> handleVNPayReturn(@RequestParam Map<String, String> allParams,@PathVariable int paymentId) {
         // Lấy vnp_SecureHash từ response nhưng không xóa khỏi map vội
         String vnp_SecureHash = allParams.get("vnp_SecureHash");
 
@@ -78,13 +82,8 @@ public class VNPayReturnController {
                 // TODO: Cập nhật trạng thái đơn hàng trong database của bạn
                 // Cập nhật payment trong database
                 try {
-                    int paymentId = Integer.parseInt(allParams.get("vnp_TxnRef"));
+
                     Payment payment = paymentService.findPaymentById(paymentId);
-                    if(payment.getPaymentMethod().equalsIgnoreCase("deposited")){
-                        payment.setStatus("DEPOSITED");
-                    }else{
-                        payment.setStatus("COMPLETED");
-                    }
 
                     payment.setTransactionCode(allParams.get("vnp_TransactionNo"));
 
@@ -93,7 +92,7 @@ public class VNPayReturnController {
                     LocalDateTime transactionTime = LocalDateTime.parse(allParams.get("vnp_PayDate"), formatter);
                     payment.setTransactionTime(transactionTime);
 
-                    if (paymentService.UpdatePayment(payment) == null) {
+                    if (paymentServiceImpl.updatePaymentAfterPaid(payment) == null) {
                         throw new RuntimeException("Failed to update payment");
                     }
 

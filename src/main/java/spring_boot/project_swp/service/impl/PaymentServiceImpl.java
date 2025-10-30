@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import spring_boot.project_swp.dto.response.PaymentResponse;
 import spring_boot.project_swp.entity.Payment;
 import spring_boot.project_swp.entity.Rental;
+import spring_boot.project_swp.entity.RentalDiscounts;
 import spring_boot.project_swp.mapper.PaymentMapper;
 import spring_boot.project_swp.repository.PaymentRepository;
 import spring_boot.project_swp.repository.UserRepository;
@@ -56,12 +57,9 @@ public class PaymentServiceImpl implements PaymentService {
         if (payment != null) {
             if (payment.getStaffId() != null && payment.getStaffId().getUserId() != 0) {
                 payment.setStaffId(userRepository.findById(payment.getStaffId().getUserId())
-                        .orElseThrow(() -> new RuntimeException("User not found")));
+                        .orElseThrow(() -> new RuntimeException("Staff not found")));
             }
-            //Phần này của discount tạm thời chưa làm
 
-
-            //
             Rental rental = payment.getRental();
             if (rental == null || rental.getRentalId() == 0) {
                 throw new RuntimeException("Rental information is missing");
@@ -69,12 +67,30 @@ public class PaymentServiceImpl implements PaymentService {
                 payment.setRental(rental);
                 payment.setAmount(rental.getTotalCost());
             }
+            float totalAmount = (float) payment.getAmount();
+
+
+            //Phần này của discount tạm thời chưa làm
+            List<RentalDiscounts> rentalDiscounts = payment.getRental().getRentalDiscounts();
+            for(RentalDiscounts rd : rentalDiscounts){
+                if(rd.getDiscount() == null || rd.getDiscount().getDiscountId() == 0){
+                    throw new RuntimeException("Discount information is missing");
+                }
+                if (rd.getRental().getRentalId()  == payment.getRental().getRentalId()){
+                    float discountValue =  totalAmount * (rd.getAppliedAmount());
+                    totalAmount = totalAmount - discountValue;
+                    payment.setAmount(totalAmount);
+                }
+            }
+            //
 
             //Payment method validation
-            if (payment.getPaymentMethod().equalsIgnoreCase("vnpay")) {
+            if (payment.getPaymentMethod().equalsIgnoreCase("vnpay")) {//thanh toan ngay
                 payment.setPaymentMethod("VNPay");
-            }else if (payment.getPaymentMethod().equalsIgnoreCase("cash")) {
+            }else if (payment.getPaymentMethod().equalsIgnoreCase("cash")) {//thanh toan truc tiep
                 payment.setPaymentMethod("Cash");
+            }else if (payment.getPaymentMethod().equalsIgnoreCase("deposited")) {//dat coc
+                payment.setPaymentMethod("Deposited");
             }else{
                 throw new RuntimeException("Invalid payment method");
             }
@@ -108,11 +124,15 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentRepository.save(payment);
     }
 
-    public Payment updatePaymentAfterPaid(Payment payment) {
+    public Payment updatePaymentAfterPaid(Payment payment){
+
         if(payment != null){
+            if(payment.getAmount()==0){
+                this.confirmPayment(payment.getPaymentId());
+            }
+
             if(payment.getPaymentMethod().equalsIgnoreCase("deposited")){
-                payment.setPaymentMethod("deposited");
-                payment.setAmount(payment.getAmount());
+                payment.setAmount(payment.getAmount()-(payment.getAmount() * 10/100));
             }
 
             if(payment.getTransactionCode() != null){
@@ -125,6 +145,7 @@ public class PaymentServiceImpl implements PaymentService {
             } else {
                 throw new RuntimeException("Payment Transaction Time information is missing");
             }
+
         }else{
             throw new RuntimeException("Payment not found");
         }
