@@ -16,7 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import spring_boot.project_swp.dto.request.VehicleRequest;
+import spring_boot.project_swp.dto.response.BookingResponse;
 import spring_boot.project_swp.dto.response.VehicleResponse;
+import spring_boot.project_swp.service.BookingService;
 import spring_boot.project_swp.service.VehicleService;
 
 @RestController
@@ -24,6 +26,7 @@ import spring_boot.project_swp.service.VehicleService;
 @AllArgsConstructor
 public class VehicleController {
     private final VehicleService vehicleService;
+    private final BookingService bookingService;
 
     //------------ Create Vehicle ----------
     @PostMapping("/create")
@@ -56,5 +59,11 @@ public class VehicleController {
     @GetMapping("/{id}")
     public ResponseEntity<VehicleResponse> getVehicleById(@PathVariable int id) {
         return ResponseEntity.ok(vehicleService.findById(id));
+    }
+
+    // ---------- LIST 3 ON-GOING BOOKINGS OF A SPECIFIC VEHICLE (by vehicleId) ----------
+    @GetMapping("/{vehicleId}/active-bookings") // URL mới: /api/vehicles/{vehicleId}/active-bookings
+    public ResponseEntity<List<BookingResponse>> get3OnGoingBookings(@PathVariable Integer vehicleId) {
+        return ResponseEntity.ok(bookingService.get3OnGoingBookingsOfVehicle(vehicleId));
     }
 }

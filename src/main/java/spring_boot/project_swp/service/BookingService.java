@@ -13,4 +13,5 @@ public interface BookingService {
     List<BookingResponse> getBookingsByUserId(Integer userId);
     BookingResponse updateBooking(Integer bookingId, BookingRequest request);
     void updateBookingStatus(Integer bookingId, BookingStatusEnum status);
+    List<BookingResponse> get3OnGoingBookingsOfVehicle(Integer vehicleId);
 }

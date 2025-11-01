@@ -148,6 +148,20 @@ public class BookingServiceImpl implements BookingService {
         bookingRepository.save(booking);
     }
 
+    @Override
+    public List<BookingResponse> get3OnGoingBookingsOfVehicle(Integer vehicleId) {
+        vehicleRepository.findById(vehicleId).orElseThrow(() -> new NotFoundException("Vehicle not found"));
+
+        List<Booking> activeBookings = bookingRepository.findTop3ByVehicleVehicleIdAndStatusAndEndTimeGreaterThanOrderByStartTimeAsc(vehicleId, BookingStatusEnum.CONFIRMED, LocalDateTime.now());
+        List<BookingResponse> bookingResponses = new ArrayList<>();
+
+        for (Booking booking : activeBookings) {
+            BookingResponse response = bookingMapper.toBookingResponse(booking);
+            bookingResponses.add(response);
+        }
+        return bookingResponses;
+    }
+
     private boolean isOverlapping(LocalDateTime start1, LocalDateTime end1, LocalDateTime start2, LocalDateTime end2) {
         return !start1.isAfter(end2) && !end1.isBefore(start2);
     }
