@@ -33,7 +33,7 @@ public class RentalDiscounts {
     Discount discount;
 
     @Column(name = "AppliedAmount", precision = 10, scale = 2)
-    BigDecimal appliedAmount;
+    int appliedAmount;
 
     @Column(name = "AppliedAt")
     LocalDateTime appliedAt;

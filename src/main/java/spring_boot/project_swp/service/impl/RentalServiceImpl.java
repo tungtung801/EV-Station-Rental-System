@@ -202,7 +202,7 @@ public class RentalServiceImpl implements RentalService {
 
         if (rental.getRentalDiscounts() != null) {
             for (RentalDiscounts rentalDiscount : rental.getRentalDiscounts()) {
-                totalDiscountAmount += rentalDiscount.getAppliedAmount().doubleValue();
+                totalDiscountAmount += rentalDiscount.getAppliedAmount();
             }
         }
 
