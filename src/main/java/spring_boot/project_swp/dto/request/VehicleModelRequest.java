@@ -14,21 +14,21 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class VehicleModelRequest {
-    @NotBlank(message = "Model name cannot be blank")
-    @Size(max = 100, message = "Model name cannot exceed 100 characters")
-    private String modelName;
+  @NotBlank(message = "Model name cannot be blank")
+  @Size(max = 100, message = "Model name cannot exceed 100 characters")
+  private String modelName;
 
-    @NotBlank(message = "Brand cannot be blank")
-    @Size(max = 100, message = "Brand cannot exceed 100 characters")
-    private String brand;
+  @NotBlank(message = "Brand cannot be blank")
+  @Size(max = 100, message = "Brand cannot exceed 100 characters")
+  private String brand;
 
-    @NotBlank(message = "Type cannot be blank")
-    @Size(max = 100, message = "Type cannot exceed 100 characters")
-    private String type;
+  @NotBlank(message = "Type cannot be blank")
+  @Size(max = 100, message = "Type cannot exceed 100 characters")
+  private String type;
 
-    @NotNull(message = "Capacity KWh cannot be null")
-    private Integer capacityKWh;
+  @NotNull(message = "Capacity KWh cannot be null")
+  private int capacityKWh;
 
-    @Size(max = 500, message = "Description cannot exceed 500 characters")
-    private String description;
+  @Size(max = 500, message = "Description cannot exceed 500 characters")
+  private String description;
 }

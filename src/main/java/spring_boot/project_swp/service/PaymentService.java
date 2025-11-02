@@ -1,34 +1,21 @@
 package spring_boot.project_swp.service;
 
-import org.springframework.stereotype.Service;
+import java.util.List;
+import spring_boot.project_swp.dto.request.PaymentRequest;
 import spring_boot.project_swp.dto.response.PaymentResponse;
 import spring_boot.project_swp.entity.Payment;
+import spring_boot.project_swp.entity.PaymentStatusEnum;
 
-
-import java.util.List;
-
-@Service
 public interface PaymentService {
+  PaymentResponse createPayment(PaymentRequest request);
 
-    public List<PaymentResponse> findAllPaymentsStatus();
+  PaymentResponse findPaymentById(Long paymentId);
 
-    public List<PaymentResponse> findAllPaymentsStatus(String status);
+  List<PaymentResponse> getPaymentsByRentalId(Long rentalId);
 
-    public Payment findPaymentById(int paymentId);
+  PaymentResponse updatePaymentStatus(Long paymentId, PaymentStatusEnum status);
 
-    public PaymentResponse createPayment(Payment payment);
+  PaymentResponse findPaymentByTransactionCode(String transactionCode);
 
-    public void savePayment(Payment payment);
-
-    public Payment UpdatePayment(Payment payment);
-
-    public Payment updatePaymentStatus(int paymentId, String status);
-
-    public Payment cancelPayment(int paymentId);
-
-    public Payment confirmPayment(Payment paymentId);
-
-    public Payment findPaymentByTransactionCode(String transactionCode);
-
-
+  Payment savePayment(Payment payment);
 }

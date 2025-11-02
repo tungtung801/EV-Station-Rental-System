@@ -4,10 +4,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 @Data
@@ -17,23 +17,23 @@ import lombok.experimental.FieldDefaults;
 @Builder
 public class IncidentReportRequest {
 
-    @NotNull(message = "Rental ID không được để trống")
-    Long rentalId;
+  @NotNull(message = "Rental ID cannot be null")
+  Long rentalId;
 
-    @NotNull(message = "Vehicle ID không được để trống")
-    Long vehicleId;
+  @NotNull(message = "Vehicle ID cannot be null")
+  Long vehicleId;
 
-    @NotNull(message = "User ID không được để trống")
-    Long userId;
+  @NotNull(message = "User ID cannot be null")
+  Long userId;
 
-    Long checkId; // Nullable as discussed
+  Long checkId;
 
-    @NotBlank(message = "Mô tả không được để trống")
-    @Size(max = 1000, message = "Mô tả không được vượt quá 1000 ký tự")
-    String description;
+  @NotBlank(message = "Description cannot be blank")
+  @Size(max = 1000, message = "Description must not exceed 1000 characters")
+  String description;
 
-    @NotBlank(message = "Trạng thái không được để trống")
-    String status;
+  @NotBlank(message = "Status cannot be blank")
+  String status;
 
-    String imageUrls;
+  String imageUrls;
 }

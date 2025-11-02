@@ -8,8 +8,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
-import spring_boot.project_swp.entity.User;
-import spring_boot.project_swp.entity.UserProfileStatusEnum;
 
 @Entity
 @Table(name = "UserProfiles")
@@ -19,31 +17,32 @@ import spring_boot.project_swp.entity.UserProfileStatusEnum;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserProfile {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ProfileId")
-    Integer profileId;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "ProfileId")
+  Long profileId;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "UserId", nullable = false)
-    @ToString.Exclude
-    User user;
+  @OneToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "UserId", nullable = false)
+  @ToString.Exclude
+  User user;
 
-    @Column(name = "DrivingLicenseUrl", length = 255)
-    String drivingLicenseUrl;
+  @Column(name = "DrivingLicenseUrl", length = 255)
+  String drivingLicenseUrl;
 
-    @Column(name = "IdCardUrl", length = 255)
-    String idCardUrl;
+  @Column(name = "IdCardUrl", length = 255)
+  String idCardUrl;
 
-    @Column(name = "Status", nullable = true, length = 50)
-    String status;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "Status", nullable = true, length = 50)
+  UserProfileStatusEnum status;
 
-    @Column(name = "Reason", columnDefinition = "NTEXT")
-    String reason;
+  @Column(name = "Reason", columnDefinition = "NTEXT")
+  String reason;
 
-    @Column(name = "Bio", columnDefinition = "NTEXT")
-    String bio;
+  @Column(name = "Bio", columnDefinition = "NTEXT")
+  String bio;
 
-    @Column(name = "Preferences", columnDefinition = "NTEXT")
-    String preferences;
+  @Column(name = "Preferences", columnDefinition = "NTEXT")
+  String preferences;
 }

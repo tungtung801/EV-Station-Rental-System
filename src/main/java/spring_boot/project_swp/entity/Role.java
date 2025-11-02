@@ -1,38 +1,36 @@
 package spring_boot.project_swp.entity;
 
-import java.util.ArrayList;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 
-import java.util.List;
-
 @Entity
 @Table(name = "Roles")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Role {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "RoleId")
-    private int roleId;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "RoleId")
+  private Long roleId;
 
-    @Column(name = "RoleName", nullable = false, unique = true, length = 50)
-    private String roleName;
+  @Column(name = "RoleName", nullable = false, unique = true, length = 50)
+  private String roleName;
 
-    @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
-    @ToString.Exclude
-    @JsonIgnore
-    private List<User> users = new ArrayList<>();
+  @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
+  @ToString.Exclude
+  @JsonIgnore
+  @Builder.Default
+  private List<User> users = new ArrayList<>();
 }
-

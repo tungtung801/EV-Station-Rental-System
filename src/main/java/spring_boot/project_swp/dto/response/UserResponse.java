@@ -1,7 +1,6 @@
 package spring_boot.project_swp.dto.response;
 
 import java.time.LocalDateTime;
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,11 +12,11 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserResponse {
-    Integer userId;
-    String fullName;
-    String email;
-    String phoneNumber;
-    String roleName;
-    Boolean accountStatus;
-    LocalDateTime createdAt;
+  Long userId;
+  String fullName;
+  String email;
+  String phoneNumber;
+  String roleName;
+  Boolean accountStatus;
+  LocalDateTime createdAt;
 }

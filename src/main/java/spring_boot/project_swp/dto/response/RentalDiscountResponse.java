@@ -1,14 +1,13 @@
 package spring_boot.project_swp.dto.response;
 
-import lombok.AccessLevel;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.experimental.FieldDefaults;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.FieldDefaults;
 
 @Data
 @NoArgsConstructor
@@ -17,8 +16,8 @@ import java.time.LocalDateTime;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RentalDiscountResponse {
 
-    Integer rentalId;
-    Integer discountId;
-    BigDecimal appliedAmount;
-    LocalDateTime appliedAt;
+  Long rentalId;
+  Long discountId;
+  BigDecimal appliedAmount;
+  LocalDateTime appliedAt;
 }

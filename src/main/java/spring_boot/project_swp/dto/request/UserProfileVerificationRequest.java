@@ -14,11 +14,11 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserProfileVerificationRequest {
-    @NotBlank(message = "User ID is required")
-    String userId;
+  @NotBlank(message = "User ID is required")
+  Long userId;
 
-    @NotBlank(message = "Status is required (VERIFIED/REJECTED)")
-    String status;
+  @NotBlank(message = "Status is required (VERIFIED/REJECTED)")
+  String status;
 
-    String reason;
+  String reason;
 }

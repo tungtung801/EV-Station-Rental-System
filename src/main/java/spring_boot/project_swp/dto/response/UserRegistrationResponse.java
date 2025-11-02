@@ -11,6 +11,6 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserRegistrationResponse {
-    Integer userId;
-    String email;
+  Long userId;
+  String email;
 }

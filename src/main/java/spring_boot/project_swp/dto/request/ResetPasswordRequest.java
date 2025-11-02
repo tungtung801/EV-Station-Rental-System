@@ -1,19 +1,18 @@
 package spring_boot.project_swp.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ResetPasswordRequest {
-    @NotBlank(message = "OTP_NOT_BLANK")
-    String otp;
+  @NotBlank(message = "OTP cannot be blank")
+  String otp;
 
-    @NotBlank(message = "NEW_PASSWORD_NOT_BLANK")
-    @Size(min = 8, message = "PASSWORD_MIN_SIZE")
-    String newPassword;
+  @NotBlank(message = "New password cannot be blank")
+  @Size(min = 8, message = "Password must be at least 8 characters long")
+  String newPassword;
 }

@@ -1,181 +1,126 @@
 package spring_boot.project_swp.service.impl;
 
-
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import spring_boot.project_swp.dto.response.PaymentResponse;
-import spring_boot.project_swp.entity.Payment;
-import spring_boot.project_swp.entity.Rental;
-import spring_boot.project_swp.entity.RentalDiscounts;
-import spring_boot.project_swp.mapper.PaymentMapper;
-import spring_boot.project_swp.repository.PaymentRepository;
-import spring_boot.project_swp.repository.UserRepository;
-import spring_boot.project_swp.service.PaymentService;
-
 import java.util.ArrayList;
 import java.util.List;
-
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import spring_boot.project_swp.dto.request.PaymentRequest;
+import spring_boot.project_swp.dto.response.PaymentResponse;
+import spring_boot.project_swp.dto.response.UserResponse;
+import spring_boot.project_swp.entity.*;
+import spring_boot.project_swp.exception.NotFoundException;
+import spring_boot.project_swp.mapper.PaymentMapper;
+import spring_boot.project_swp.mapper.UserMapper;
+import spring_boot.project_swp.repository.PaymentRepository;
+import spring_boot.project_swp.repository.RentalRepository;
+import spring_boot.project_swp.service.PaymentService;
+import spring_boot.project_swp.service.UserService;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentServiceImpl implements PaymentService {
 
-    final PaymentRepository paymentRepository;
-    final PaymentMapper paymentMapper;
-    final UserRepository userRepository;
+  private final PaymentRepository paymentRepository;
+  private final PaymentMapper paymentMapper;
+  private final RentalRepository rentalRepository;
+  private final UserService userService;
+  private final UserMapper userMapper;
 
-    @Override
-    public List<PaymentResponse> findAllPaymentsStatus() {
-        List<Payment> payments = paymentRepository.findAll();
-        List<PaymentResponse> paymentResponseList = new ArrayList<>();
-        for (Payment payment : payments) {
-            paymentResponseList.add(paymentMapper.toPaymentResponse(payment));
-        }
-        return paymentResponseList;
+  @Override
+  public PaymentResponse createPayment(PaymentRequest request) {
+    Rental rental =
+        rentalRepository
+            .findById(request.getRentalId())
+            .orElseThrow(
+                () -> new NotFoundException("Rental not found with id: " + request.getRentalId()));
+
+    UserResponse userResponse = userService.getUserById(request.getUserId());
+    if (userResponse == null) {
+      throw new NotFoundException("User not found with id: " + request.getUserId());
+    }
+    User user = userMapper.toEntity(userResponse);
+
+    // --- Payment calculation logic using double (as requested) ---
+    // NOTE: Using double can cause inaccuracies due to rounding errors.
+    // RECOMMENDATION: Use BigDecimal for currency to avoid precision issues.
+    double amountToPay = 0.0;
+    double totalCost = rental.getTotalCost(); // Assuming rental.getTotalCost() returns a double
+
+    if (request.getPaymentType() == PaymentTypeEnum.DEPOSIT) {
+      // Example: 10% deposit
+      amountToPay = totalCost * 0.10;
+    } else if (request.getPaymentType() == PaymentTypeEnum.FINAL_PAYMENT) {
+      // Example: Remaining 90% payment
+      amountToPay = totalCost * 0.90;
+    } else {
+      // Handle other types of fees
+      amountToPay = totalCost;
     }
 
-    @Override
-    public List<PaymentResponse> findAllPaymentsMethod(String status) {
-        List<Payment> payments = paymentRepository.findPaymentByStatus(status);
-        List<PaymentResponse> paymentResponseList = new ArrayList<>();
-        for (Payment payment : payments) {
-            paymentResponseList.add(paymentMapper.toPaymentResponse(payment));
-        }
-        return paymentResponseList;
+    Payment payment = new Payment();
+    payment.setRental(rental);
+    payment.setUser(user);
+    payment.setPaymentType(request.getPaymentType());
+    payment.setPaymentMethod(request.getPaymentMethod());
+    payment.setAmount(amountToPay); // Entity can still be double
+    payment.setStatus(PaymentStatusEnum.PENDING);
+    payment.setTransactionTime(java.time.LocalDateTime.now());
+
+    Payment savedPayment = paymentRepository.save(payment);
+    log.info(
+        "Created new payment with id: {} for rental: {}",
+        savedPayment.getPaymentId(),
+        savedPayment.getRental().getRentalId());
+    return paymentMapper.toPaymentResponse(savedPayment);
+  }
+
+  @Override
+  public PaymentResponse findPaymentById(Long paymentId) {
+    Payment payment =
+        paymentRepository
+            .findById(paymentId)
+            .orElseThrow(() -> new NotFoundException("Payment not found with id: " + paymentId));
+    return paymentMapper.toPaymentResponse(payment);
+  }
+
+  @Override
+  public List<PaymentResponse> getPaymentsByRentalId(Long rentalId) {
+    List<Payment> payments = paymentRepository.findAllByRental_RentalId(rentalId);
+    List<PaymentResponse> paymentResponseList = new ArrayList<>();
+    for (Payment payment : payments) {
+      paymentResponseList.add(paymentMapper.toPaymentResponse(payment));
     }
+    return paymentResponseList;
+  }
 
-    @Override
-    public Payment findPaymentById(int paymentId) {
-        Payment payment = paymentRepository.findPaymentByPaymentId(paymentId)
-                .orElseThrow(() -> new RuntimeException("Payment not found"));
-        return payment;
-    }
+  @Override
+  public PaymentResponse updatePaymentStatus(Long paymentId, PaymentStatusEnum status) {
+    Payment payment =
+        paymentRepository
+            .findById(paymentId)
+            .orElseThrow(() -> new NotFoundException("Payment not found with id: " + paymentId));
+    payment.setStatus(status);
+    Payment updatedPayment = paymentRepository.save(payment);
+    log.info("Updated payment status to {} for payment id: {}", status, paymentId);
+    return paymentMapper.toPaymentResponse(updatedPayment);
+  }
 
-    @Override
-    public PaymentResponse createPayment(Payment payment) {
+  @Override
+  public PaymentResponse findPaymentByTransactionCode(String transactionCode) {
+    Payment payment =
+        paymentRepository
+            .findByTransactionCode(transactionCode)
+            .orElseThrow(
+                () ->
+                    new NotFoundException(
+                        "Payment not found with transaction code: " + transactionCode));
+    return paymentMapper.toPaymentResponse(payment);
+  }
 
-        if (payment != null) {
-            if (payment.getStaffId() != null && payment.getStaffId().getUserId() != 0) {
-                payment.setStaffId(userRepository.findById(payment.getStaffId().getUserId())
-                        .orElseThrow(() -> new RuntimeException("Staff not found")));
-            }
-
-            Rental rental = payment.getRental();
-            if (rental == null || rental.getRentalId() == 0) {
-                throw new RuntimeException("Rental information is missing");
-            }else{
-                payment.setRental(rental);
-                payment.setAmount(rental.getTotalCost());
-            }
-            float totalAmount = (float) payment.getAmount();
-
-
-            //Phần này của discount tạm thời chưa làm
-            List<RentalDiscounts> rentalDiscounts = payment.getRental().getRentalDiscounts();
-            for(RentalDiscounts rd : rentalDiscounts){
-                if(rd.getDiscount() == null || rd.getDiscount().getDiscountId() == 0){
-                    throw new RuntimeException("Discount information is missing");
-                }
-                if (rd.getRental().getRentalId()  == payment.getRental().getRentalId()){
-                    float discountValue =  totalAmount * (rd.getAppliedAmount());
-                    totalAmount = totalAmount - discountValue;
-                    payment.setAmount(totalAmount);
-                }
-            }
-            //
-
-            //Payment method validation
-            if (payment.getPaymentMethod().equalsIgnoreCase("vnpay")) {//thanh toan ngay
-                payment.setPaymentMethod("VNPay");
-            }else if (payment.getPaymentMethod().equalsIgnoreCase("cash")) {//thanh toan truc tiep
-                payment.setPaymentMethod("Cash");
-            }else if (payment.getPaymentMethod().equalsIgnoreCase("deposited")) {//dat coc
-                payment.setPaymentMethod("Deposited");
-            }else{
-                throw new RuntimeException("Invalid payment method");
-            }
-
-            if (payment.getStatus().equalsIgnoreCase("PENDING")) {
-                payment.setPaymentMethod("PENDING");
-            }
-
-        }else{
-            throw new RuntimeException("Payment information is missing");
-        }
-
-        Payment savedPayment = paymentRepository.save(payment);
-        return paymentMapper.toPaymentResponse(savedPayment);
-
-    }
-
-    @Override
-    public Payment updatePaymentStatus(int paymentId, String status) {
-        Payment payment = findPaymentById(paymentId);
-        if(payment != null){
-            if(!status.isEmpty()){
-                payment.setStatus(status);
-            }else{
-                throw new RuntimeException("Status is empty");
-            }
-        }else{
-            throw new RuntimeException("Payment not found");
-        }
-        payment.setStatus(status);
-        return paymentRepository.save(payment);
-    }
-
-    public Payment updatePaymentAfterPaid(Payment payment){
-
-        if(payment != null){
-            if(payment.getAmount()==0){
-                this.confirmPayment(payment.getPaymentId());
-            }
-
-            if(payment.getPaymentMethod().equalsIgnoreCase("deposited")){
-                payment.setAmount(payment.getAmount()-(payment.getAmount() * 10/100));
-            }
-
-            if(payment.getTransactionCode() != null){
-                payment.setTransactionCode(payment.getTransactionCode());
-            }else{
-                throw new RuntimeException("Payment Transaction information is missing");
-            }
-            if(payment.getTransactionTime()!= null){
-                payment.setTransactionTime(payment.getTransactionTime());
-            } else {
-                throw new RuntimeException("Payment Transaction Time information is missing");
-            }
-
-        }else{
-            throw new RuntimeException("Payment not found");
-        }
-        return paymentRepository.save(payment);
-    }
-
-    @Override
-    public Payment UpdatePayment(Payment paymentUpdate) {
-        Payment payment = paymentRepository.findPaymentByPaymentId(paymentUpdate.getPaymentId())
-                .orElseThrow(() -> new RuntimeException("Payment not found"));
-        return payment;
-    }
-
-    @Override
-    public Payment cancelPayment(int paymentId) {
-        return updatePaymentStatus(paymentId, "Cancelled");
-    }
-
-    @Override
-    public Payment confirmPayment(int paymentId) {
-        return updatePaymentStatus(paymentId, "Confirmed");
-    }
-
-    @Override
-    public Payment findPaymentByTransactionCode(String transactionCode) {
-        Payment payment =paymentRepository.findPaymentByTransactionCode(transactionCode);
-        if(payment != null){
-            return payment;
-        }else{
-            throw new RuntimeException("Payment not found");
-        }
-    }
+  @Override
+  public Payment savePayment(Payment payment) {
+    return paymentRepository.save(payment);
+  }
 }

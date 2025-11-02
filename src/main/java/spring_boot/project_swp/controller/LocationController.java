@@ -1,5 +1,9 @@
 package spring_boot.project_swp.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
@@ -7,61 +11,73 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import spring_boot.project_swp.dto.request.LocationAddingRequest;
 import spring_boot.project_swp.dto.request.LocationUpdateRequest;
+import spring_boot.project_swp.dto.response.LocationResponse;
 import spring_boot.project_swp.service.LocationService;
 
 @RestController
 @RequestMapping("/api/location")
 @AllArgsConstructor
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
+@Tag(name = "Location APIs", description = "APIs for managing locations (cities, districts, wards)")
 public class LocationController {
-    LocationService locationService;
+  LocationService locationService;
 
-    //------------ Add Location ----------
-    @PostMapping("/add")
-    public ResponseEntity<?> addLocation(@RequestBody LocationAddingRequest request) {
-        return new ResponseEntity<>(locationService.addLocation(request), HttpStatus.CREATED);
-    }
+  @PostMapping("/add")
+  @Operation(
+      summary = "Add a new location",
+      description = "Adds a new location (city, district, or ward) to the system.")
+  public ResponseEntity<LocationResponse> addLocation(
+      @RequestBody @Valid LocationAddingRequest request) {
+    return new ResponseEntity<>(locationService.addLocation(request), HttpStatus.CREATED);
+  }
 
-    //------------ Update Location ----------
-    @PutMapping("/update/{id}")
-    public ResponseEntity<?> updateLocation(@PathVariable int id, @RequestBody LocationUpdateRequest request) {
-        return new ResponseEntity<>(locationService.updateLocation(id, request), HttpStatus.OK);
-    }
+  @PutMapping("/update/{id}")
+  @Operation(
+      summary = "Update an existing location",
+      description = "Updates an existing location's details.")
+  public ResponseEntity<LocationResponse> updateLocation(
+      @PathVariable Long id, @RequestBody @Valid LocationUpdateRequest request) {
+    return new ResponseEntity<>(locationService.updateLocation(id, request), HttpStatus.OK);
+  }
 
-    //------------ Get Location by ID ----------
-    @GetMapping("/get/getById/{locationId}")
-    public ResponseEntity<?> getLocationById(@PathVariable Integer locationId) {
-        return new ResponseEntity<>(locationService.getLocationById(locationId), HttpStatus.OK);
-    }
+  @GetMapping("/get/getById/{locationId}")
+  @Operation(summary = "Get location by ID", description = "Retrieves a location by its unique ID.")
+  public ResponseEntity<LocationResponse> getLocationById(@PathVariable Long locationId) {
+    return new ResponseEntity<>(locationService.getLocationById(locationId), HttpStatus.OK);
+  }
 
-    //------------ Get All Locations ----------
-    @GetMapping("/get/getAll")
-    public ResponseEntity<?> getAllLocations() {
-        return new ResponseEntity<>(locationService.getAllLocations(), HttpStatus.OK);
-    }
+  @GetMapping("/get/getAll")
+  @Operation(summary = "Get all locations", description = "Retrieves a list of all locations.")
+  public ResponseEntity<List<LocationResponse>> getAllLocations() {
+    return new ResponseEntity<>(locationService.getAllLocations(), HttpStatus.OK);
+  }
 
-    //------------ Get Cities ----------
-    @GetMapping("/get/getCities")
-    public ResponseEntity<?> getCities() {
-        return new ResponseEntity<>(locationService.getCities(), HttpStatus.OK);
-    }
+  @GetMapping("/get/getCities")
+  @Operation(summary = "Get all cities", description = "Retrieves a list of all cities.")
+  public ResponseEntity<List<LocationResponse>> getCities() {
+    return new ResponseEntity<>(locationService.getCities(), HttpStatus.OK);
+  }
 
-    //------------ Get Districts by City ID ----------
-    @GetMapping("/get/getDistricts/{cityId}")
-    public ResponseEntity<?> getDistricts(@PathVariable Integer cityId) {
-        return new ResponseEntity<>(locationService.getDistrictsByCityId(cityId), HttpStatus.OK);
-    }
+  @GetMapping("/get/getDistricts/{cityId}")
+  @Operation(
+      summary = "Get districts by city ID",
+      description = "Retrieves a list of districts for a given city ID.")
+  public ResponseEntity<List<LocationResponse>> getDistricts(@PathVariable Long cityId) {
+    return new ResponseEntity<>(locationService.getDistrictsByCityId(cityId), HttpStatus.OK);
+  }
 
-    //------------ Get Wards by District ID ----------
-    @GetMapping("/get/getWards/{districtId}")
-    public ResponseEntity<?> getWards(@PathVariable Integer districtId) {
-        return new ResponseEntity<>(locationService.getWardByDistrictId(districtId), HttpStatus.OK);
-    }
+  @GetMapping("/get/getWards/{districtId}")
+  @Operation(
+      summary = "Get wards by district ID",
+      description = "Retrieves a list of wards for a given district ID.")
+  public ResponseEntity<List<LocationResponse>> getWards(@PathVariable Long districtId) {
+    return new ResponseEntity<>(locationService.getWardByDistrictId(districtId), HttpStatus.OK);
+  }
 
-    //------------ Delete Location ----------
-    @PostMapping("/delete/{locationId}")
-    public ResponseEntity<?> deleteLocation(@PathVariable int locationId) {
-        return new ResponseEntity<>(locationService.deleteLocation(locationId), HttpStatus.OK);
-    }
-
+  @DeleteMapping("/delete/{locationId}")
+  @Operation(summary = "Delete a location", description = "Deletes a location by its ID.")
+  public ResponseEntity<Void> deleteLocation(@PathVariable Long locationId) {
+    locationService.deleteLocation(locationId);
+    return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+  }
 }

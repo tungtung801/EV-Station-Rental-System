@@ -1,10 +1,10 @@
 package spring_boot.project_swp.dto.response;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 
 @Data
@@ -13,5 +13,5 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MessageResponse {
-    String message;
+  String message;
 }

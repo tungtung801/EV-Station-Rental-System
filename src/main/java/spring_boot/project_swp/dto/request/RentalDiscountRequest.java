@@ -2,15 +2,14 @@ package spring_boot.project_swp.dto.request;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
-import lombok.AccessLevel;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.experimental.FieldDefaults;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.FieldDefaults;
 
 @Data
 @NoArgsConstructor
@@ -19,14 +18,17 @@ import java.time.LocalDateTime;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RentalDiscountRequest {
 
-    @NotNull(message = "Mã thuê xe không được để trống")
-    Integer rentalId;
+  @NotNull(message = "Rental ID cannot be null")
+  Long rentalId;
 
-    @NotNull(message = "Mã giảm giá không được để trống")
-    Integer discountId;
+  @NotNull(message = "Discount ID cannot be null")
+  Long discountId;
 
-    @DecimalMin(value = "0.0", inclusive = true, message = "Số tiền giảm giá áp dụng phải lớn hơn hoặc bằng 0")
-    BigDecimal appliedAmount;
+  @DecimalMin(
+      value = "0.0",
+      inclusive = true,
+      message = "Applied discount amount must be greater than or equal to 0")
+  BigDecimal appliedAmount;
 
-    LocalDateTime appliedAt;
+  LocalDateTime appliedAt;
 }

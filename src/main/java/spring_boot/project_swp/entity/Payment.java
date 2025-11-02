@@ -1,53 +1,64 @@
 package spring_boot.project_swp.entity;
 
-
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import jakarta.persistence.FetchType;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
-
-import javax.naming.Name;
-import java.time.LocalDateTime;
+import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
 @Table(name = "Payments")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Payment {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "paymentId")
-    int paymentId;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "rentalId", referencedColumnName = "rentalId")
-    @JsonBackReference
-    Rental rental;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "PaymentId")
+  Long paymentId;
 
-    @Column(name = "amount", nullable = false)
-    double amount;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "RentalId", nullable = false)
+  @JsonBackReference
+  Rental rental;
 
-    @Column(name = "paymentMethod", nullable = false, length = 50)
-    String paymentMethod;
+  @Column(name = "Amount", nullable = false)
+  double amount;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "PaymentType", nullable = false, length = 50)
+  PaymentTypeEnum paymentType;
 
-    @Column(name = "transactionTime", length = 100)
-    LocalDateTime transactionTime;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "PaymentMethod", nullable = false, length = 50)
+  PaymentMethodEnum paymentMethod;
 
-    @Column(name = "transactionCode", nullable = false, length = 150)
-    String transactionCode;
+  @CreationTimestamp
+  @Column(name = "TransactionTime", nullable = false, updatable = false)
+  LocalDateTime transactionTime;
 
-    @Column(name = "status", nullable = false, length = 50)
-    String status;
+  @Column(name = "TransactionCode", length = 150)
+  String transactionCode;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "Status", nullable = false, length = 50)
+  PaymentStatusEnum status;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "UserId", referencedColumnName = "UserId")
-    @JsonBackReference
-    User staffId;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "ProcessedByStaffId", nullable = false)
+  @JsonBackReference
+  User processedByStaff;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "RenterId", nullable = false)
+  private User user;
 }

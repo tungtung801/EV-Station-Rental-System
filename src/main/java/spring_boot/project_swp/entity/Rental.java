@@ -1,15 +1,17 @@
 package spring_boot.project_swp.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.FieldDefaults;
-
-import org.hibernate.annotations.CreationTimestamp;
-
 import java.time.LocalDateTime;
 import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
 @Table(name = "Rentals")
@@ -19,70 +21,71 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Rental {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "RentalId")
-    Integer rentalId;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "RentalId")
+  Long rentalId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "BookingId", nullable = false)
-    @ToString.Exclude
-    Booking booking;
+  @OneToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "BookingId", nullable = false, unique = true)
+  @ToString.Exclude
+  Booking booking;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "RenterId", nullable = false)
-    @ToString.Exclude
-    User renter;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "RenterId", nullable = false)
+  @ToString.Exclude
+  User renter;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "VehicleId", nullable = false)
-    @ToString.Exclude
-    Vehicle vehicle;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "VehicleId", nullable = false)
+  @ToString.Exclude
+  Vehicle vehicle;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "PickupStationId", nullable = false)
-    @ToString.Exclude
-    Station pickupStation;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "PickupStationId", nullable = false)
+  @ToString.Exclude
+  Station pickupStation;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ReturnStationId")
-    @ToString.Exclude
-    Station returnStation;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "ReturnStationId")
+  @ToString.Exclude
+  Station returnStation;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "PickupStaffId")
-    @ToString.Exclude
-    User pickupStaff;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "PickupStaffId")
+  @ToString.Exclude
+  User pickupStaff;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ReturnStaffId")
-    @ToString.Exclude
-    User returnStaff;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "ReturnStaffId")
+  @ToString.Exclude
+  User returnStaff;
 
-    @Column(name = "StartTime", nullable = false)
-    LocalDateTime startTime;
+  @Column(name = "StartTime", nullable = false)
+  LocalDateTime startTime;
 
-    @Column(name = "EndTime")
-    LocalDateTime endTime;
+  @Column(name = "EndTime")
+  LocalDateTime endTime;
 
-    @Column(name = "TotalCost", columnDefinition = "DECIMAL(10,2)")
-    Double totalCost;
+  @Column(name = "TotalCost", columnDefinition = "DECIMAL(10,2)")
+  Double totalCost;
 
-    @Column(name = "Status", length = 50)
-    String status;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "Status", length = 50)
+  RentalStatusEnum status;
 
-    @Column(name = "ContractUrl", length = 255)
-    String contractUrl;
+  @Column(name = "ContractUrl", length = 255)
+  String contractUrl;
 
-    @CreationTimestamp
-    @Column(name = "CreatedAt", nullable = false, updatable = false)
-    LocalDateTime createdAt;
+  @CreationTimestamp
+  @Column(name = "CreatedAt", nullable = false, updatable = false)
+  LocalDateTime createdAt;
 
-    public Rental(Long rentalId) {
-        this.rentalId = rentalId.intValue();
-    }
+  @OneToMany(mappedBy = "rental", cascade = CascadeType.ALL, orphanRemoval = true)
+  @JsonIgnore
+  List<Payment> payments;
 
-    @OneToMany(mappedBy = "rental", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    List<RentalDiscounts> rentalDiscounts;
+  @OneToMany(mappedBy = "rental", cascade = CascadeType.ALL, orphanRemoval = true)
+  @JsonIgnore
+  List<RentalDiscounts> rentalDiscounts;
 }

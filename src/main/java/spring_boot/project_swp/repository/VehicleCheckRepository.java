@@ -5,5 +5,4 @@ import org.springframework.stereotype.Repository;
 import spring_boot.project_swp.entity.VehicleChecks;
 
 @Repository
-public interface VehicleCheckRepository extends JpaRepository<VehicleChecks, Long> {
-}
+public interface VehicleCheckRepository extends JpaRepository<VehicleChecks, Long> {}

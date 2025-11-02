@@ -1,19 +1,18 @@
 package spring_boot.project_swp.service;
 
+import java.util.List;
 import spring_boot.project_swp.dto.request.IncidentReportRequest;
 import spring_boot.project_swp.dto.response.IncidentReportResponse;
 
-import java.util.List;
-
 public interface IncidentReportService {
 
-    IncidentReportResponse createIncidentReport(IncidentReportRequest request);
+  IncidentReportResponse createIncidentReport(IncidentReportRequest request);
 
-    List<IncidentReportResponse> getAllIncidentReports();
+  List<IncidentReportResponse> getAllIncidentReports();
 
-    IncidentReportResponse getIncidentReportById(Long reportId);
+  IncidentReportResponse getIncidentReportById(Long reportId);
 
-    IncidentReportResponse updateIncidentReport(Long reportId, IncidentReportRequest request);
+  IncidentReportResponse updateIncidentReport(Long reportId, IncidentReportRequest request);
 
-    void deleteIncidentReport(Long reportId);
+  void deleteIncidentReport(Long reportId);
 }

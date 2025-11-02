@@ -16,18 +16,23 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class VehicleModel {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ModelId")
-    private int modelId;
-    @Column(name = "ModelName", nullable = false, unique = true, length = 100)
-    private String modelName;
-    @Column(name = "Brand", nullable = false, length = 100)
-    private String brand;
-    @Column(name = "Type", nullable = false, length = 100)
-    private String type;
-    @Column(name = "CapacityKWh", nullable = false)
-    private int capacityKWh;
-    @Column(name = "Description", length = 500)
-    private String description;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "ModelId")
+  private Long modelId;
+
+  @Column(name = "ModelName", nullable = false, unique = true, length = 100)
+  private String modelName;
+
+  @Column(name = "Brand", nullable = false, length = 100)
+  private String brand;
+
+  @Column(name = "Type", nullable = false, length = 100)
+  private String type;
+
+  @Column(name = "CapacityKWh", nullable = false)
+  private int capacityKWh;
+
+  @Column(name = "Description", length = 500)
+  private String description;
 }

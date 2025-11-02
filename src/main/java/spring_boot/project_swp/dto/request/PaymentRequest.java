@@ -1,9 +1,14 @@
 package spring_boot.project_swp.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import spring_boot.project_swp.entity.PaymentMethodEnum;
+import spring_boot.project_swp.entity.PaymentTypeEnum;
 
 @Data
 @NoArgsConstructor
@@ -12,15 +17,17 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class PaymentRequest {
 
-    @NotBlank(message = "RentalId is required")
-    Integer rentalId;
+  @NotNull(message = "RentalId is required")
+  Long rentalId;
 
-    @NotBlank(message = "UserId is required")
-    Integer userId;
+  @NotNull(message = "UserId is required")
+  Long userId;
 
-    @NotBlank(message = "paymentMethod is required")
-    String paymentMethod;
+  @NotNull(message = "PaymentType is required")
+  PaymentTypeEnum paymentType;
 
+  @NotNull(message = "PaymentMethod is required")
+  PaymentMethodEnum paymentMethod;
 
-
+  Long staffId;
 }

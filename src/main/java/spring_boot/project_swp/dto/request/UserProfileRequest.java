@@ -1,7 +1,5 @@
 package spring_boot.project_swp.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,13 +14,13 @@ import org.springframework.web.multipart.MultipartFile;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserProfileRequest {
-    Integer userId;
+  Long userId;
 
-    MultipartFile drivingLicenseFile;
+  MultipartFile drivingLicenseFile;
 
-    MultipartFile idCardFile;
+  MultipartFile idCardFile;
 
-    String bio;
+  String bio;
 
-    String preferences;
+  String preferences;
 }

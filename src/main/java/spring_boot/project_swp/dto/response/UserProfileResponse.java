@@ -14,14 +14,14 @@ import spring_boot.project_swp.entity.UserProfileStatusEnum;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserProfileResponse {
-    Integer profileId;
-    Integer userId;
-    String userName;
-    String email;
-    String phoneNumber;
-    String drivingLicenseUrl;
-    String idCardUrl;
-    UserProfileStatusEnum status;
-    String bio;
-    String preferences;
+  Long profileId;
+  Long userId;
+  String userName;
+  String email;
+  String phoneNumber;
+  String drivingLicenseUrl;
+  String idCardUrl;
+  UserProfileStatusEnum status;
+  String bio;
+  String preferences;
 }

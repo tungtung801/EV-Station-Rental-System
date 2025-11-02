@@ -8,21 +8,20 @@ import org.springframework.web.filter.CorsFilter;
 
 @Configuration
 public class CorsConfig {
-    @Bean
-    public CorsFilter corsFilter() {
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        CorsConfiguration config = new CorsConfiguration();
+  @Bean
+  public CorsFilter corsFilter() {
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    CorsConfiguration config = new CorsConfiguration();
 
-        // Add the specific frontend URL your friend is using
-        config.addAllowedOrigin("http://localhost:5173");
+    config.addAllowedOrigin("http://localhost:5173");
 
-        config.addAllowedOrigin("https://kesha-subartesian-bowen.ngrok-free.dev/");
+    config.addAllowedOrigin("https://kesha-subartesian-bowen.ngrok-free.dev/");
 
-        config.addAllowedHeader("*");
-        config.addAllowedMethod("*");
-        config.setAllowCredentials(true);
+    config.addAllowedHeader("*");
+    config.addAllowedMethod("*");
+    config.setAllowCredentials(true);
 
-        source.registerCorsConfiguration("/**", config);
-        return new CorsFilter(source);
-    }
+    source.registerCorsConfiguration("/**", config);
+    return new CorsFilter(source);
+  }
 }

@@ -1,26 +1,30 @@
 package spring_boot.project_swp.mapper;
 
+import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingConstants;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.ReportingPolicy;
 import spring_boot.project_swp.dto.request.VehicleModelRequest;
 import spring_boot.project_swp.dto.response.VehicleModelResponse;
 import spring_boot.project_swp.dto.response.VehicleResponse;
 import spring_boot.project_swp.entity.VehicleModel;
 
-import java.util.List;
-
-@Mapper(componentModel = "spring")
+@Mapper(
+    componentModel = MappingConstants.ComponentModel.SPRING,
+    unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface VehicleModelMapper {
-    @Mapping(target = "modelId", ignore = true)
-    VehicleModel toVehicleModel(VehicleModelRequest request);
+  @Mapping(target = "modelId", ignore = true)
+  VehicleModel toVehicleModel(VehicleModelRequest request);
 
-    @Mapping(target = "modelId", ignore = true)
-    void updateVehicleModelFromRequest(VehicleModelRequest request, @MappingTarget VehicleModel vehicleModel);
+  @Mapping(target = "modelId", ignore = true)
+  void updateVehicleModelFromRequest(
+      VehicleModelRequest request, @MappingTarget VehicleModel vehicleModel);
 
-    VehicleModelResponse toVehicleModelResponse(VehicleModel vehicleModel);
+  VehicleModelResponse toVehicleModelResponse(VehicleModel vehicleModel);
 
-    List<VehicleModelResponse> toVehicleModelResponseList(List<VehicleModel> vehicleModels);
+  List<VehicleModelResponse> toVehicleModelResponseList(List<VehicleModel> vehicleModels);
 
-    VehicleResponse.ModelInfo toModelInfo(VehicleModel vehicleModel);
+  VehicleResponse.ModelInfo toModelInfo(VehicleModel vehicleModel);
 }

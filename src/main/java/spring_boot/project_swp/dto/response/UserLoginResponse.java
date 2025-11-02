@@ -11,9 +11,9 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserLoginResponse {
-    Integer userId;
-    String fullName;
-    String email;
-    String phoneNumber;
-    String roleName;
+  Long userId;
+  String fullName;
+  String email;
+  String phoneNumber;
+  String roleName;
 }
