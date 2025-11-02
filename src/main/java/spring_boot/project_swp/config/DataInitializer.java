@@ -1,18 +1,11 @@
 package spring_boot.project_swp.config;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import spring_boot.project_swp.dto.request.RoleRequest;
-import spring_boot.project_swp.entity.Discount;
 import spring_boot.project_swp.entity.Location;
-import spring_boot.project_swp.entity.Station;
 import spring_boot.project_swp.entity.User;
-import spring_boot.project_swp.entity.Vehicle;
-import spring_boot.project_swp.entity.VehicleModel;
 import spring_boot.project_swp.repository.DiscountRepository;
 import spring_boot.project_swp.repository.LocationRepository;
 import spring_boot.project_swp.repository.RoleRepository;
@@ -129,32 +122,27 @@ public class DataInitializer implements CommandLineRunner {
       normalUser.setRole(roleRepository.findByRoleName("user").orElse(null));
       userRepository.save(normalUser);
     }
-      if (locationRepository.findByLocationName("Hà Nội").isEmpty()) {
-          Location hanoi = Location.builder()
-                  .locationName("Hà Nội")
-                  .locationType("City")
-                  .isActive(true)
-                  .build();
-          locationRepository.save(hanoi);
-      }
+    if (locationRepository.findByLocationName("Hà Nội").isEmpty()) {
+      Location hanoi =
+          Location.builder().locationName("Hà Nội").locationType("City").isActive(true).build();
+      locationRepository.save(hanoi);
+    }
 
-      if (locationRepository.findByLocationName("Đà Nẵng").isEmpty()) {
-          Location danang = Location.builder()
-                  .locationName("Đà Nẵng")
-                  .locationType("City")
-                  .isActive(true)
-                  .build();
-          locationRepository.save(danang);
-      }
+    if (locationRepository.findByLocationName("Đà Nẵng").isEmpty()) {
+      Location danang =
+          Location.builder().locationName("Đà Nẵng").locationType("City").isActive(true).build();
+      locationRepository.save(danang);
+    }
 
-      if (locationRepository.findByLocationName("Hồ Chí Minh").isEmpty()) {
-          Location hcm = Location.builder()
-                  .locationName("Hồ Chí Minh")
-                  .locationType("City")
-                  .isActive(true)
-                  .build();
-          locationRepository.save(hcm);
-      }
+    if (locationRepository.findByLocationName("Hồ Chí Minh").isEmpty()) {
+      Location hcm =
+          Location.builder()
+              .locationName("Hồ Chí Minh")
+              .locationType("City")
+              .isActive(true)
+              .build();
+      locationRepository.save(hcm);
+    }
 
     /*
     Location hanoi =

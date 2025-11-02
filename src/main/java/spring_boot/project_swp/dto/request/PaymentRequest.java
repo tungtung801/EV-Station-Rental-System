@@ -30,4 +30,7 @@ public class PaymentRequest {
   PaymentMethodEnum paymentMethod;
 
   Long staffId;
+
+  @NotNull(message = "Amount is required")
+  Long amount;
 }

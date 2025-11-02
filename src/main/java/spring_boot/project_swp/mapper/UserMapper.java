@@ -23,7 +23,6 @@ public interface UserMapper {
   @Mapping(target = "userId", ignore = true)
   @Mapping(target = "accountStatus", ignore = true)
   @Mapping(target = "createdAt", ignore = true)
-  @Mapping(target = "role", ignore = true)
   User toUser(UserRegistrationRequest userRegistrationRequest);
 
   // entity to dto
@@ -38,7 +37,6 @@ public interface UserMapper {
   void updateUser(@MappingTarget User user, UserUpdateRequest request);
 
   // Add method to convert UserResponse to User entity (fix PaymentServiceImpl error)
-  @Mapping(target = "role", ignore = true)
   @Mapping(target = "password", ignore = true)
   @Mapping(target = "accountStatus", ignore = true)
   @Mapping(target = "createdAt", ignore = true)

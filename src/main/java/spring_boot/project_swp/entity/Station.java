@@ -3,7 +3,6 @@ package spring_boot.project_swp.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.List;
-import spring_boot.project_swp.entity.Vehicle;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
