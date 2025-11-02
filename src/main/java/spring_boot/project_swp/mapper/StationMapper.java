@@ -1,6 +1,7 @@
 package spring_boot.project_swp.mapper;
 
 import java.util.List;
+
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -15,41 +16,43 @@ import spring_boot.project_swp.entity.Location;
 import spring_boot.project_swp.entity.Station;
 
 @Mapper(
-    componentModel = MappingConstants.ComponentModel.SPRING,
-    uses = {MapperUtils.class},
-    unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        componentModel = MappingConstants.ComponentModel.SPRING,
+        uses = {MapperUtils.class},
+        unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface StationMapper {
-  Station toStation(StationAddingRequest request);
 
-  StationResponse toStationResponse(Station station);
+    @Mapping(target = "isActive", source = "isActive")
+    Station toStation(StationAddingRequest request);
 
-  List<StationResponse> toStationResponseList(List<Station> stations);
+    StationResponse toStationResponse(Station station);
 
-  // Map từ StationUpdateRequest sang Station entity (cho update)
-  @Mapping(target = "stationId", ignore = true)
-  @Mapping(target = "active", ignore = true)
-  @Mapping(target = "location", source = "locationId")
-  void updateStationFromRequest(StationUpdateRequest request, @MappingTarget Station station);
+    List<StationResponse> toStationResponseList(List<Station> stations);
 
-  @AfterMapping // tự động gọi đến mapper này sau khi chuyeenr doi thành ResponseDto
-  default void mapLocationDetails(@MappingTarget StationResponse response, Station station) {
-    Location currentlocation = station.getLocation();
+    // Map từ StationUpdateRequest sang Station entity (cho update)
+    @Mapping(target = "stationId", ignore = true)
+    @Mapping(target = "isActive", source = "isActive")
+    @Mapping(target = "location", source = "locationId")
+    void updateStationFromRequest(StationUpdateRequest request, @MappingTarget Station station);
 
-    while (currentlocation != null) {
-      String locationName = currentlocation.getLocationName();
-      String locationType = currentlocation.getLocationType();
+    @AfterMapping // tự động gọi đến mapper này sau khi chuyeenr doi thành ResponseDto
+    default void mapLocationDetails(@MappingTarget StationResponse response, Station station) {
+        Location currentlocation = station.getLocation();
 
-      if ("Ward".equalsIgnoreCase(locationType)) {
-        response.setWard(locationName);
-      } else if ("District".equalsIgnoreCase(locationType)) {
-        response.setDistrict(locationName);
-      } else if ("City".equalsIgnoreCase(locationType)) {
-        response.setCity(locationName);
-      }
+        while (currentlocation != null) {
+            String locationName = currentlocation.getLocationName();
+            String locationType = currentlocation.getLocationType();
 
-      currentlocation = currentlocation.getParent();
+            if ("Ward".equalsIgnoreCase(locationType)) {
+                response.setWard(locationName);
+            } else if ("District".equalsIgnoreCase(locationType)) {
+                response.setDistrict(locationName);
+            } else if ("City".equalsIgnoreCase(locationType)) {
+                response.setCity(locationName);
+            }
+
+            currentlocation = currentlocation.getParent();
+        }
     }
-  }
 
-  VehicleResponse.StationInfo toStationInfo(Station station);
+    VehicleResponse.StationInfo toStationInfo(Station station);
 }
