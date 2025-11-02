@@ -21,3 +21,4 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
   List<Booking> findTop3ByVehicleVehicleIdAndStatusAndEndTimeGreaterThanOrderByStartTimeAsc(
       Long vehicleId, BookingStatusEnum status, LocalDateTime now);
 }
+

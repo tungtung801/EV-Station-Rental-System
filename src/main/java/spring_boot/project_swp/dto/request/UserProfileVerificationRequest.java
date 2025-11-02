@@ -1,6 +1,7 @@
 package spring_boot.project_swp.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,7 +15,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserProfileVerificationRequest {
-  @NotBlank(message = "User ID is required")
+  @NotNull(message = "User ID is required")
   Long userId;
 
   @NotBlank(message = "Status is required (VERIFIED/REJECTED)")

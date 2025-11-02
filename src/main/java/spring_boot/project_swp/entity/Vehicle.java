@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -56,6 +57,7 @@ public class Vehicle {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "StationId", nullable = false)
+  @JsonIgnore
   private Station station;
 
   public Vehicle(Long vehicleId) {
@@ -64,4 +66,8 @@ public class Vehicle {
 
   @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Rental> rentals;
+
+  @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, orphanRemoval = true)
+  @JsonIgnore
+  private List<IncidentReports> incidentReports;
 }

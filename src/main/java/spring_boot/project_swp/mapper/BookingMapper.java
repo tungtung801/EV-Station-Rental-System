@@ -11,7 +11,7 @@ import spring_boot.project_swp.entity.Booking;
 
 @Mapper(
     componentModel = MappingConstants.ComponentModel.SPRING,
-    uses = {MapperUtils.class},
+    uses = {MapperUtils.class, VehicleMapper.class},
     unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface BookingMapper {
 

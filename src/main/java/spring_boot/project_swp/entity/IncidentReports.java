@@ -1,5 +1,6 @@
 package spring_boot.project_swp.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
@@ -30,6 +31,7 @@ public class IncidentReports {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "VehicleId", nullable = false)
+  @JsonIgnore
   Vehicle vehicle;
 
   @ManyToOne(fetch = FetchType.LAZY)

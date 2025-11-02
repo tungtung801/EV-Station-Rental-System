@@ -12,7 +12,7 @@ import spring_boot.project_swp.entity.Vehicle;
 
 @Mapper(
     componentModel = MappingConstants.ComponentModel.SPRING,
-    uses = {MapperUtils.class},
+    uses = {MapperUtils.class, VehicleModelMapper.class, StationMapper.class},
     unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface VehicleMapper {
   @Mapping(target = "vehicleId", ignore = true)

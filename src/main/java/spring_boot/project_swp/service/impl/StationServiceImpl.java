@@ -1,8 +1,11 @@
 package spring_boot.project_swp.service.impl;
 
 import java.util.List;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
+
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import spring_boot.project_swp.dto.request.StationAddingRequest;
 import spring_boot.project_swp.dto.request.StationUpdateRequest;
 import spring_boot.project_swp.dto.response.StationResponse;
@@ -13,16 +16,21 @@ import spring_boot.project_swp.exception.NotFoundException;
 import spring_boot.project_swp.mapper.LocationMapper;
 import spring_boot.project_swp.mapper.StationMapper;
 import spring_boot.project_swp.repository.LocationRepository;
+import spring_boot.project_swp.repository.RentalRepository;
 import spring_boot.project_swp.repository.StationRepository;
+import spring_boot.project_swp.repository.VehicleRepository;
 import spring_boot.project_swp.service.StationService;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class StationServiceImpl implements StationService {
   private final StationRepository stationRepository;
   private final StationMapper stationMapper;
   private final LocationRepository locationRepository;
   private final LocationMapper locationMapper;
+  private final RentalRepository rentalRepository;
+  private final VehicleRepository vehicleRepository;
 
   @Override
   public List<StationResponse> getAllStations() {
@@ -122,6 +130,22 @@ public class StationServiceImpl implements StationService {
         stationRepository
             .findStationByStationId(id)
             .orElseThrow(() -> new NotFoundException("Station does not exist"));
+
+    // Delete all related rentals first
+    rentalRepository.deleteAll(station.getPickupRentals());
+    rentalRepository.deleteAll(station.getReturnRentals());
+
+    // Delete all related vehicles
+    vehicleRepository.deleteAll(station.getVehicles());
+
+    // 3) Detach from parent Location to avoid being re-persisted by Location.stations cascade
+    Location location = station.getLocation();
+    if (location != null && location.getStations() != null) {
+      location.getStations().removeIf(s -> s.getStationId() != null && s.getStationId().equals(id));
+    }
+    station.setLocation(null);
+
+    // 4) Hard delete the Station; JPA will cascade remove remaining dependents (e.g., Vehicles)
     stationRepository.delete(station);
   }
 

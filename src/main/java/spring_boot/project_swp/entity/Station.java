@@ -3,6 +3,7 @@ package spring_boot.project_swp.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.List;
+import spring_boot.project_swp.entity.Vehicle;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -53,4 +54,7 @@ public class Station {
 
   @OneToMany(mappedBy = "returnStation", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Rental> returnRentals;
+
+  @OneToMany(mappedBy = "station", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<Vehicle> vehicles;
 }
