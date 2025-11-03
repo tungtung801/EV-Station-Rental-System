@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import spring_boot.project_swp.entity.StationStatusEnum;
 
 @Data
 @AllArgsConstructor
@@ -27,6 +28,8 @@ public class StationAddingRequest {
 
   @Min(value = 1, message = "Total docks must be greater than 0")
   int totalDocks;
+
+  StationStatusEnum isActive;
 
   @NotNull(message = "Location ID cannot be null")
   Long locationId;

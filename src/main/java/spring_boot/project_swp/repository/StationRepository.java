@@ -21,13 +21,13 @@ public interface StationRepository extends JpaRepository<Station, Long> {
   public List<Station> findByLocation_LocationIdInAndIsActiveTrue(List<Long> locationIds);
 
   @Query(
-      "SELECT s FROM Station s WHERE s.isActive = true AND s.location.locationId IN "
+      "SELECT s FROM Station s WHERE s.isActive = 'ACTIVE' AND s.location.locationId IN "
           + "(SELECT w.locationId FROM Location w WHERE w.parent.locationId IN "
           + "(SELECT d.locationId FROM Location d WHERE d.parent.locationId = :cityId))")
   List<Station> findStationsByCityId(Long cityId);
 
   @Query(
-      "SELECT s FROM Station s WHERE s.isActive = true AND s.location.locationId IN "
+      "SELECT s FROM Station s WHERE s.isActive = 'ACTIVE' AND s.location.locationId IN "
           + "(SELECT w.locationId FROM Location w WHERE w.parent.locationId = :districtId)")
   List<Station> findStationsByDistrictId(Long districtId);
 }

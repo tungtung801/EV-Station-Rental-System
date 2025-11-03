@@ -42,7 +42,8 @@ public class Station {
   int availableDocks;
 
   @Column(name = "IsActive", nullable = false)
-  boolean isActive;
+  @Enumerated(EnumType.STRING)
+  StationStatusEnum  isActive;
 
   @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "LocationId")

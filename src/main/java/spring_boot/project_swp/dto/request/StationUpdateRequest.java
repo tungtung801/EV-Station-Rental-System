@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import spring_boot.project_swp.entity.StationStatusEnum;
 
 @Data
 @AllArgsConstructor
@@ -32,6 +33,8 @@ public class StationUpdateRequest {
 
   @NotNull(message = "AvailableDocks cannot be null")
   int availableDocks;
+
+  StationStatusEnum isActive;
 
   @NotNull(message = "District / Ward Id cannot be null")
   Long locationId;
