@@ -153,10 +153,11 @@ public class RentalServiceImpl implements RentalService {
         bookingRepository
             .findById(bookingId)
             .orElseThrow(() -> new NotFoundException("Booking not found"));
-
+      System.out.printf("Booking ID: %d, Status: %s%n", booking.getBookingId(), booking.getStatus());
     // Ensure booking is in DEPOSIT_PAID status before pickup
     if (!booking.getStatus().equals(BookingStatusEnum.DEPOSIT_PAID)) {
       throw new ConflictException("Booking is not in DEPOSIT_PAID status");
+
     }
 
     // Find the existing Rental associated with this booking

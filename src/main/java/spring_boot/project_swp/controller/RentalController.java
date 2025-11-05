@@ -43,8 +43,9 @@ public class RentalController {
       @PathVariable Long rentalId, @RequestBody @Valid RentalConfirmPickupRequest request) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     String staffEmail = authentication.getName();
+    RentalResponse re= this.rentalService.getRentalById(rentalId);
     return ResponseEntity.ok(
-        rentalService.confirmPickup(rentalId, staffEmail, request.getContractUrl()));
+        rentalService.confirmPickup(re.getBookingId(), staffEmail, request.getContractUrl()));
   }
 
   @PutMapping("/{rentalId}/confirm-return")

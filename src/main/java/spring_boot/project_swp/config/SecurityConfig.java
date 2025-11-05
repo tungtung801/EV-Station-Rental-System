@@ -147,8 +147,9 @@ public class SecurityConfig {
                     .hasAnyAuthority("user", "admin", "staff")
                     .requestMatchers(HttpMethod.PUT, "/api/bookings/{bookingId}/cancel")
                     .hasAuthority("user")
-                    .requestMatchers(HttpMethod.PUT, "/api/bookings/{bookingId}/confirm")
+                    .requestMatchers(HttpMethod.PUT, "/api/bookings/{bookingId}/confirm-deposit")
                     .hasAnyAuthority("admin", "staff")
+
 
                     // RentalController
                     .requestMatchers(HttpMethod.POST, "/api/rentals")

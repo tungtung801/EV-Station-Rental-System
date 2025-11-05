@@ -42,7 +42,7 @@ public class User {
   private Boolean accountStatus = true;
 
   @Column(name = "IsVerified", nullable = false)
-  @Builder.Default
+    @Builder.Default
   private Boolean isVerified = false;
 
   @ManyToOne(fetch = FetchType.LAZY)

@@ -14,6 +14,7 @@ import spring_boot.project_swp.dto.request.BookingRequest;
 import spring_boot.project_swp.dto.request.BookingStatusUpdateRequest;
 import spring_boot.project_swp.dto.request.PaymentRequest;
 import spring_boot.project_swp.dto.response.BookingResponse;
+import spring_boot.project_swp.dto.response.RentalResponse;
 import spring_boot.project_swp.dto.response.UserVerificationStatusResponse;
 import spring_boot.project_swp.entity.Booking;
 import spring_boot.project_swp.entity.BookingStatusEnum;
@@ -53,8 +54,9 @@ public class BookingServiceImpl implements BookingService {
   final StationRepository stationRepository;
   @Lazy final PaymentService paymentService;
   final PaymentRepository paymentRepository;
+    private final RentalServiceImpl rentalServiceImpl;
 
-  @Override
+    @Override
   public BookingResponse createBooking(String email, BookingRequest request) {
     User user =
         userRepository
@@ -293,6 +295,8 @@ public class BookingServiceImpl implements BookingService {
 
     // Cập nhật trạng thái booking
     booking.setStatus(BookingStatusEnum.DEPOSIT_PAID);
+      RentalResponse rentalResponse = new RentalResponse();
+      rentalResponse = rentalServiceImpl.createRentalFromBooking(bookingId);
     return bookingMapper.toBookingResponse(bookingRepository.save(booking));
   }
 
