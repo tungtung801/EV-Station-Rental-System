@@ -74,7 +74,7 @@ public class LocationController {
     return new ResponseEntity<>(locationService.getWardByDistrictId(districtId), HttpStatus.OK);
   }
 
-  @DeleteMapping("/{id}")
+  @DeleteMapping("/{locationId}")
   @Operation(summary = "Delete a location", description = "Deletes a location by its ID.")
   public ResponseEntity<Void> deleteLocation(@PathVariable Long locationId) {
     locationService.deleteLocation(locationId);

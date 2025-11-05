@@ -4,14 +4,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
-
 import spring_boot.project_swp.dto.request.BookingRequest;
 import spring_boot.project_swp.dto.request.BookingStatusUpdateRequest;
 import spring_boot.project_swp.dto.request.PaymentRequest;
@@ -19,6 +17,7 @@ import spring_boot.project_swp.dto.response.BookingResponse;
 import spring_boot.project_swp.dto.response.UserVerificationStatusResponse;
 import spring_boot.project_swp.entity.Booking;
 import spring_boot.project_swp.entity.BookingStatusEnum;
+import spring_boot.project_swp.entity.BookingTypeEnum;
 import spring_boot.project_swp.entity.Payment;
 import spring_boot.project_swp.entity.PaymentMethodEnum;
 import spring_boot.project_swp.entity.PaymentStatusEnum;
@@ -39,7 +38,6 @@ import spring_boot.project_swp.repository.UserRepository;
 import spring_boot.project_swp.repository.VehicleRepository;
 import spring_boot.project_swp.service.BookingService;
 import spring_boot.project_swp.service.PaymentService;
-import org.springframework.context.annotation.Lazy;
 
 @Service
 @RequiredArgsConstructor
@@ -108,25 +106,33 @@ public class BookingServiceImpl implements BookingService {
             vehicle.getPricePerDay());
     booking.setExpectedTotal(expectedTotal);
     booking.setDepositPercent(BigDecimal.valueOf(0.1)); // 10% deposit
-    booking.setStatus(BookingStatusEnum.PENDING_DEPOSIT);
+    booking.setBookingType(request.getBookingType());
+
+    // Set initial status based on booking type
+    if (request.getBookingType() == BookingTypeEnum.ONLINE
+        || request.getBookingType() == BookingTypeEnum.FLEXIBLE) {
+      booking.setStatus(BookingStatusEnum.PENDING_DEPOSIT);
+    } else if (request.getBookingType() == BookingTypeEnum.OFFLINE) {
+      booking.setStatus(BookingStatusEnum.DEPOSIT_PAID);
+    }
 
     Booking savedBooking = bookingRepository.save(booking);
 
-    // Tạo PaymentRequest cho khoản đặt cọc
-    PaymentRequest depositPaymentRequest = new PaymentRequest();
-    depositPaymentRequest.setBookingId(savedBooking.getBookingId());
-    depositPaymentRequest.setUserId(user.getUserId());
-    depositPaymentRequest.setPaymentType(PaymentTypeEnum.DEPOSIT);
-    depositPaymentRequest.setPaymentMethod(
-        PaymentMethodEnum.BANK_TRANSFER); // Mặc định là chuyển khoản ngân hàng
-    depositPaymentRequest.setAmount(
-        booking.getExpectedTotal().multiply(booking.getDepositPercent())); // Số tiền cọc
-    depositPaymentRequest.setNote("Deposit for booking " + savedBooking.getBookingId());
+    // Create deposit payment only for ONLINE or FLEXIBLE bookings
+    if (request.getBookingType() == BookingTypeEnum.ONLINE
+        || request.getBookingType() == BookingTypeEnum.FLEXIBLE) {
+      PaymentRequest depositPaymentRequest = new PaymentRequest();
+      depositPaymentRequest.setBookingId(savedBooking.getBookingId());
+      depositPaymentRequest.setUserId(user.getUserId());
+      depositPaymentRequest.setPaymentType(PaymentTypeEnum.DEPOSIT);
+      depositPaymentRequest.setPaymentMethod(
+          PaymentMethodEnum.BANK_TRANSFER); // Mặc định là chuyển khoản ngân hàng
+      depositPaymentRequest.setAmount(
+          booking.getExpectedTotal().multiply(booking.getDepositPercent())); // Số tiền cọc
+      depositPaymentRequest.setNote("Deposit for booking " + savedBooking.getBookingId());
 
-    // Gọi PaymentService để tạo payment cọc
-    // ... existing code ...
-    // Thay đổi từ passing booking.getBookingId() sang passing booking trực tiếp
-    paymentService.createDepositPayment(booking, user.getEmail(), depositPaymentRequest);
+      paymentService.createDepositPayment(booking, user.getEmail(), depositPaymentRequest);
+    }
 
     return bookingMapper.toBookingResponse(savedBooking);
   }
@@ -225,7 +231,8 @@ public class BookingServiceImpl implements BookingService {
   }
 
   @Override
-  public BookingResponse updateBookingStatus(Long bookingId, String email, BookingStatusUpdateRequest request) {
+  public BookingResponse updateBookingStatus(
+      Long bookingId, String email, BookingStatusUpdateRequest request) {
     Booking booking =
         bookingRepository
             .findById(bookingId)
@@ -237,7 +244,8 @@ public class BookingServiceImpl implements BookingService {
             .orElseThrow(() -> new NotFoundException("User not found with email: " + email));
 
     if (booking.getStatus().equals(request.getStatus())) {
-      throw new ConflictException("Booking is already in " + request.getStatus().name() + " status");
+      throw new ConflictException(
+          "Booking is already in " + request.getStatus().name() + " status");
     }
 
     // Add specific business logic for status transitions if needed
@@ -265,17 +273,23 @@ public class BookingServiceImpl implements BookingService {
       throw new ConflictException("Booking is not in PENDING_DEPOSIT status.");
     }
 
-    // Tìm payment cọc liên quan đến booking này
-    Payment depositPayment =
-        paymentRepository
-            .findByBooking_BookingIdAndPaymentType(bookingId, PaymentTypeEnum.DEPOSIT)
-            .orElseThrow(
-                () ->
-                    new NotFoundException(
-                        "Deposit payment not found for booking with id: " + bookingId));
+    // Xử lý khác biệt giữa đặt xe trực tuyến và ngoại tuyến
+    if (booking.getBookingType() == BookingTypeEnum.ONLINE) {
+      // Tìm payment cọc liên quan đến booking này
+      Payment depositPayment =
+          paymentRepository
+              .findByBooking_BookingIdAndPaymentType(bookingId, PaymentTypeEnum.DEPOSIT)
+              .orElseThrow(
+                  () ->
+                      new NotFoundException(
+                          "Deposit payment not found for booking with id: " + bookingId));
 
-    // Cập nhật trạng thái của payment cọc thành SUCCESS
-    paymentService.updatePaymentStatus(depositPayment.getPaymentId(), PaymentStatusEnum.SUCCESS);
+      // Cập nhật trạng thái của payment cọc thành SUCCESS
+      paymentService.updatePaymentStatus(depositPayment.getPaymentId(), PaymentStatusEnum.SUCCESS);
+    } else if (booking.getBookingType() == BookingTypeEnum.OFFLINE) {
+      // Đặt xe ngoại tuyến không cần thanh toán đặt cọc, bỏ qua kiểm tra
+      log.info("Confirming offline booking without deposit payment: {}", bookingId);
+    }
 
     // Cập nhật trạng thái booking
     booking.setStatus(BookingStatusEnum.DEPOSIT_PAID);
@@ -328,12 +342,17 @@ public class BookingServiceImpl implements BookingService {
 
   @Override
   public UserVerificationStatusResponse checkUserVerification(Long userId) {
-      UserProfile userProfile = userProfileRepository.findByUserUserId(userId)
-              .orElseThrow(() -> new NotFoundException("User profile not found"));
-  
-      if (!userProfile.getStatus().equals(UserProfileStatusEnum.VERIFIED)) {
-          throw new UserNotVerifiedException("User is not verified");
-      }
-      return UserVerificationStatusResponse.builder().isVerified(true).message("User is verified").build();
+    UserProfile userProfile =
+        userProfileRepository
+            .findByUserUserId(userId)
+            .orElseThrow(() -> new NotFoundException("User profile not found"));
+
+    if (!userProfile.getStatus().equals(UserProfileStatusEnum.VERIFIED)) {
+      throw new UserNotVerifiedException("User is not verified");
+    }
+    return UserVerificationStatusResponse.builder()
+        .isVerified(true)
+        .message("User is verified")
+        .build();
   }
 }

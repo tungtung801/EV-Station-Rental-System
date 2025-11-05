@@ -2,12 +2,10 @@ package spring_boot.project_swp.vnpay;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -15,10 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import spring_boot.project_swp.dto.request.BookingStatusUpdateRequest;
 import spring_boot.project_swp.dto.response.PaymentResponse;
-import spring_boot.project_swp.entity.BookingStatusEnum;
 import spring_boot.project_swp.entity.PaymentStatusEnum;
 import spring_boot.project_swp.exception.NotFoundException;
 import spring_boot.project_swp.service.BookingService;
@@ -89,7 +85,8 @@ public class VNPayReturnController {
             String userEmail = userService.getUserById(paymentResponse.getPayerId()).getEmail();
 
             // Cập nhật trạng thái booking
-            BookingStatusUpdateRequest bookingStatusUpdateRequest = new BookingStatusUpdateRequest();
+            BookingStatusUpdateRequest bookingStatusUpdateRequest =
+                new BookingStatusUpdateRequest();
             bookingService.updateBookingStatus(
                 paymentResponse.getBookingId(), userEmail, bookingStatusUpdateRequest);
           }

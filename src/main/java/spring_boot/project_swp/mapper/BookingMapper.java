@@ -18,18 +18,13 @@ public interface BookingMapper {
   @Mapping(target = "bookingId", ignore = true)
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "status", ignore = true)
-  @Mapping(target = "depositPercent", ignore = true)
-  @Mapping(target = "expectedTotal", ignore = true)
   @Mapping(target = "vehicle", source = "vehicleId")
-  @Mapping(target = "user", source = "userId")
+  @Mapping(target = "bookingType", source = "bookingType") // Explicitly map bookingType
   Booking toBooking(BookingRequest request);
 
-  @Mapping(source = "user.userId", target = "userId")
-  @Mapping(source = "user.fullName", target = "userName")
   @Mapping(target = "vehicle", source = "vehicle")
   BookingResponse toBookingResponse(Booking booking);
 
-  @Mapping(source = "userId", target = "user")
   @Mapping(target = "vehicle", source = "vehicle")
   @Mapping(target = "bookingId", source = "bookingId")
   @Mapping(target = "createdAt", source = "createdAt")
@@ -42,8 +37,6 @@ public interface BookingMapper {
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "status", ignore = true)
   @Mapping(target = "vehicle", source = "vehicleId")
-  @Mapping(target = "depositPercent", ignore = true)
-  @Mapping(target = "expectedTotal", ignore = true)
-  @Mapping(target = "user", source = "userId")
+  @Mapping(target = "bookingType", source = "bookingType") // Explicitly map bookingType
   void updateBookingFromRequest(BookingRequest request, @MappingTarget Booking booking);
 }

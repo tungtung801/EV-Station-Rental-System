@@ -72,11 +72,11 @@ public class SecurityConfig {
 
                     // UserController
                     .requestMatchers("/api/user/**")
-                    .hasAuthority("user")
+                    .hasAnyAuthority("admin", "user")
                     .requestMatchers(HttpMethod.GET, "/api/users/{id}")
-                    .hasAnyAuthority("user", "staff")
+                    .hasAnyAuthority("user", "staff", "admin")
                     .requestMatchers(HttpMethod.PUT, "/api/users/{id}")
-                    .hasAnyAuthority("user", "staff")
+                    .hasAnyAuthority("user", "staff", "admin")
                     .requestMatchers("/api/users/user", "/api/users/staff", "/api/users/delete/**")
                     .hasAnyAuthority("admin", "staff")
 
@@ -86,11 +86,12 @@ public class SecurityConfig {
                         "/api/user-profiles/{profileId}",
                         "/api/user-profiles/user/{userId}")
                     .hasAnyAuthority("user", "admin")
+                    // Only GET list endpoints require staff/admin; do not shadow PUT
                     .requestMatchers(
-                        "/api/user-profiles",
-                        "/api/user-profiles/pending",
-                        "/api/user-profiles/verify-reject")
+                        HttpMethod.GET, "/api/user-profiles", "/api/user-profiles/pending")
                     .hasAnyAuthority("staff", "admin")
+                    .requestMatchers(HttpMethod.PUT, "/api/user-profiles")
+                    .hasAnyAuthority("user", "admin")
                     .requestMatchers(HttpMethod.PUT, "/api/user-profiles/{userId}")
                     .hasAnyAuthority("user", "admin")
                     .requestMatchers(HttpMethod.DELETE, "/api/user-profiles/{profileId}")
@@ -101,14 +102,14 @@ public class SecurityConfig {
                     .hasAuthority("admin")
 
                     // VehicleController
-                    .requestMatchers("/api/vehicles/**")
-                    .hasAuthority("admin")
                     .requestMatchers(
                         HttpMethod.GET,
                         "/api/vehicles",
                         "/api/vehicles/{id}",
                         "/api/vehicles/{vehicleId}/active-bookings")
                     .hasAnyAuthority("user", "admin", "staff")
+                    .requestMatchers("/api/vehicles/**")
+                    .hasAuthority("admin")
 
                     // StationController
                     .requestMatchers("/api/station/**")

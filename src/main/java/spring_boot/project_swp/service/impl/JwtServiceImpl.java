@@ -3,8 +3,6 @@ package spring_boot.project_swp.service.impl;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
@@ -15,6 +13,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import spring_boot.project_swp.entity.User;
+import spring_boot.project_swp.security.JwtKeyUtils;
 import spring_boot.project_swp.service.JwtService;
 
 @Service
@@ -83,7 +82,6 @@ public class JwtServiceImpl implements JwtService {
   }
 
   private Key getSignInKey() {
-    byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-    return Keys.hmacShaKeyFor(keyBytes);
+    return JwtKeyUtils.hmacKey(secretKey);
   }
 }

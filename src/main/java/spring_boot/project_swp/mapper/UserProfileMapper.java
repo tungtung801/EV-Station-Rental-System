@@ -18,7 +18,6 @@ public interface UserProfileMapper {
   @Mapping(target = "profileId", ignore = true)
   @Mapping(target = "drivingLicenseUrl", ignore = true)
   @Mapping(target = "idCardUrl", ignore = true)
-  @Mapping(source = "userId", target = "user.userId")
   UserProfile toUserProfile(UserProfileRequest request);
 
   @Mapping(source = "user.userId", target = "userId")

@@ -53,9 +53,11 @@ public class Discount {
   Integer usageLimit;
 
   @Column(name = "CurrentUsage")
+  @Builder.Default
   Integer currentUsage = 0; // Default value
 
   @Column(name = "IsActive", nullable = false)
+  @Builder.Default
   Boolean isActive = true; // Default value
 
   @OneToMany(mappedBy = "discount", cascade = CascadeType.ALL, orphanRemoval = true)

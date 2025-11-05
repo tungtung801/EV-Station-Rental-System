@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import spring_boot.project_swp.dto.request.VehicleRequest;
+import spring_boot.project_swp.dto.request.VehicleUpdateRequest;
 import spring_boot.project_swp.dto.response.BookingResponse;
 import spring_boot.project_swp.dto.response.VehicleResponse;
 import spring_boot.project_swp.service.BookingService;
@@ -46,7 +47,7 @@ public class VehicleController {
       summary = "Update vehicle details",
       description = "Updates an existing vehicle's information.")
   public ResponseEntity<VehicleResponse> updateVehicle(
-      @PathVariable Long id, @Valid @ModelAttribute VehicleRequest request) {
+      @PathVariable Long id, @ModelAttribute VehicleUpdateRequest request) {
     VehicleResponse updated = vehicleService.updateVehicle(id, request);
     return ResponseEntity.ok(updated);
   }

@@ -10,6 +10,8 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import spring_boot.project_swp.dto.request.DocumentUploadRequest;
 import spring_boot.project_swp.dto.request.UserProfileRejectionRequest;
@@ -58,7 +60,7 @@ public class UserProfileController {
     return ResponseEntity.ok(userProfileService.getAllPendingUserProfiles());
   }
 
-  @PutMapping("/{userId}")
+  @PutMapping
   @Operation(
       summary = "Update user profile",
       description = "Updates an existing user profile's information.",
@@ -69,7 +71,10 @@ public class UserProfileController {
                       mediaType = "multipart/form-data",
                       schema = @Schema(implementation = UserProfileRequest.class))))
   public ResponseEntity<UserProfileResponse> updateUserProfile(
-      @PathVariable Long userId, @ModelAttribute @Valid UserProfileRequest request) {
+      @ModelAttribute @Valid UserProfileRequest request) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String userEmail = authentication.getName();
+    Long userId = userProfileService.getUserIdByEmail(userEmail);
     return ResponseEntity.ok(userProfileService.updateUserProfile(userId, request));
   }
 

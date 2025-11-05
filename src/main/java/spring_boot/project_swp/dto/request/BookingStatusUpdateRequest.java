@@ -16,6 +16,6 @@ import spring_boot.project_swp.entity.BookingStatusEnum;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class BookingStatusUpdateRequest {
 
-    @NotNull(message = "Booking status cannot be null")
-    BookingStatusEnum status;
+  @NotNull(message = "Booking status cannot be null")
+  BookingStatusEnum status;
 }

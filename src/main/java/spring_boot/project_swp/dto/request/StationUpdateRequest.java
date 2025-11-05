@@ -1,8 +1,6 @@
 package spring_boot.project_swp.dto.request;
 
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -16,26 +14,20 @@ import spring_boot.project_swp.entity.StationStatusEnum;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class StationUpdateRequest {
-  @NotBlank(message = "StationName cannot be blank")
   String stationName;
 
-  @NotBlank(message = "Station address cannot be blank")
   String address;
 
-  @NotNull(message = "Latitude cannot be null")
   BigDecimal latitude;
 
-  @NotNull(message = "Longitude cannot be null")
   BigDecimal longitude;
 
   @Min(value = 1, message = "TotalDocs must greater than 0")
-  int totalDocks;
+  Integer totalDocks;
 
-  @NotNull(message = "AvailableDocks cannot be null")
-  int availableDocks;
+  Integer availableDocks;
 
   StationStatusEnum isActive;
 
-  @NotNull(message = "District / Ward Id cannot be null")
   Long locationId;
 }

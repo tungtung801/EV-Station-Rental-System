@@ -1,10 +1,12 @@
 package spring_boot.project_swp.service.impl;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import spring_boot.project_swp.dto.request.VehicleRequest;
+import spring_boot.project_swp.dto.request.VehicleUpdateRequest;
 import spring_boot.project_swp.dto.response.VehicleResponse;
 import spring_boot.project_swp.entity.Station;
 import spring_boot.project_swp.entity.Vehicle;
@@ -35,6 +37,9 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     Vehicle vehicle = vehicleMapper.toVehicle(request);
+    // Luôn tính toán và gán PricePerDay
+    vehicle.setPricePerDay(BigDecimal.valueOf(request.getPricePerHour() * 8));
+
     VehicleModel model =
         vehicleModelRepository
             .findByModelId(request.getModelId())
@@ -55,7 +60,7 @@ public class VehicleServiceImpl implements VehicleService {
   }
 
   @Override
-  public VehicleResponse updateVehicle(Long id, VehicleRequest request) {
+  public VehicleResponse updateVehicle(Long id, VehicleUpdateRequest request) {
     Optional<Vehicle> existingVehicleOptional = vehicleRepository.findById(id);
     if (existingVehicleOptional.isEmpty()) {
       throw new NotFoundException("Vehicle not found with ID: " + id);
@@ -63,15 +68,22 @@ public class VehicleServiceImpl implements VehicleService {
 
     Vehicle existingVehicle = existingVehicleOptional.get();
 
-    Optional<Vehicle> vehicleWithSameLicensePlate =
-        vehicleRepository.findByLicensePlate(request.getLicensePlate());
-    if (vehicleWithSameLicensePlate.isPresent()
-        && vehicleWithSameLicensePlate.get().getVehicleId() != id) {
-      throw new ConflictException(
-          "Vehicle with license plate '" + request.getLicensePlate() + "' already exists.");
+    if (request.getLicensePlate() != null && !request.getLicensePlate().isEmpty()) {
+      Optional<Vehicle> vehicleWithSameLicensePlate =
+          vehicleRepository.findByLicensePlate(request.getLicensePlate());
+      if (vehicleWithSameLicensePlate.isPresent()
+          && !vehicleWithSameLicensePlate.get().getVehicleId().equals(id)) {
+        throw new ConflictException(
+            "Vehicle with license plate '" + request.getLicensePlate() + "' already exists.");
+      }
     }
 
     vehicleMapper.updateVehicleFromRequest(request, existingVehicle);
+
+    // Nếu pricePerHour được cập nhật, tính toán lại pricePerDay
+    if (request.getPricePerHour() != null) {
+      existingVehicle.setPricePerDay(BigDecimal.valueOf(request.getPricePerHour() * 8));
+    }
 
     if (request.getModelId() != null) {
       VehicleModel model =

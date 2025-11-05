@@ -11,16 +11,16 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.web.bind.annotation.*;
 import spring_boot.project_swp.dto.request.PaymentRequest;
 import spring_boot.project_swp.dto.response.BookingResponse;
 import spring_boot.project_swp.dto.response.UserResponse;
 import spring_boot.project_swp.entity.PaymentMethodEnum;
+import spring_boot.project_swp.mapper.BookingMapper;
 import spring_boot.project_swp.service.BookingService;
 import spring_boot.project_swp.service.PaymentService;
 import spring_boot.project_swp.service.UserService;
-import spring_boot.project_swp.mapper.BookingMapper;
-import org.springframework.context.annotation.Lazy;
 
 @RestController
 @RequestMapping("/vnpay")
@@ -79,7 +79,8 @@ public class VNPayController {
     paymentRequest.setPaymentMethod(PaymentMethodEnum.BANK_TRANSFER); // Or get from request
     // vnp_TxnRef sẽ được tạo và gán bên trong createDepositPayment
     spring_boot.project_swp.dto.response.PaymentResponse paymentResponse =
-        paymentService.createDepositPayment(bookingMapper.toBooking(booking), userEmail, paymentRequest);
+        paymentService.createDepositPayment(
+            bookingMapper.toBooking(booking), userEmail, paymentRequest);
 
     // 3. Chuẩn bị các tham số cho VNPay
     String vnp_Version = "2.1.0";

@@ -4,6 +4,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.ReportingPolicy;
 import spring_boot.project_swp.dto.request.LocationAddingRequest;
 import spring_boot.project_swp.dto.request.LocationUpdateRequest;
@@ -13,7 +14,8 @@ import spring_boot.project_swp.entity.Location;
 @Mapper(
     componentModel = MappingConstants.ComponentModel.SPRING,
     uses = {MapperUtils.class},
-    unmappedTargetPolicy = ReportingPolicy.IGNORE)
+    unmappedTargetPolicy = ReportingPolicy.IGNORE,
+    nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface LocationMapper {
   // Dùng de add new 1 Location tu request
   Location toLocation(LocationAddingRequest request);

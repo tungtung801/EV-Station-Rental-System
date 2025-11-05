@@ -6,8 +6,6 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import java.security.Key;
 import java.util.Date;
@@ -28,7 +26,6 @@ public class JwtTokenProvider {
 
   @PostConstruct
   public void init() {
-    log.info("JWT Secret Key: {}", jwtSecret);
     log.info("JWT Expiration Date: {}", jwtExpirationDate);
   }
 
@@ -51,7 +48,7 @@ public class JwtTokenProvider {
   }
 
   private Key key() {
-    return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+    return JwtKeyUtils.hmacKey(jwtSecret);
   }
 
   // get username from JWT token

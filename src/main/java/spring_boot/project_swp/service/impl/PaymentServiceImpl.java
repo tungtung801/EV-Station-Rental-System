@@ -6,6 +6,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import spring_boot.project_swp.dto.request.BookingStatusUpdateRequest;
 import spring_boot.project_swp.dto.request.PaymentRequest;
 import spring_boot.project_swp.dto.response.PaymentResponse;
 import spring_boot.project_swp.dto.response.UserResponse;
@@ -25,13 +26,10 @@ import spring_boot.project_swp.mapper.UserMapper;
 import spring_boot.project_swp.repository.BookingRepository;
 import spring_boot.project_swp.repository.PaymentRepository;
 import spring_boot.project_swp.repository.RentalRepository;
-import spring_boot.project_swp.service.BookingService;
 import spring_boot.project_swp.service.PaymentService;
 import spring_boot.project_swp.service.RentalService;
 import spring_boot.project_swp.service.RoleService;
 import spring_boot.project_swp.service.UserService;
-import spring_boot.project_swp.dto.request.BookingStatusUpdateRequest;
-import org.springframework.context.annotation.Lazy;
 
 @Service
 @RequiredArgsConstructor
@@ -113,7 +111,8 @@ public class PaymentServiceImpl implements PaymentService {
     payment.setPaymentMethod(request.getPaymentMethod());
     payment.setAmount(amountToPay);
     payment.setStatus(PaymentStatusEnum.PENDING);
-    // payment.setTransactionTime(java.time.LocalDateTime.now()); // Removed as createdAt is auto-generated
+    // payment.setTransactionTime(java.time.LocalDateTime.now()); // Removed as createdAt is
+    // auto-generated
     payment.setConfirmedBy(processedByStaff); // Set the confirmedBy staff here
 
     Payment savedPayment = paymentRepository.save(payment);
@@ -162,8 +161,11 @@ public class PaymentServiceImpl implements PaymentService {
         BookingStatusUpdateRequest bookingStatusUpdateRequest = new BookingStatusUpdateRequest();
         bookingStatusUpdateRequest.setStatus(BookingStatusEnum.COMPLETED);
         // bookingService.updateBookingStatus(bookingId, userEmail, bookingStatusUpdateRequest);
-        Booking bookingToUpdate = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new NotFoundException("Booking not found with id: " + bookingId));
+        Booking bookingToUpdate =
+            bookingRepository
+                .findById(bookingId)
+                .orElseThrow(
+                    () -> new NotFoundException("Booking not found with id: " + bookingId));
         bookingToUpdate.setStatus(BookingStatusEnum.COMPLETED);
         bookingRepository.save(bookingToUpdate);
         // rentalService.createRentalFromBooking(bookingId); // Rental should already exist
@@ -196,7 +198,8 @@ public class PaymentServiceImpl implements PaymentService {
   public PaymentResponse createDepositPayment(
       Booking booking, String userEmail, PaymentRequest request) {
     // Tìm booking theo ID
-    // Booking booking = bookingMapper.toBooking(bookingService.getBookingById(bookingId)); // Xóa dòng này
+    // Booking booking = bookingMapper.toBooking(bookingService.getBookingById(bookingId)); // Xóa
+    // dòng này
     if (booking == null) {
       throw new NotFoundException("Booking not found");
     }
@@ -232,7 +235,8 @@ public class PaymentServiceImpl implements PaymentService {
     payment.setPaymentMethod(request.getPaymentMethod());
     payment.setAmount(depositAmount);
     payment.setStatus(PaymentStatusEnum.PENDING);
-    // payment.setTransactionTime(java.time.LocalDateTime.now()); // Removed as createdAt is auto-generated
+    // payment.setTransactionTime(java.time.LocalDateTime.now()); // Removed as createdAt is
+    // auto-generated
     payment.setConfirmedBy(processedByStaff);
 
     // Tạo mã giao dịch duy nhất cho VNPay
@@ -285,7 +289,8 @@ public class PaymentServiceImpl implements PaymentService {
     payment.setPaymentMethod(request.getPaymentMethod());
     payment.setAmount(finalAmount);
     payment.setStatus(PaymentStatusEnum.PENDING);
-    // payment.setTransactionTime(java.time.LocalDateTime.now()); // Removed as createdAt is auto-generated
+    // payment.setTransactionTime(java.time.LocalDateTime.now()); // Removed as createdAt is
+    // auto-generated
     payment.setConfirmedBy(processedByStaff);
 
     // Lưu payment

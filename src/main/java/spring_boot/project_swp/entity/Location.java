@@ -55,6 +55,7 @@ public class Location {
 
   @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY, targetEntity = Location.class)
   @JsonIgnore
+  @Builder.Default
   List<Location> children = new ArrayList<>();
 
   @OneToMany(
@@ -63,5 +64,6 @@ public class Location {
       cascade = CascadeType.ALL,
       orphanRemoval = true)
   @JsonIgnore
+  @Builder.Default
   List<Station> stations = new ArrayList<>();
 }

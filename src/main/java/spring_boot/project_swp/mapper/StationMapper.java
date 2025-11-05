@@ -6,6 +6,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.ReportingPolicy;
 import spring_boot.project_swp.dto.request.StationAddingRequest;
 import spring_boot.project_swp.dto.request.StationUpdateRequest;
@@ -17,10 +18,10 @@ import spring_boot.project_swp.entity.Station;
 @Mapper(
     componentModel = MappingConstants.ComponentModel.SPRING,
     uses = {MapperUtils.class},
-    unmappedTargetPolicy = ReportingPolicy.IGNORE)
+    unmappedTargetPolicy = ReportingPolicy.IGNORE,
+    nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface StationMapper {
 
-  @Mapping(target = "isActive", source = "isActive")
   Station toStation(StationAddingRequest request);
 
   StationResponse toStationResponse(Station station);
@@ -29,7 +30,6 @@ public interface StationMapper {
 
   // Map từ StationUpdateRequest sang Station entity (cho update)
   @Mapping(target = "stationId", ignore = true)
-  @Mapping(target = "isActive", source = "isActive")
   @Mapping(target = "location", source = "locationId")
   void updateStationFromRequest(StationUpdateRequest request, @MappingTarget Station station);
 

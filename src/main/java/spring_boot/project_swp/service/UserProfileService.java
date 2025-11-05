@@ -31,4 +31,6 @@ public interface UserProfileService {
 
   UserProfileResponse rejectUserProfile(
       Long userId, spring_boot.project_swp.dto.request.UserProfileRejectionRequest request);
+
+  Long getUserIdByEmail(String email);
 }

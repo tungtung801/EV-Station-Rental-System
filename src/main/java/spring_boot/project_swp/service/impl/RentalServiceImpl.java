@@ -87,8 +87,7 @@ public class RentalServiceImpl implements RentalService {
     }
 
     List<Rental> conflictingRentals =
-
-      rentalRepository.findByVehicleVehicleIdAndStartActualBeforeAndEndActualAfterAndStatusNotIn(
+        rentalRepository.findByVehicleVehicleIdAndStartActualBeforeAndEndActualAfterAndStatusNotIn(
             request.getVehicleId(),
             request.getEndActual(),
             request.getStartActual(),
@@ -328,7 +327,7 @@ public class RentalServiceImpl implements RentalService {
     }
 
     List<Rental> allRentals =
-        rentalRepository.findByVehicleVehicleIdAndStartActualBeforeAndEndActualAfterAndStatusNotIn (
+        rentalRepository.findByVehicleVehicleIdAndStartActualBeforeAndEndActualAfterAndStatusNotIn(
             request.getVehicleId(),
             request.getEndActual(),
             request.getStartActual(),

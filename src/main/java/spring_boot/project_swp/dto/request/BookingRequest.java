@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import spring_boot.project_swp.entity.BookingTypeEnum;
 
 @Data
 @NoArgsConstructor
@@ -12,11 +13,11 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class BookingRequest {
-  @NotNull(message = "User ID cannot be null")
-  Long userId;
-
   @NotNull(message = "Vehicle ID cannot be null")
   Long vehicleId;
+
+  @NotNull(message = "Booking type cannot be null")
+  BookingTypeEnum bookingType;
 
   @NotNull(message = "Start time cannot be null")
   @FutureOrPresent(message = "Start time must be in the present or future")

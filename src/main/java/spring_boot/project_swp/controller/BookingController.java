@@ -7,6 +7,7 @@ import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -26,7 +27,6 @@ import spring_boot.project_swp.dto.response.BookingResponse;
 import spring_boot.project_swp.dto.response.UserVerificationStatusResponse;
 import spring_boot.project_swp.entity.BookingStatusEnum;
 import spring_boot.project_swp.service.BookingService;
-import org.springframework.context.annotation.Lazy;
 
 @RestController
 @RequestMapping("/api/bookings")
@@ -114,9 +114,10 @@ public class BookingController {
   @Operation(
       summary = "Check user verification status",
       description = "Checks if a user is verified.")
-  public ResponseEntity<UserVerificationStatusResponse> checkUserVerification(@PathVariable Long userId) {
-      UserVerificationStatusResponse response = bookingService.checkUserVerification(userId);
-      return ResponseEntity.ok(response);
+  public ResponseEntity<UserVerificationStatusResponse> checkUserVerification(
+      @PathVariable Long userId) {
+    UserVerificationStatusResponse response = bookingService.checkUserVerification(userId);
+    return ResponseEntity.ok(response);
   }
 
   @PutMapping("/{bookingId}/cancel")
@@ -124,7 +125,8 @@ public class BookingController {
   public ResponseEntity<Void> cancelBooking(@PathVariable Long bookingId) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     String email = authentication.getName();
-    BookingStatusUpdateRequest request = BookingStatusUpdateRequest.builder().status(BookingStatusEnum.CANCELLED).build();
+    BookingStatusUpdateRequest request =
+        BookingStatusUpdateRequest.builder().status(BookingStatusEnum.CANCELLED).build();
     bookingService.updateBookingStatus(bookingId, email, request);
     return ResponseEntity.noContent().build();
   }

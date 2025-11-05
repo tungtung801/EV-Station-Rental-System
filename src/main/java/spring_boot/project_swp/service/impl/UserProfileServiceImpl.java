@@ -178,6 +178,15 @@ public class UserProfileServiceImpl implements UserProfileService {
   }
 
   @Override
+  public Long getUserIdByEmail(String email) {
+    User user =
+        userRepository
+            .findByEmail(email)
+            .orElseThrow(() -> new NotFoundException("User not found with email: " + email));
+    return user.getUserId();
+  }
+
+  @Override
   public UserProfileVerificationResponse verifyOrRejectUserProfile(
       UserProfileVerificationRequest request) {
     UserProfile userProfile =

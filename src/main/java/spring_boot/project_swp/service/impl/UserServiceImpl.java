@@ -1,6 +1,5 @@
 package spring_boot.project_swp.service.impl;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
@@ -159,6 +158,7 @@ public class UserServiceImpl implements UserService {
     if (request.getEmail() != null) user.setEmail(request.getEmail());
     if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
     if (request.getFullName() != null) user.setFullName(request.getFullName());
+    if (request.getPassword() != null) user.setPassword(request.getPassword());
 
     User saved = userRepository.save(user);
     return userMapper.toUserResponse(saved);
