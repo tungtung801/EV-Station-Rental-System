@@ -8,7 +8,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import spring_boot.project_swp.entity.BookingStatusEnum;
-import spring_boot.project_swp.entity.BookingTypeEnum;
 
 @Data
 @NoArgsConstructor
@@ -20,10 +19,10 @@ public class BookingResponse {
   Long userId;
   String userName;
   VehicleResponse vehicle;
-  BookingTypeEnum bookingType;
   LocalDateTime startTime;
   LocalDateTime endTime;
-  Double totalAmount;
+  java.math.BigDecimal depositPercent;
+  java.math.BigDecimal expectedTotal;
   BookingStatusEnum status;
   LocalDateTime createdAt;
 }

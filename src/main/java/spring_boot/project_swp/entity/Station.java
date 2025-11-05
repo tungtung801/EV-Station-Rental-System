@@ -43,7 +43,7 @@ public class Station {
 
   @Column(name = "IsActive", nullable = false)
   @Enumerated(EnumType.STRING)
-  StationStatusEnum  isActive;
+  StationStatusEnum isActive;
 
   @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "LocationId")

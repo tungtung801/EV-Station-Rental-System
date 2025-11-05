@@ -4,60 +4,97 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import spring_boot.project_swp.dto.request.PaymentRequest;
+import spring_boot.project_swp.dto.response.BookingResponse;
+import spring_boot.project_swp.dto.response.UserResponse;
+import spring_boot.project_swp.entity.PaymentMethodEnum;
+import spring_boot.project_swp.service.BookingService;
+import spring_boot.project_swp.service.PaymentService;
+import spring_boot.project_swp.service.UserService;
+import spring_boot.project_swp.mapper.BookingMapper;
+import org.springframework.context.annotation.Lazy;
 
 @RestController
 @RequestMapping("/vnpay")
 @Tag(name = "VNPay APIs", description = "APIs for VNPay integration")
 public class VNPayController {
 
-  // Assuming you have a Config class to read values from application.properties
-  // @Value("${vnpay.tmnCode}") private String tmnCode;
-  // @Value("${vnpay.hashSecret}") private String hashSecret;
-  // ...
-
-  @org.springframework.beans.factory.annotation.Value("${vnpay.tmnCode}")
+  @Value("${vnpay.tmnCode}")
   private String tmnCode;
 
-  @org.springframework.beans.factory.annotation.Value("${vnpay.hashSecret}")
+  @Value("${vnpay.hashSecret}")
   private String hashSecret;
 
-  @org.springframework.beans.factory.annotation.Value(
-      "${vnpay.url}") // Added ${} to properly reference property
+  @Value("${vnpay.url}")
   private String vnpayUrl;
 
   @Value("${vnpay.returnUrl}")
   private String returnUrl;
 
+  // @Autowired private BookingService bookingService; // Xóa dòng này
+
+  @Autowired private PaymentService paymentService;
+
+  @Autowired private UserService userService;
+
+  @Autowired @Lazy private BookingService bookingService;
+
+  @Autowired private BookingMapper bookingMapper;
+
   @GetMapping("/create_payment")
   @Operation(
-      summary = "Create VNPay payment URL",
-      description = "Generates a URL for initiating a VNPay payment.")
-  public String createPayment(HttpServletRequest req, @RequestParam("amount") long amount)
+      summary = "Create VNPay payment URL for booking deposit",
+      description = "Generates a URL for initiating a VNPay payment for a specific booking.")
+  public String createPayment(
+      HttpServletRequest req,
+      @RequestParam("bookingId") Long bookingId,
+      @RequestParam("userId") Long userId)
       throws UnsupportedEncodingException {
 
+    // 1. Lấy thông tin booking
+    BookingResponse booking = bookingService.getBookingById(bookingId);
+    BigDecimal depositAmount =
+        booking
+            .getExpectedTotal()
+            .multiply(booking.getDepositPercent())
+            .divide(BigDecimal.valueOf(100), 0, BigDecimal.ROUND_HALF_UP);
+
+    // Lấy userEmail từ userId
+    UserResponse userResponse = userService.getUserById(userId);
+    String userEmail = userResponse.getEmail();
+
+    // 2. Tạo một thanh toán mới với trạng thái PENDING
+    PaymentRequest paymentRequest = new PaymentRequest();
+    paymentRequest.setBookingId(bookingId);
+    paymentRequest.setUserId(userId);
+    paymentRequest.setAmount(depositAmount);
+    paymentRequest.setPaymentMethod(PaymentMethodEnum.BANK_TRANSFER); // Or get from request
+    // vnp_TxnRef sẽ được tạo và gán bên trong createDepositPayment
+    spring_boot.project_swp.dto.response.PaymentResponse paymentResponse =
+        paymentService.createDepositPayment(bookingMapper.toBooking(booking), userEmail, paymentRequest);
+
+    // 3. Chuẩn bị các tham số cho VNPay
     String vnp_Version = "2.1.0";
     String vnp_Command = "pay";
     String orderType = "other";
-    long amountInVND = amount * 100; // Amount must be multiplied by 100
-    String bankCode = req.getParameter("bankCode"); // Get bank code if available
+    long amountInVND = depositAmount.longValue() * 100;
+    String bankCode = req.getParameter("bankCode");
 
-    String vnp_TxnRef = String.valueOf(System.currentTimeMillis());
-    // Get IP address accurately
+    String vnp_TxnRef = paymentResponse.getTransactionCode(); // Lấy mã giao dịch đã tạo
     String vnp_IpAddr = VnpayUtils.getIpAddress(req);
 
     Map<String, String> vnp_Params = new HashMap<>();
     vnp_Params.put("vnp_Version", vnp_Version);
     vnp_Params.put("vnp_Command", vnp_Command);
-    vnp_Params.put("vnp_TmnCode", this.tmnCode); // Sử dụng giá trị đã tiêm
+    vnp_Params.put("vnp_TmnCode", this.tmnCode);
     vnp_Params.put("vnp_Amount", String.valueOf(amountInVND));
     vnp_Params.put("vnp_CurrCode", "VND");
 
@@ -66,10 +103,10 @@ public class VNPayController {
     }
 
     vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
-    vnp_Params.put("vnp_OrderInfo", "Payment for order:" + vnp_TxnRef);
+    vnp_Params.put("vnp_OrderInfo", "Thanh toan dat coc cho don hang: " + bookingId);
     vnp_Params.put("vnp_OrderType", orderType);
     vnp_Params.put("vnp_Locale", "vn");
-    vnp_Params.put("vnp_ReturnUrl", this.returnUrl); // Sử dụng giá trị đã tiêm
+    vnp_Params.put("vnp_ReturnUrl", this.returnUrl);
     vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
 
     Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
@@ -81,7 +118,7 @@ public class VNPayController {
     String vnp_ExpireDate = formatter.format(cld.getTime());
     vnp_Params.put("vnp_ExpireDate", vnp_ExpireDate);
 
-    // Build data to hash and query string
+    // 4. Build URL
     List<String> fieldNames = new ArrayList<>(vnp_Params.keySet());
     Collections.sort(fieldNames);
     StringBuilder hashData = new StringBuilder();
@@ -106,7 +143,6 @@ public class VNPayController {
       }
     }
     String queryUrl = query.toString();
-    // Sử dụng giá trị hashSecret đã tiêm và gọi hàm từ lớp Utils
     String vnp_SecureHash = VnpayUtils.hmacSHA512(this.hashSecret, hashData.toString());
     queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
 

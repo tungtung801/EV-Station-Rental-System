@@ -6,6 +6,7 @@ import spring_boot.project_swp.dto.response.PaymentResponse;
 import spring_boot.project_swp.entity.Payment;
 import spring_boot.project_swp.entity.PaymentStatusEnum;
 import spring_boot.project_swp.exception.ConflictException;
+import spring_boot.project_swp.entity.Booking;
 
 public interface PaymentService {
   PaymentResponse createPayment(PaymentRequest request) throws ConflictException;
@@ -19,4 +20,8 @@ public interface PaymentService {
   PaymentResponse findPaymentByTransactionCode(String transactionCode);
 
   Payment savePayment(Payment payment);
+
+  PaymentResponse createDepositPayment(Booking booking, String userEmail, PaymentRequest request);
+
+  PaymentResponse createFinalPayment(Long rentalId, String userEmail, PaymentRequest request);
 }

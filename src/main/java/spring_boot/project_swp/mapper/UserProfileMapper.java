@@ -7,6 +7,7 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 import spring_boot.project_swp.dto.request.UserProfileRequest;
 import spring_boot.project_swp.dto.response.UserProfileResponse;
+import spring_boot.project_swp.dto.response.UserProfileVerificationResponse;
 import spring_boot.project_swp.entity.UserProfile;
 
 @Mapper(
@@ -25,6 +26,11 @@ public interface UserProfileMapper {
   @Mapping(source = "user.email", target = "email")
   @Mapping(source = "user.phoneNumber", target = "phoneNumber")
   UserProfileResponse toUserProfileResponse(UserProfile userProfile);
+
+  @Mapping(source = "profileId", target = "profileId")
+  @Mapping(source = "status", target = "status")
+  @Mapping(source = "reason", target = "reason")
+  UserProfileVerificationResponse toUserProfileVerificationResponse(UserProfile userProfile);
 
   @Mapping(target = "profileId", ignore = true)
   @Mapping(target = "user", ignore = true)

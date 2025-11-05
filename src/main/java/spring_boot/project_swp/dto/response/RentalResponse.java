@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import spring_boot.project_swp.entity.RentalStatusEnum;
 
 @Data
 @NoArgsConstructor
@@ -16,7 +17,7 @@ import lombok.experimental.FieldDefaults;
 public class RentalResponse {
   Long rentalId;
   Long bookingId;
-  Long renterId;
+  Long userId;
   String renterName;
   Long vehicleId;
   String vehicleModel;
@@ -28,10 +29,10 @@ public class RentalResponse {
   String pickupStaffName;
   Long returnStaffId;
   String returnStaffName;
-  LocalDateTime startTime;
-  LocalDateTime endTime;
-  Double totalCost;
-  String status;
+  LocalDateTime startActual;
+  LocalDateTime endActual;
+  java.math.BigDecimal total;
+  RentalStatusEnum status;
   String contractUrl;
   LocalDateTime createdAt;
 }

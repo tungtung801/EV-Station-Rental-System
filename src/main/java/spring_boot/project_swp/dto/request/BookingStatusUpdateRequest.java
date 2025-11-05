@@ -1,6 +1,5 @@
 package spring_boot.project_swp.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -8,22 +7,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import spring_boot.project_swp.entity.BookingStatusEnum;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CreatePaymentRequest {
-  @NotNull(message = "Rental ID cannot be null")
-  Long rentalId;
+public class BookingStatusUpdateRequest {
 
-  @NotNull(message = "Amount cannot be null")
-  Double amount;
-
-  @NotBlank(message = "Payment method cannot be blank")
-  String paymentMethod;
-
-  String transactionId;
-  Long processedByStaffId;
+    @NotNull(message = "Booking status cannot be null")
+    BookingStatusEnum status;
 }

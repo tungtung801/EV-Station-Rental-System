@@ -1,8 +1,9 @@
 package spring_boot.project_swp.entity;
 
 public enum PaymentMethodEnum {
+  CASH,
+  BANK_TRANSFER,
   VNPAY,
   MOMO,
-  BANK_TRANSFER,
   CASH_ON_DELIVERY
 }

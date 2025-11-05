@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -46,7 +47,10 @@ public class Vehicle {
   private String vehicleStatus;
 
   @Column(name = "PricePerHour", nullable = false)
-  private double pricePerHour;
+  private BigDecimal pricePerHour;
+
+  @Column(name = "PricePerDay", nullable = false)
+  private BigDecimal pricePerDay;
 
   @Column(name = "ImageUrl", length = 255)
   private String imageUrl;

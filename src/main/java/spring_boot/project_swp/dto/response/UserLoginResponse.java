@@ -16,4 +16,5 @@ public class UserLoginResponse {
   String email;
   String phoneNumber;
   String roleName;
+  String accessToken;
 }

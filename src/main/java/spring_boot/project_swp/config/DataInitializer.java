@@ -1,11 +1,16 @@
 package spring_boot.project_swp.config;
 
+import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import spring_boot.project_swp.dto.request.RoleRequest;
 import spring_boot.project_swp.entity.Location;
+import spring_boot.project_swp.entity.Station;
+import spring_boot.project_swp.entity.StationStatusEnum;
 import spring_boot.project_swp.entity.User;
+import spring_boot.project_swp.entity.Vehicle;
+import spring_boot.project_swp.entity.VehicleModel;
 import spring_boot.project_swp.repository.DiscountRepository;
 import spring_boot.project_swp.repository.LocationRepository;
 import spring_boot.project_swp.repository.RoleRepository;
@@ -144,15 +149,14 @@ public class DataInitializer implements CommandLineRunner {
       locationRepository.save(hcm);
     }
 
-    /*
     Location hanoi =
         locationRepository
-            .findByLocationName("Hanoi")
+            .findByLocationName("Hà Nội")
             .orElseGet(
                 () -> {
                   Location newHanoi =
                       Location.builder()
-                          .locationName("Hanoi")
+                          .locationName("Hà Nội")
                           .locationType("City")
                           .isActive(true)
                           .build();
@@ -161,12 +165,12 @@ public class DataInitializer implements CommandLineRunner {
 
     Location hoanKiem =
         locationRepository
-            .findByLocationNameAndParent("Hoan Kiem", hanoi)
+            .findByLocationNameAndParent("Hoàn Kiếm", hanoi)
             .orElseGet(
                 () -> {
                   Location newHoanKiem =
                       Location.builder()
-                          .locationName("Hoan Kiem")
+                          .locationName("Hoàn Kiếm")
                           .locationType("District")
                           .parent(hanoi)
                           .isActive(true)
@@ -176,12 +180,12 @@ public class DataInitializer implements CommandLineRunner {
 
     Location baDinh =
         locationRepository
-            .findByLocationNameAndParent("Ba Dinh", hanoi)
+            .findByLocationNameAndParent("Ba Đình", hanoi)
             .orElseGet(
                 () -> {
                   Location newBaDinh =
                       Location.builder()
-                          .locationName("Ba Dinh")
+                          .locationName("Ba Đình")
                           .locationType("District")
                           .parent(hanoi)
                           .isActive(true)
@@ -191,12 +195,12 @@ public class DataInitializer implements CommandLineRunner {
 
     Location hangTrong =
         locationRepository
-            .findByLocationNameAndParent("Hang Trong", hoanKiem)
+            .findByLocationNameAndParent("Hàng Trống", hoanKiem)
             .orElseGet(
                 () -> {
                   Location newHangTrong =
                       Location.builder()
-                          .locationName("Hang Trong")
+                          .locationName("Hàng Trống")
                           .locationType("Ward")
                           .parent(hoanKiem)
                           .isActive(true)
@@ -206,12 +210,12 @@ public class DataInitializer implements CommandLineRunner {
 
     Location phucTan =
         locationRepository
-            .findByLocationNameAndParent("Phuc Tan", hoanKiem)
+            .findByLocationNameAndParent("Phúc Tân", hoanKiem)
             .orElseGet(
                 () -> {
                   Location newPhucTan =
                       Location.builder()
-                          .locationName("Phuc Tan")
+                          .locationName("Phúc Tân")
                           .locationType("Ward")
                           .parent(hoanKiem)
                           .isActive(true)
@@ -249,7 +253,8 @@ public class DataInitializer implements CommandLineRunner {
       modelB = vehicleModelRepository.findByModelName("Xe May Dien B").get();
     }
 
-    Station station1 =
+    Station station1;
+    station1 =
         stationRepository
             .findStationByStationName("Station Hoan Kiem 1")
             .orElseGet(
@@ -260,7 +265,7 @@ public class DataInitializer implements CommandLineRunner {
                           .address("123 Hang Trong, Hoan Kiem")
                           .totalDocks(10)
                           .availableDocks(10)
-                          .isActive(true)
+                          .isActive(StationStatusEnum.ACTIVE)
                           .location(hangTrong)
                           .build();
                   return stationRepository.save(newStation1);
@@ -277,7 +282,7 @@ public class DataInitializer implements CommandLineRunner {
                           .address("456 Phuc Tan, Hoan Kiem")
                           .totalDocks(15)
                           .availableDocks(15)
-                          .isActive(true)
+                          .isActive(StationStatusEnum.ACTIVE)
                           .location(phucTan)
                           .build();
                   return stationRepository.save(newStation2);
@@ -292,7 +297,8 @@ public class DataInitializer implements CommandLineRunner {
               .batteryCapacity(100)
               .currentBattery(80)
               .vehicleStatus("Available")
-              .pricePerHour(15000.0)
+              .pricePerHour(BigDecimal.valueOf(15000.0))
+              .pricePerDay(BigDecimal.valueOf(15000.0 * 8)) // Thêm dòng này
               .vehicleModel(modelA)
               .station(station1)
               .build();
@@ -308,7 +314,8 @@ public class DataInitializer implements CommandLineRunner {
               .batteryCapacity(120)
               .currentBattery(90)
               .vehicleStatus("Available")
-              .pricePerHour(20000.0)
+              .pricePerHour(BigDecimal.valueOf(20000.0))
+              .pricePerDay(BigDecimal.valueOf(20000.0 * 8)) // Thêm dòng này
               .vehicleModel(modelB)
               .station(station1)
               .build();
@@ -324,12 +331,12 @@ public class DataInitializer implements CommandLineRunner {
               .batteryCapacity(90)
               .currentBattery(70)
               .vehicleStatus("Available")
-              .pricePerHour(15000.0)
+              .pricePerHour(BigDecimal.valueOf(15000.0))
+              .pricePerDay(BigDecimal.valueOf(15000.0 * 8)) // Thêm dòng này
               .vehicleModel(modelA)
               .station(station2)
               .build();
       vehicleRepository.save(vehicle3);
     }
-    */
   }
 }

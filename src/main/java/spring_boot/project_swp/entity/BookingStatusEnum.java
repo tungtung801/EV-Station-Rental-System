@@ -1,8 +1,9 @@
 package spring_boot.project_swp.entity;
 
 public enum BookingStatusEnum {
-  PENDING,
-  CONFIRMED,
+  PENDING_DEPOSIT,
+  DEPOSIT_PAID,
   CANCELLED,
-  COMPLETED
+  COMPLETED,
+  IN_USE
 }

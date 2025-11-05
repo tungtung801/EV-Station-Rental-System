@@ -1,7 +1,10 @@
 package spring_boot.project_swp.dto.response;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -10,16 +13,23 @@ import spring_boot.project_swp.entity.PaymentStatusEnum;
 import spring_boot.project_swp.entity.PaymentTypeEnum;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class PaymentResponse {
+
   Long paymentId;
+  Long bookingId;
   Long rentalId;
+  BigDecimal amount;
   PaymentTypeEnum paymentType;
-  double amount;
   PaymentMethodEnum paymentMethod;
-  String transactionTime;
-  String transactionCode;
   PaymentStatusEnum status;
+  Long confirmedById;
+  String note;
+  LocalDateTime createdAt;
+  LocalDateTime confirmedAt;
+  String transactionCode;
+  Long payerId;
 }

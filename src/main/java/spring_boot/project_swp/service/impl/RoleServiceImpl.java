@@ -35,12 +35,20 @@ public class RoleServiceImpl implements RoleService {
 
   @Override
   public Optional<RoleResponse> findByRoleName(String roleName) {
-    return roleRepository.findByRoleName(roleName).map(roleMapper::toRoleResponse);
+    Optional<Role> role = roleRepository.findByRoleName(roleName);
+    if (role.isPresent()) {
+      return Optional.of(roleMapper.toRoleResponse(role.get()));
+    }
+    return Optional.empty();
   }
 
   @Override
   public Optional<RoleResponse> findByRoleId(int roleId) {
-    return roleRepository.findById(roleId).map(roleMapper::toRoleResponse);
+    Optional<Role> role = roleRepository.findById(roleId);
+    if (role.isPresent()) {
+      return Optional.of(roleMapper.toRoleResponse(role.get()));
+    }
+    return Optional.empty();
   }
 
   @Override

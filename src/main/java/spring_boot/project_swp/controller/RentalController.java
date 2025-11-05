@@ -9,7 +9,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import spring_boot.project_swp.dto.request.RentalConfirmPickupRequest;
 import spring_boot.project_swp.dto.request.RentalRequest;
 import spring_boot.project_swp.dto.response.RentalResponse;
 import spring_boot.project_swp.service.RentalService;
@@ -17,22 +20,45 @@ import spring_boot.project_swp.service.RentalService;
 @RestController
 @RequestMapping("/api/rentals")
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "Rental APIs", description = "APIs for managing vehicle rentals")
 public class RentalController {
 
-  final RentalService rentalService;
+  RentalService rentalService;
 
-  @PostMapping
-  @Operation(summary = "Create a new rental", description = "Creates a new vehicle rental record.")
-  public ResponseEntity<RentalResponse> createRental(@RequestBody @Valid RentalRequest request) {
-    return new ResponseEntity<>(rentalService.createRental(request), HttpStatus.CREATED);
+  @PostMapping("/create-from-booking/{bookingId}")
+  @Operation(
+      summary = "Create a rental from a booking",
+      description = "Creates a new rental based on an existing booking.")
+  public ResponseEntity<RentalResponse> createRentalFromBooking(@PathVariable Long bookingId) {
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(rentalService.createRentalFromBooking(bookingId));
+  }
+
+  @PutMapping("/{rentalId}/confirm-pickup")
+  @Operation(
+      summary = "Confirm vehicle pickup",
+      description = "Confirms the pickup of a vehicle for a rental.")
+  public ResponseEntity<RentalResponse> confirmPickup(
+      @PathVariable Long rentalId, @RequestBody @Valid RentalConfirmPickupRequest request) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String staffEmail = authentication.getName();
+    return ResponseEntity.ok(
+        rentalService.confirmPickup(rentalId, staffEmail, request.getContractUrl()));
+  }
+
+  @PutMapping("/{rentalId}/confirm-return")
+  @Operation(
+      summary = "Confirm vehicle return",
+      description = "Confirms the return of a vehicle for a rental.")
+  public ResponseEntity<RentalResponse> confirmReturn(@PathVariable Long rentalId) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String staffEmail = authentication.getName();
+    return ResponseEntity.ok(rentalService.confirmReturn(rentalId, staffEmail));
   }
 
   @GetMapping("/{rentalId}")
-  @Operation(
-      summary = "Get rental by ID",
-      description = "Retrieves a rental record by its unique ID.")
+  @Operation(summary = "Get rental by ID", description = "Retrieves a rental by its unique ID.")
   public ResponseEntity<RentalResponse> getRentalById(@PathVariable Long rentalId) {
     return new ResponseEntity<>(rentalService.getRentalById(rentalId), HttpStatus.OK);
   }
@@ -65,7 +91,10 @@ public class RentalController {
       description = "Updates an existing rental record.")
   public ResponseEntity<RentalResponse> updateRental(
       @PathVariable Long rentalId, @RequestBody @Valid RentalRequest request) {
-    return new ResponseEntity<>(rentalService.updateRental(rentalId, request), HttpStatus.OK);
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String userEmail = authentication.getName();
+    return new ResponseEntity<>(
+        rentalService.updateRental(rentalId, userEmail, request), HttpStatus.OK);
   }
 
   @DeleteMapping("/{rentalId}")

@@ -1,5 +1,6 @@
 package spring_boot.project_swp.dto.response;
 
+import java.math.BigDecimal;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,7 +17,8 @@ public class VehicleResponse {
   private int batteryCapacity;
   private int currentBattery;
   private String vehicleStatus;
-  private double pricePerHour;
+  private BigDecimal pricePerHour;
+  private BigDecimal pricePerDay;
   private ModelInfo model;
   private StationInfo currentStation;
   private String imageUrl;

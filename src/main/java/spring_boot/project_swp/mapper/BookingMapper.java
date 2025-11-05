@@ -18,8 +18,10 @@ public interface BookingMapper {
   @Mapping(target = "bookingId", ignore = true)
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "status", ignore = true)
-  @Mapping(target = "user", source = "userId")
+  @Mapping(target = "depositPercent", ignore = true)
+  @Mapping(target = "expectedTotal", ignore = true)
   @Mapping(target = "vehicle", source = "vehicleId")
+  @Mapping(target = "user", source = "userId")
   Booking toBooking(BookingRequest request);
 
   @Mapping(source = "user.userId", target = "userId")
@@ -27,10 +29,21 @@ public interface BookingMapper {
   @Mapping(target = "vehicle", source = "vehicle")
   BookingResponse toBookingResponse(Booking booking);
 
+  @Mapping(source = "userId", target = "user")
+  @Mapping(target = "vehicle", source = "vehicle")
+  @Mapping(target = "bookingId", source = "bookingId")
+  @Mapping(target = "createdAt", source = "createdAt")
+  @Mapping(target = "status", source = "status")
+  @Mapping(target = "depositPercent", source = "depositPercent")
+  @Mapping(target = "expectedTotal", source = "expectedTotal")
+  Booking toBooking(BookingResponse response);
+
   @Mapping(target = "bookingId", ignore = true)
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "status", ignore = true)
-  @Mapping(target = "user", source = "userId")
   @Mapping(target = "vehicle", source = "vehicleId")
+  @Mapping(target = "depositPercent", ignore = true)
+  @Mapping(target = "expectedTotal", ignore = true)
+  @Mapping(target = "user", source = "userId")
   void updateBookingFromRequest(BookingRequest request, @MappingTarget Booking booking);
 }

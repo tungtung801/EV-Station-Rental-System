@@ -41,11 +41,22 @@ public class User {
   @Builder.Default
   private Boolean accountStatus = true;
 
+  @Column(name = "IsVerified", nullable = false)
+  @Builder.Default
+  private Boolean isVerified = false;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "VerifiedBy")
+  private User verifiedBy;
+
+  @Column(name = "VerifiedAt")
+  private LocalDateTime verifiedAt;
+
   @CreationTimestamp
   @Column(name = "CreatedAt", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "RoleId", nullable = false)
   @ToString.Exclude
   private Role role;
@@ -53,6 +64,11 @@ public class User {
   public User(Long userId) {
     this.userId = userId;
   }
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "StationId")
+  @ToString.Exclude
+  private Station station;
 
   @OneToMany(mappedBy = "renter", cascade = CascadeType.ALL, orphanRemoval = true)
   @ToString.Exclude

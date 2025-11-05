@@ -4,123 +4,214 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import spring_boot.project_swp.security.CustomAuthEntryPoint;
 import spring_boot.project_swp.security.CustomFailureHandler;
 import spring_boot.project_swp.security.CustomSuccessHandler;
 import spring_boot.project_swp.security.CustomUserDetailsService;
+import spring_boot.project_swp.security.JwtAuthenticationFilter;
 
 @Configuration
 @RequiredArgsConstructor
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final CustomUserDetailsService customUserDetailsService;
-    private final CustomSuccessHandler customSuccessHandler;
-    private final CustomFailureHandler customFailureHandler;
+  private final CustomUserDetailsService customUserDetailsService;
+  private final CustomSuccessHandler customSuccessHandler;
+  private final CustomFailureHandler customFailureHandler;
+  private final CustomAuthEntryPoint customAuthEntryPoint;
+  private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+  }
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                // Tắt CSRF nếu FE dùng React, Vue, Next
-                .csrf(AbstractHttpConfigurer::disable)
+  @Bean
+  public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration)
+      throws Exception {
+    return configuration.getAuthenticationManager();
+  }
 
-                // các API không cần phân quyền
-                .authorizeHttpRequests(auth -> auth
+  @Bean
+  public DaoAuthenticationProvider authenticationProvider() {
+    DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+    authProvider.setUserDetailsService(customUserDetailsService);
+    authProvider.setPasswordEncoder(passwordEncoder());
+    return authProvider;
+  }
 
-                        .requestMatchers(
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/api/auth/**"
-                        ).permitAll()
+  @Bean
+  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+        // Tắt CSRF nếu FE dùng React, Vue, Next
+        .csrf(AbstractHttpConfigurer::disable)
+        .exceptionHandling(exception -> exception.authenticationEntryPoint(customAuthEntryPoint))
+        .sessionManagement(
+            session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        // các API không cần phân quyền
+        .authorizeHttpRequests(
+            auth ->
+                auth.requestMatchers(
+                        "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/api/auth/**")
+                    .permitAll()
 
-                        //RoleController
-                        .requestMatchers("/api/roles/**").hasRole("ADMIN")
+                    // RoleController
+                    .requestMatchers("/api/roles/**")
+                    .hasAuthority("admin")
 
+                    // UserController
+                    .requestMatchers("/api/user/**")
+                    .hasAuthority("user")
+                    .requestMatchers(HttpMethod.GET, "/api/users/{id}")
+                    .hasAnyAuthority("user", "staff")
+                    .requestMatchers(HttpMethod.PUT, "/api/users/{id}")
+                    .hasAnyAuthority("user", "staff")
+                    .requestMatchers("/api/users/user", "/api/users/staff", "/api/users/delete/**")
+                    .hasAnyAuthority("admin", "staff")
 
-                        // UserController
-                        .requestMatchers("/api/user/**").hasRole("USER")
-                        .requestMatchers(HttpMethod.GET, "/api/users/{id}").hasAnyRole("USER", "STAFF")
-                        .requestMatchers(HttpMethod.PUT, "/api/users/{id}").hasAnyRole("USER", "STAFF")
+                    // UserProfileController
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/api/user-profiles/{profileId}",
+                        "/api/user-profiles/user/{userId}")
+                    .hasAnyAuthority("user", "admin")
+                    .requestMatchers(
+                        "/api/user-profiles",
+                        "/api/user-profiles/pending",
+                        "/api/user-profiles/verify-reject")
+                    .hasAnyAuthority("staff", "admin")
+                    .requestMatchers(HttpMethod.PUT, "/api/user-profiles/{userId}")
+                    .hasAnyAuthority("user", "admin")
+                    .requestMatchers(HttpMethod.DELETE, "/api/user-profiles/{profileId}")
+                    .hasAuthority("admin")
 
+                    // VehicleModelController
+                    .requestMatchers("/api/vehicle-models/**")
+                    .hasAuthority("admin")
 
-                        .requestMatchers( "/api/users/user", "/api/users/staff", "/api/users/delete/**").hasRole( "STAFF")
+                    // VehicleController
+                    .requestMatchers("/api/vehicles/**")
+                    .hasAuthority("admin")
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/api/vehicles",
+                        "/api/vehicles/{id}",
+                        "/api/vehicles/{vehicleId}/active-bookings")
+                    .hasAnyAuthority("user", "admin", "staff")
 
+                    // StationController
+                    .requestMatchers("/api/station/**")
+                    .hasAuthority("admin")
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/api/station",
+                        "/api/station/location/{locationId}",
+                        "/api/station/city/{cityId}",
+                        "/api/station/city/{cityId}/district/{districtId}")
+                    .hasAnyAuthority("user", "admin", "staff")
 
-                        //UserProfileController
-                        .requestMatchers(HttpMethod.GET, "/api/user-profiles/{profileId}", "/api/user-profiles/user/{userId}").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers("/api/user-profiles", "/api/user-profiles/pending", "/api/user-profiles/verify-reject").hasAnyRole("STAFF", "ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/user-profiles/{userId}").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/user-profiles/{profileId}").hasRole("ADMIN")
+                    // LocationController
+                    .requestMatchers("/api/location/**")
+                    .hasAuthority("admin")
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/api/location",
+                        "/api/location/{locationId}",
+                        "/api/location/getCities",
+                        "/api/location/getDistricts/{cityId}",
+                        "/api/location/getWards/{districtId}")
+                    .hasAnyAuthority("user", "admin", "staff")
 
+                    // BookingController
+                    .requestMatchers(HttpMethod.POST, "/api/bookings")
+                    .hasAnyAuthority("user", "admin", "staff")
+                    .requestMatchers("/api/bookings/**")
+                    .hasAuthority("admin")
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/api/bookings",
+                        "/api/bookings/{bookingId}",
+                        "/api/bookings/user/{userId}")
+                    .hasAnyAuthority("user", "admin", "staff")
+                    .requestMatchers(HttpMethod.PUT, "/api/bookings/{bookingId}/cancel")
+                    .hasAuthority("user")
+                    .requestMatchers(HttpMethod.PUT, "/api/bookings/{bookingId}/confirm")
+                    .hasAnyAuthority("admin", "staff")
 
-                        //VehicleModelController
-                        .requestMatchers("/api/vehicle-models/**").hasRole("ADMIN")
+                    // RentalController
+                    .requestMatchers(HttpMethod.POST, "/api/rentals")
+                    .hasAuthority("user")
+                    .requestMatchers(HttpMethod.GET, "/api/rentals", "/api/rentals/{rentalId}")
+                    .hasAnyAuthority("user", "admin", "staff")
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/api/rentals/renter/{renterId}",
+                        "/api/rentals/vehicle/{vehicleId}")
+                    .hasAnyAuthority("admin", "staff")
+                    .requestMatchers(HttpMethod.PUT, "/api/rentals/{rentalId}")
+                    .hasAnyAuthority("admin", "staff")
+                    .requestMatchers(HttpMethod.DELETE, "/api/rentals/{rentalId}")
+                    .hasAuthority("admin")
 
-                        //VehicleController
-                        .requestMatchers("/api/vehicles/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/vehicles", "/api/vehicles/{id}", "/api/vehicles/{vehicleId}/active-bookings").hasAnyRole("USER", "ADMIN", "STAFF")
+                    // RentalDiscount
+                    .requestMatchers(HttpMethod.POST, "/api/rental-discounts")
+                    .hasAuthority("admin")
+                    .requestMatchers(
+                        HttpMethod.DELETE, "/api/rental-discounts/{rentalId}/{discountId}")
+                    .hasAuthority("admin")
+                    .requestMatchers(HttpMethod.GET, "/api/rental-discounts")
+                    .hasAnyAuthority("admin", "staff")
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/api/rental-discounts/rental/{rentalId}",
+                        "/api/rental-discounts/discount/{discountId}")
+                    .hasAuthority("admin")
 
-                        //StationController
-                        .requestMatchers("/api/station/**").hasRole("ADMIN")
+                    // Incident Report
+                    .requestMatchers(
+                        HttpMethod.POST,
+                        "/api/incident-reports",
+                        "/api/incident-reports/{reportId}")
+                    .hasAuthority("user")
+                    .requestMatchers(HttpMethod.GET, "/api/incident-reports")
+                    .hasAnyAuthority("admin", "staff")
+                    .requestMatchers(HttpMethod.PUT, "/api/incident-reports/{reportId}")
+                    .hasAnyAuthority("admin", "staff")
+                    .requestMatchers(HttpMethod.DELETE, "/api/incident-reports/{reportId}")
+                    .hasAuthority("admin")
 
-                        .requestMatchers(HttpMethod.GET, "/api/station", "/api/station/location/{locationId}", "/api/station/city/{cityId}", "/api/station/city/{cityId}/district/{districtId}").hasAnyRole("USER", "ADMIN", "STAFF")
+                    // DiscountController
+                    .requestMatchers("/api/discounts/**")
+                    .hasAuthority("admin")
 
-                        //LocationController
-                        .requestMatchers("/api/location/**").hasRole("ADMIN")
+                    // PaymentController
+                    .requestMatchers(HttpMethod.POST, "/api/payments/createpayment")
+                    .hasAuthority("user")
+                    .requestMatchers(
+                        HttpMethod.POST, "/api/payments/updatepayment/{paymentId}/{status}")
+                    .hasAnyAuthority("admin", "staff")
+                    .requestMatchers(HttpMethod.GET, "/api/payments/{paymentId}")
+                    .hasAnyAuthority("admin", "staff")
+                    .requestMatchers(HttpMethod.GET, "/api/payments/transaction/{transactionCode}")
+                    .hasAnyAuthority("admin", "staff", "user")
+                    .anyRequest()
+                    .authenticated());
 
-                        .requestMatchers(HttpMethod.GET, "/api/location", "/api/location/{locationId}","/api/location/getCities", "/api/location/getDistricts/{cityId}", "/api/location/getWards/{districtId}").hasAnyRole("USER", "ADMIN", "STAFF")
+    http.authenticationProvider(authenticationProvider());
 
-                        //BookingController
-                        .requestMatchers("/api/bookings/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/bookings", "/api/bookings/{bookingId}", "/api/bookings/user/{userId}")
-                        .hasAnyRole("USER", "ADMIN", "STAFF")
-                        .requestMatchers(HttpMethod.PUT, "/api/bookings/{bookingId}/cancel")
-                        .hasAnyRole("USER")
-                        .requestMatchers(HttpMethod.PUT, "/api/bookings/{bookingId}/confirm").hasAnyRole("ADMIN", "STAFF")
+    http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-                        //RentalController
-                        .requestMatchers(HttpMethod.POST, "/api/rentals").hasRole("USER")
-                        .requestMatchers(HttpMethod.GET, "/api/rentals", "/api/rentals/{rentalId}").hasAnyRole("USER", "ADMIN", "STAFF")
-                        .requestMatchers(HttpMethod.GET, "/api/rentals/renter/{renterId}", "/api/rentals/vehicle/{vehicleId}").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers(HttpMethod.PUT, "/api/rentals/{rentalId}").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers(HttpMethod.DELETE, "/api/rentals/{rentalId}").hasAnyRole("ADMIN")
-
-                        //RentalDiscount
-                        .requestMatchers(HttpMethod.POST, "/api/rental-discounts").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/rental-discounts/{rentalId}/{discountId}").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/rental-discounts").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers(HttpMethod.GET, "/api/rental-discounts/rental/{rentalId}", "/api/rental-discounts/discount/{discountId}").hasRole("ADMIN")
-
-                        //Incident Report
-                        .requestMatchers(HttpMethod.POST, "/api/incident-reports", "/api/incident-reports/{reportId}").hasRole("USER")
-                        .requestMatchers(HttpMethod.GET, "/api/incident-reports").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers(HttpMethod.PUT, "/api/incident-reports/{reportId}").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers(HttpMethod.DELETE, "/api/incident-reports/{reportId}").hasRole("ADMIN")
-
-                        //DiscountController
-                        .requestMatchers("/api/discounts/**").hasRole("ADMIN")
-
-
-                        //PaymentController
-                        .requestMatchers(HttpMethod.POST, "/api/payments/createpayment").hasAnyRole("USER")
-                        .requestMatchers(HttpMethod.POST, "/api/payments/updatepayment/{paymentId}/{status}").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers(HttpMethod.GET, "/api/payments/{paymentId}").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers(HttpMethod.GET, "/api/payments/transaction/{transactionCode}").hasAnyRole("ADMIN", "STAFF", "USER")
-
-                        .anyRequest().authenticated()
-                );
-
-        return http.build();
-    }
+    return http.build();
+  }
 }

@@ -40,4 +40,6 @@ public class UserRegistrationRequest {
           "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character")
   @Size(min = 6, message = "Password must be at least 6 characters long")
   String password;
+
+  Long stationId;
 }

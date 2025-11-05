@@ -1,6 +1,7 @@
 package spring_boot.project_swp.entity;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -44,13 +45,19 @@ public class Booking {
   @Column(name = "EndTime", nullable = false)
   LocalDateTime endTime;
 
-  @Column(name = "TotalAmount", nullable = false)
-  Double totalAmount;
+  @Column(name = "TotalAmount", nullable = false, columnDefinition = "DECIMAL(19,4)")
+  BigDecimal totalAmount;
+
+  @Column(name = "DepositPercent", nullable = false, columnDefinition = "DECIMAL(5,2)")
+  BigDecimal depositPercent;
+
+  @Column(name = "ExpectedTotal", nullable = false, columnDefinition = "DECIMAL(19,4)")
+  BigDecimal expectedTotal;
 
   @Column(name = "Status", nullable = false, length = 50)
   @Enumerated(EnumType.STRING)
   @Builder.Default
-  BookingStatusEnum status = BookingStatusEnum.PENDING;
+  BookingStatusEnum status = BookingStatusEnum.PENDING_DEPOSIT;
 
   @CreationTimestamp
   @Column(name = "CreatedAt", nullable = false, updatable = false)

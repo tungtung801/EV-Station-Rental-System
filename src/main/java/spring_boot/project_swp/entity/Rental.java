@@ -2,6 +2,7 @@ package spring_boot.project_swp.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.AccessLevel;
@@ -32,7 +33,7 @@ public class Rental {
   Booking booking;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "RenterId", nullable = false)
+  @JoinColumn(name = "UserId", nullable = false)
   @ToString.Exclude
   User renter;
 
@@ -61,14 +62,14 @@ public class Rental {
   @ToString.Exclude
   User returnStaff;
 
-  @Column(name = "StartTime", nullable = false)
-  LocalDateTime startTime;
+  @Column(name = "StartActual")
+  LocalDateTime startActual;
 
-  @Column(name = "EndTime")
-  LocalDateTime endTime;
+  @Column(name = "EndActual")
+  LocalDateTime endActual;
 
-  @Column(name = "TotalCost", columnDefinition = "DECIMAL(10,2)")
-  Double totalCost;
+  @Column(name = "Total", columnDefinition = "DECIMAL(19,4)")
+  BigDecimal total;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "Status", length = 50)

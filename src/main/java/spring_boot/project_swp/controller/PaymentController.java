@@ -8,35 +8,62 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import spring_boot.project_swp.dto.request.PaymentRequest;
+import spring_boot.project_swp.dto.request.PaymentStatusUpdateRequest;
 import spring_boot.project_swp.dto.response.PaymentResponse;
+import spring_boot.project_swp.entity.Booking;
 import spring_boot.project_swp.entity.PaymentStatusEnum;
-import spring_boot.project_swp.mapper.PaymentMapper;
+import spring_boot.project_swp.service.BookingService;
 import spring_boot.project_swp.service.PaymentService;
+import spring_boot.project_swp.mapper.BookingMapper;
+import org.springframework.context.annotation.Lazy;
 
 @RestController
 @RequestMapping("/api/payments")
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "Payment APIs", description = "APIs for managing payments")
 public class PaymentController {
-  final PaymentService paymentService;
-  final PaymentMapper paymentMapper;
+  PaymentService paymentService;
+  @Lazy BookingService bookingService;
+  BookingMapper bookingMapper;
 
-  @PostMapping("/createpayment")
-  @Operation(summary = "Create a new payment", description = "Creates a new payment record.")
-  public ResponseEntity<PaymentResponse> createPayment(@Valid @RequestBody PaymentRequest request) {
-    return new ResponseEntity<>(paymentService.createPayment(request), HttpStatus.CREATED);
+  @PostMapping("/deposit/{bookingId}")
+  @Operation(
+      summary = "Create a deposit payment",
+      description = "Creates a new deposit payment for a booking.")
+  public ResponseEntity<PaymentResponse> createDepositPayment(
+      @PathVariable Long bookingId, @Valid @RequestBody PaymentRequest request) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String userEmail = authentication.getName();
+    // Lấy đối tượng Booking từ bookingService và chuyển đổi sang Booking entity
+    Booking booking = bookingMapper.toBooking(bookingService.getBookingById(bookingId));
+    return new ResponseEntity<>(
+        paymentService.createDepositPayment(booking, userEmail, request), HttpStatus.CREATED);
   }
 
-  @PostMapping("/updatepayment/{paymentId}/{status}")
+  @PostMapping("/final/{rentalId}")
+  @Operation(
+      summary = "Create a final payment",
+      description = "Creates a new final payment for a rental.")
+  public ResponseEntity<PaymentResponse> createFinalPayment(
+      @PathVariable Long rentalId, @Valid @RequestBody PaymentRequest request) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String userEmail = authentication.getName();
+    return new ResponseEntity<>(
+        paymentService.createFinalPayment(rentalId, userEmail, request), HttpStatus.CREATED);
+  }
+
+  @PatchMapping("/{paymentId}/status")
   @Operation(
       summary = "Update payment status",
       description = "Updates the status of an existing payment.")
   public ResponseEntity<PaymentResponse> updatePaymentStatus(
-      @PathVariable Long paymentId, @PathVariable String status) {
-    PaymentStatusEnum paymentStatus = PaymentStatusEnum.valueOf(status.toUpperCase());
+      @PathVariable Long paymentId, @Valid @RequestBody PaymentStatusUpdateRequest request) {
+    PaymentStatusEnum paymentStatus = request.getStatus();
     PaymentResponse updatedPayment = paymentService.updatePaymentStatus(paymentId, paymentStatus);
     return new ResponseEntity<>(updatedPayment, HttpStatus.OK);
   }

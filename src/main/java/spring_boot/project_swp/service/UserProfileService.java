@@ -21,4 +21,14 @@ public interface UserProfileService {
   void deleteUserProfile(Long profileId);
 
   UserProfileVerificationResponse verifyOrRejectUserProfile(UserProfileVerificationRequest request);
+
+  void uploadVerificationDocuments(
+      Long userId, spring_boot.project_swp.dto.request.DocumentUploadRequest request);
+
+  UserProfileResponse getUserProfileStatus(Long userId);
+
+  UserProfileResponse approveUserProfile(Long userId);
+
+  UserProfileResponse rejectUserProfile(
+      Long userId, spring_boot.project_swp.dto.request.UserProfileRejectionRequest request);
 }

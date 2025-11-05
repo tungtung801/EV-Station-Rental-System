@@ -15,19 +15,18 @@ import spring_boot.project_swp.entity.Payment;
 public interface PaymentMapper {
 
   @Mapping(target = "paymentId", ignore = true)
-  @Mapping(target = "rental", source = "rentalId")
-  @Mapping(target = "processedByStaff", source = "staffId")
-  @Mapping(target = "transactionTime", ignore = true)
-  @Mapping(target = "transactionCode", ignore = true)
+  @Mapping(target = "createdAt", ignore = true)
+  @Mapping(target = "confirmedAt", ignore = true)
   @Mapping(target = "status", ignore = true)
-  Payment toPayment(PaymentRequest paymentRequest);
+  @Mapping(target = "booking", source = "bookingId")
+  @Mapping(target = "rental", source = "rentalId")
+  @Mapping(target = "confirmedBy", source = "confirmedById")
+  @Mapping(target = "payer", source = "payerId")
+  Payment toPayment(PaymentRequest request);
 
-  @Mapping(source = "rental.rentalId", target = "rentalId")
+  @Mapping(target = "bookingId", source = "booking.bookingId")
+  @Mapping(target = "rentalId", source = "rental.rentalId")
+  @Mapping(target = "confirmedById", source = "confirmedBy.userId")
+  @Mapping(target = "payerId", source = "payer.userId")
   PaymentResponse toPaymentResponse(Payment payment);
-
-  // Add method to convert PaymentResponse to Payment entity
-  @Mapping(target = "rental", ignore = true)
-  @Mapping(target = "user", ignore = true)
-  @Mapping(target = "processedByStaff", ignore = true)
-  Payment toPayment(PaymentResponse paymentResponse);
 }

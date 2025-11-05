@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import spring_boot.project_swp.exception.Print_Exception.UserNotVerifiedException;
 
 @RestControllerAdvice
 public class HandleException {
@@ -54,5 +55,12 @@ public class HandleException {
             "Đã có lỗi không mong muốn xảy ra. Vui lòng thử lại sau.",
             "Internal Server Error");
     return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+  }
+
+  @ExceptionHandler(UserNotVerifiedException.class)
+  public ResponseEntity<Object> handleUserNotVerifiedException(UserNotVerifiedException ex) {
+    Map<String, Object> body = new HashMap<>();
+    body.put("message", ex.getMessage());
+    return new ResponseEntity<>(body, HttpStatus.FORBIDDEN);
   }
 }

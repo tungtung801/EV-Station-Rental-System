@@ -6,6 +6,8 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
+import spring_boot.project_swp.dto.request.DocumentUploadRequest;
+import spring_boot.project_swp.dto.request.UserProfileRejectionRequest;
 import spring_boot.project_swp.dto.request.UserProfileRequest;
 import spring_boot.project_swp.dto.request.UserProfileVerificationRequest;
 import spring_boot.project_swp.dto.response.UserProfileResponse;
@@ -19,8 +21,6 @@ import spring_boot.project_swp.repository.UserProfileRepository;
 import spring_boot.project_swp.repository.UserRepository;
 import spring_boot.project_swp.service.FileStorageService;
 import spring_boot.project_swp.service.UserProfileService;
-
-// ... existing code ...
 
 @Service
 @RequiredArgsConstructor
@@ -64,12 +64,11 @@ public class UserProfileServiceImpl implements UserProfileService {
 
   @Override
   public List<UserProfileResponse> getAllPendingUserProfiles() {
-    List<UserProfile> userProfiles = userProfileRepository.findAll();
+    List<UserProfile> userProfiles =
+        userProfileRepository.findAllByStatus(UserProfileStatusEnum.PENDING);
     List<UserProfileResponse> pendingUserProfiles = new ArrayList<>();
     for (UserProfile userProfile : userProfiles) {
-      if (UserProfileStatusEnum.PENDING.equals(userProfile.getStatus())) {
-        pendingUserProfiles.add(userProfileMapper.toUserProfileResponse(userProfile));
-      }
+      pendingUserProfiles.add(userProfileMapper.toUserProfileResponse(userProfile));
     }
     return pendingUserProfiles;
   }
@@ -120,25 +119,82 @@ public class UserProfileServiceImpl implements UserProfileService {
   }
 
   @Override
+  public void uploadVerificationDocuments(Long userId, DocumentUploadRequest request) {
+    UserProfile userProfile =
+        userProfileRepository
+            .findByUserUserId(userId)
+            .orElseThrow(
+                () -> new NotFoundException("User profile not found for user ID: " + userId));
+
+    if (request.getIdCardFile() != null && !request.getIdCardFile().isEmpty()) {
+      String idCardUrl = fileStorageService.saveFile(request.getIdCardFile());
+      userProfile.setIdCardUrl(idCardUrl);
+    }
+
+    if (request.getDrivingLicenseFile() != null && !request.getDrivingLicenseFile().isEmpty()) {
+      String drivingLicenseUrl = fileStorageService.saveFile(request.getDrivingLicenseFile());
+      userProfile.setDrivingLicenseUrl(drivingLicenseUrl);
+    }
+
+    userProfile.setStatus(UserProfileStatusEnum.PENDING);
+    userProfileRepository.save(userProfile);
+  }
+
+  @Override
+  public UserProfileResponse getUserProfileStatus(Long userId) {
+    UserProfile userProfile =
+        userProfileRepository
+            .findByUserUserId(userId)
+            .orElseThrow(
+                () -> new NotFoundException("User profile not found for user ID: " + userId));
+    return userProfileMapper.toUserProfileResponse(userProfile);
+  }
+
+  @Override
+  public UserProfileResponse approveUserProfile(Long userId) {
+    UserProfile userProfile =
+        userProfileRepository
+            .findByUserUserId(userId)
+            .orElseThrow(
+                () -> new NotFoundException("User profile not found for user ID: " + userId));
+
+    userProfile.setStatus(UserProfileStatusEnum.VERIFIED);
+    userProfileRepository.save(userProfile);
+    return userProfileMapper.toUserProfileResponse(userProfile);
+  }
+
+  @Override
+  public UserProfileResponse rejectUserProfile(Long userId, UserProfileRejectionRequest request) {
+    UserProfile userProfile =
+        userProfileRepository
+            .findByUserUserId(userId)
+            .orElseThrow(
+                () -> new NotFoundException("User profile not found for user ID: " + userId));
+
+    userProfile.setStatus(UserProfileStatusEnum.REJECTED);
+    userProfile.setReason(request.getReason());
+    userProfileRepository.save(userProfile);
+    return userProfileMapper.toUserProfileResponse(userProfile);
+  }
+
+  @Override
   public UserProfileVerificationResponse verifyOrRejectUserProfile(
       UserProfileVerificationRequest request) {
     UserProfile userProfile =
         userProfileRepository
-            .findByUserUserId(request.getUserId())
+            .findById(request.getProfileId())
             .orElseThrow(
                 () ->
                     new NotFoundException(
-                        "User profile not found for user ID: " + request.getUserId()));
+                        "User profile not found with ID: " + request.getProfileId()));
 
-    UserProfileStatusEnum status = UserProfileStatusEnum.valueOf(request.getStatus().toUpperCase());
-    userProfile.setStatus(status);
-    userProfile.setReason(request.getReason());
+    if (request.getIsVerified()) {
+      userProfile.setStatus(UserProfileStatusEnum.VERIFIED);
+    } else {
+      userProfile.setStatus(UserProfileStatusEnum.REJECTED);
+      userProfile.setReason(request.getReason());
+    }
     userProfileRepository.save(userProfile);
-
-    return UserProfileVerificationResponse.builder()
-        .userId(String.valueOf(request.getUserId()))
-        .status(status.name())
-        .message("User profile " + status.name().toLowerCase() + " successfully.")
-        .build();
+    return userProfileMapper.toUserProfileVerificationResponse(userProfile);
   }
 }

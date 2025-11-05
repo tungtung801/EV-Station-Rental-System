@@ -13,9 +13,11 @@ public interface RentalMapper {
 
   @Mapping(target = "rentalId", ignore = true)
   @Mapping(target = "createdAt", ignore = true)
-  @Mapping(target = "totalCost", ignore = true)
+  @Mapping(target = "startActual", ignore = true)
+  @Mapping(target = "endActual", ignore = true)
+  @Mapping(target = "total", ignore = true)
   @Mapping(target = "booking", source = "bookingId")
-  @Mapping(target = "renter", source = "renterId")
+  @Mapping(target = "renter", source = "userId")
   @Mapping(target = "vehicle", source = "vehicleId")
   @Mapping(target = "pickupStation", source = "pickupStationId")
   @Mapping(target = "returnStation", source = "returnStationId")
@@ -24,7 +26,7 @@ public interface RentalMapper {
   Rental toRental(RentalRequest request);
 
   @Mapping(source = "booking.bookingId", target = "bookingId")
-  @Mapping(source = "renter.userId", target = "renterId")
+  @Mapping(source = "renter.userId", target = "userId")
   @Mapping(source = "renter.fullName", target = "renterName")
   @Mapping(source = "vehicle.vehicleId", target = "vehicleId")
   @Mapping(source = "vehicle.vehicleModel.modelName", target = "vehicleModel")
@@ -40,9 +42,11 @@ public interface RentalMapper {
 
   @Mapping(target = "rentalId", ignore = true)
   @Mapping(target = "createdAt", ignore = true)
-  @Mapping(target = "totalCost", ignore = true)
+  @Mapping(target = "startActual", ignore = true)
+  @Mapping(target = "endActual", ignore = true)
+  @Mapping(target = "total", ignore = true)
   @Mapping(target = "booking", source = "bookingId")
-  @Mapping(target = "renter", source = "renterId")
+  @Mapping(target = "renter", source = "userId")
   @Mapping(target = "vehicle", source = "vehicleId")
   @Mapping(target = "pickupStaff", source = "pickupStaffId")
   @Mapping(target = "returnStaff", source = "returnStaffId")

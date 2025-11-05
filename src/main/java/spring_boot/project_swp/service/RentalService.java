@@ -5,6 +5,7 @@ import spring_boot.project_swp.dto.request.RentalRequest;
 import spring_boot.project_swp.dto.response.RentalResponse;
 
 public interface RentalService {
+
   RentalResponse createRental(RentalRequest request);
 
   RentalResponse getRentalById(Long rentalId);
@@ -15,7 +16,13 @@ public interface RentalService {
 
   List<RentalResponse> getRentalsByVehicleId(Long vehicleId);
 
-  RentalResponse updateRental(Long rentalId, RentalRequest request);
+  RentalResponse updateRental(Long rentalId, String userEmail, RentalRequest request);
 
   void deleteRental(Long rentalId);
+
+  RentalResponse confirmPickup(Long bookingId, String staffEmail, String contractUrl);
+
+  RentalResponse confirmReturn(Long rentalId, String staffEmail);
+
+  RentalResponse createRentalFromBooking(Long bookingId);
 }
