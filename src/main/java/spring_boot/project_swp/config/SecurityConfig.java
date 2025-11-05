@@ -204,9 +204,12 @@ public class SecurityConfig {
                         HttpMethod.POST, "/api/payments/updatepayment/{paymentId}/{status}")
                     .hasAnyAuthority("admin", "staff")
                     .requestMatchers(HttpMethod.GET, "/api/payments/{paymentId}")
-                    .hasAnyAuthority("admin", "staff")
+                    .hasAnyAuthority("admin", "staff", "user")
                     .requestMatchers(HttpMethod.GET, "/api/payments/transaction/{transactionCode}")
                     .hasAnyAuthority("admin", "staff", "user")
+
+                    .requestMatchers("/vnpay_return").permitAll()
+
                     .anyRequest()
                     .authenticated());
 

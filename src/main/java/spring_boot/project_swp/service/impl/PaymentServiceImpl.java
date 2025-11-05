@@ -322,4 +322,10 @@ public class PaymentServiceImpl implements PaymentService {
     }
     return processedByStaff;
   }
+
+  @Override
+  public Payment getPaymentByBookingId(Long bookingId){
+      Payment foundPayment = paymentRepository.findById(bookingId).orElseThrow(null);
+      return foundPayment;
+  }
 }

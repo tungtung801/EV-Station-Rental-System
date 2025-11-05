@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import spring_boot.project_swp.dto.request.BookingStatusUpdateRequest;
 import spring_boot.project_swp.dto.response.PaymentResponse;
+import spring_boot.project_swp.entity.BookingStatusEnum;
 import spring_boot.project_swp.entity.PaymentStatusEnum;
 import spring_boot.project_swp.exception.NotFoundException;
 import spring_boot.project_swp.service.BookingService;
@@ -70,9 +71,12 @@ public class VNPayReturnController {
 
       if ("00".equals(vnp_ResponseCode)) {
         try {
+
+            System.out.println("vnp_TxnRef:" + vnp_TxnRef);
           // 1. Tìm payment bằng transaction code (vnp_TxnRef)
           PaymentResponse paymentResponse = paymentService.findPaymentByTransactionCode(vnp_TxnRef);
-
+            System.out.println("paymentResponse: "+ paymentResponse);
+          
           // 2. Cập nhật trạng thái payment thành SUCCESS
           paymentService.updatePaymentStatus(
               paymentResponse.getPaymentId(), PaymentStatusEnum.SUCCESS);
@@ -82,13 +86,21 @@ public class VNPayReturnController {
             // Lấy thông tin booking và user
             Long bookingId = paymentResponse.getBookingId();
             // Lấy email của người dùng từ payerId trong PaymentResponse
+
+
             String userEmail = userService.getUserById(paymentResponse.getPayerId()).getEmail();
 
-            // Cập nhật trạng thái booking
-            BookingStatusUpdateRequest bookingStatusUpdateRequest =
+            // Cập nhật trạng thái booking thành DEPOSIT_PAID
+                        BookingStatusUpdateRequest bookingStatusUpdateRequest =
                 new BookingStatusUpdateRequest();
+            bookingStatusUpdateRequest.setStatus(BookingStatusEnum.DEPOSIT_PAID);
             bookingService.updateBookingStatus(
                 paymentResponse.getBookingId(), userEmail, bookingStatusUpdateRequest);
+//            BookingStatusUpdateRequest bookingStatusUpdateRequest =
+//                new BookingStatusUpdateRequest();
+//            bookingStatusUpdateRequest.setStatus(BookingStatusEnum.DEPOSIT_PAID);
+//            bookingService.updateBookingStatus(
+//                paymentResponse.getBookingId(), userEmail, bookingStatusUpdateRequest);
           }
 
           // TODO: Chuyển hướng người dùng về trang kết quả của frontend

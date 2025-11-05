@@ -71,16 +71,18 @@ public class VNPayController {
     UserResponse userResponse = userService.getUserById(userId);
     String userEmail = userResponse.getEmail();
 
-    // 2. Tạo một thanh toán mới với trạng thái PENDING
-    PaymentRequest paymentRequest = new PaymentRequest();
-    paymentRequest.setBookingId(bookingId);
-    paymentRequest.setUserId(userId);
-    paymentRequest.setAmount(depositAmount);
-    paymentRequest.setPaymentMethod(PaymentMethodEnum.BANK_TRANSFER); // Or get from request
-    // vnp_TxnRef sẽ được tạo và gán bên trong createDepositPayment
-    spring_boot.project_swp.dto.response.PaymentResponse paymentResponse =
-        paymentService.createDepositPayment(
-            bookingMapper.toBooking(booking), userEmail, paymentRequest);
+     // 2. Tạo một thanh toán mới với trạng thái PENDING
+     PaymentRequest paymentRequest = new PaymentRequest();
+     paymentRequest.setBookingId(bookingId);
+     paymentRequest.setUserId(userId);
+     paymentRequest.setAmount(depositAmount);
+     paymentRequest.setPaymentMethod(PaymentMethodEnum.BANK_TRANSFER); // Or get from request
+//      vnp_TxnRef sẽ được tạo và gán bên trong createDepositPayment
+      spring_boot.project_swp.dto.response.PaymentResponse paymentResponse =
+          paymentService.createDepositPayment(
+              bookingMapper.toBooking(booking), userEmail, paymentRequest);
+
+
 
     // 3. Chuẩn bị các tham số cho VNPay
     String vnp_Version = "2.1.0";

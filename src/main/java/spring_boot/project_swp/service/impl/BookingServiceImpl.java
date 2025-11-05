@@ -39,6 +39,7 @@ import spring_boot.project_swp.repository.UserRepository;
 import spring_boot.project_swp.repository.VehicleRepository;
 import spring_boot.project_swp.service.BookingService;
 import spring_boot.project_swp.service.PaymentService;
+import spring_boot.project_swp.service.RentalService;
 
 @Service
 @RequiredArgsConstructor
@@ -133,7 +134,7 @@ public class BookingServiceImpl implements BookingService {
           booking.getExpectedTotal().multiply(booking.getDepositPercent())); // Số tiền cọc
       depositPaymentRequest.setNote("Deposit for booking " + savedBooking.getBookingId());
 
-      paymentService.createDepositPayment(booking, user.getEmail(), depositPaymentRequest);
+     paymentService.createDepositPayment(booking, user.getEmail(), depositPaymentRequest);
     }
 
     return bookingMapper.toBookingResponse(savedBooking);

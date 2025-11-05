@@ -24,4 +24,6 @@ public interface PaymentService {
   PaymentResponse createDepositPayment(Booking booking, String userEmail, PaymentRequest request);
 
   PaymentResponse createFinalPayment(Long rentalId, String userEmail, PaymentRequest request);
+
+    Payment getPaymentByBookingId(Long bookingId);
 }
