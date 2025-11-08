@@ -6,7 +6,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import lombok.extern.slf4j.Slf4j; // Thêm Log
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -14,19 +13,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import spring_boot.project_swp.dto.request.BookingStatusUpdateRequest;
+
 import spring_boot.project_swp.dto.response.PaymentResponse;
-import spring_boot.project_swp.entity.BookingStatusEnum;
 import spring_boot.project_swp.entity.PaymentStatusEnum;
 import spring_boot.project_swp.exception.NotFoundException;
 import spring_boot.project_swp.service.BookingService;
 import spring_boot.project_swp.service.PaymentService;
-import spring_boot.project_swp.service.RentalService; // THÊM MỚI
+import spring_boot.project_swp.service.RentalService;
 import spring_boot.project_swp.service.UserService;
 
 @Tag(name = "VNPay APIs", description = "Các API liên quan đến xử lý thanh toán VNPay")
 @RestController
-@Slf4j // Thêm Log
 public class VNPayReturnController {
 
     @Value("${vnpay.hashSecret}")
@@ -35,8 +32,7 @@ public class VNPayReturnController {
     @Autowired private PaymentService paymentService;
     @Autowired private BookingService bookingService;
     @Autowired private UserService userService;
-
-    @Autowired private RentalService rentalService; // THÊM MỚI
+    @Autowired private RentalService rentalService;
 
     @Operation(
             summary = "Xử lý phản hồi trả về từ VNPay",
@@ -65,7 +61,6 @@ public class VNPayReturnController {
                 hashData.deleteCharAt(hashData.length() - 1);
             }
         } catch (UnsupportedEncodingException e) {
-            log.error("VNPAY Return: Encoding error", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Encoding error");
         }
 
@@ -77,56 +72,95 @@ public class VNPayReturnController {
 
             if ("00".equals(vnp_ResponseCode)) {
                 try {
+
+                    System.out.println("vnp_TxnRef:" + vnp_TxnRef);
                     // 1. Tìm payment bằng transaction code (vnp_TxnRef)
                     PaymentResponse paymentResponse = paymentService.findPaymentByTransactionCode(vnp_TxnRef);
+                    System.out.println("paymentResponse: " + paymentResponse);
 
                     // 2. Cập nhật trạng thái payment thành SUCCESS
+                    // Lưu ý: paymentService.updatePaymentStatus() sẽ tự động xử lý:
+                    // - Cập nhật booking status thành DEPOSIT_PAID
+                    // - Tạo rental từ booking
                     paymentService.updatePaymentStatus(
                             paymentResponse.getPaymentId(), PaymentStatusEnum.SUCCESS);
 
-                    // 3. Cập nhật trạng thái booking thành DEPOSIT_PAID
-                    if (paymentResponse.getBookingId() != null) {
-                        Long bookingId = paymentResponse.getBookingId();
-                        String userEmail = userService.getUserById(paymentResponse.getPayerId()).getEmail();
+                    // 3. Lấy rental ID từ booking
+                    Long bookingId = paymentResponse.getBookingId();
+                    Long rentalId = null;
 
-                        BookingStatusUpdateRequest bookingStatusUpdateRequest =
-                                new BookingStatusUpdateRequest();
-                        bookingStatusUpdateRequest.setStatus(BookingStatusEnum.DEPOSIT_PAID);
-                        bookingService.updateBookingStatus(
-                                bookingId, userEmail, bookingStatusUpdateRequest);
-
-                        // 4. *** LOGIC SỬA LỖI: TỰ ĐỘNG TẠO RENTAL ***
-                        try {
-                            rentalService.createRentalFromBooking(bookingId);
-                            log.info("Đã tự động tạo Rental cho Booking ID: {}", bookingId);
-                        } catch (Exception e) {
-                            // Xử lý nếu việc tạo rental thất bại (ví dụ: đã tồn tại)
-                            log.warn("Không thể tự động tạo rental cho booking {}: {}", bookingId, e.getMessage());
+                    if (bookingId != null) {
+                        // Tìm rental được tạo từ booking này
+                        var rentalOptional =
+                                rentalService
+                                        .getRentalsByRenterId(paymentResponse.getPayerId())
+                                        .stream()
+                                        .filter(
+                                                rental ->
+                                                        rental.getBookingId() != null
+                                                                && rental.getBookingId().equals(bookingId))
+                                        .findFirst();
+                        if (rentalOptional.isPresent()) {
+                            rentalId = rentalOptional.get().getRentalId();
                         }
-                        // *** KẾT THÚC LOGIC SỬA LỖI ***
-
                     }
 
-                    // TODO: Chuyển hướng người dùng về trang kết quả của frontend
-                    return ResponseEntity.ok("Giao dịch thành công! Cảm ơn bạn đã đặt cọc.");
+                    // 4. Trả về response với rental ID
+                    String responseMessage = "Giao dịch thành công! Rental ID: " + rentalId;
+                    return ResponseEntity.ok(responseMessage);
 
                 } catch (NotFoundException e) {
-                    log.error("VNPAY Return: Not Found Error", e);
                     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
                 } catch (Exception e) {
-                    log.error("VNPAY Return: System Error", e);
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body("Lỗi hệ thống khi cập nhật trạng thái thanh toán.");
+                            .body("Lỗi hệ thống khi cập nhật trạng thái thanh toán: " + e.getMessage());
                 }
             } else {
                 // Giao dịch thất bại
-                log.warn("VNPAY Return: Giao dịch thất bại, Mã lỗi: {}", vnp_ResponseCode);
+                // TODO: Cập nhật trạng thái payment/booking nếu cần và chuyển hướng
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body("Giao dịch thất bại. Mã lỗi: " + vnp_ResponseCode);
             }
         } else {
-            log.warn("VNPAY Return: Chữ ký không hợp lệ!");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Chữ ký không hợp lệ!");
+        }
+    }
+
+    @GetMapping("/api/get-rental-by-booking")
+    @Operation(
+            summary = "Get rental ID by booking ID",
+            description = "Retrieves rental ID for a given booking after successful payment")
+    public ResponseEntity<?> getRentalByBooking(@RequestParam Long bookingId) {
+        try {
+            // Query rental trực tiếp từ bookingId
+            var booking = bookingService.getBookingById(bookingId);
+            var rentalService_local = rentalService;
+
+            // Lấy tất cả rentals và tìm cái match với bookingId
+            var allRentals = rentalService_local.getAllRentals();
+            var rentalOptional = allRentals.stream()
+                    .filter(rental -> rental.getBookingId() != null && rental.getBookingId().equals(bookingId))
+                    .findFirst();
+
+            if (rentalOptional.isPresent()) {
+                Long rentalId = rentalOptional.get().getRentalId();
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("rentalId", rentalId);
+                response.put("bookingId", bookingId);
+                response.put("message", "Lấy Rental ID thành công!");
+                return ResponseEntity.ok(response);
+            } else {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "Không tìm thấy rental cho booking này");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Lỗi: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 }
