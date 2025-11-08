@@ -296,9 +296,13 @@ public class BookingServiceImpl implements BookingService {
 
     // Cập nhật trạng thái booking
     booking.setStatus(BookingStatusEnum.DEPOSIT_PAID);
-      RentalResponse rentalResponse = new RentalResponse();
-      rentalResponse = rentalServiceImpl.createRentalFromBooking(bookingId);
-    return bookingMapper.toBookingResponse(bookingRepository.save(booking));
+    RentalResponse rentalResponse = rentalServiceImpl.createRentalFromBooking(bookingId);
+
+    // Tạo booking response và đưa rental vào
+    BookingResponse bookingResponse = bookingMapper.toBookingResponse(bookingRepository.save(booking));
+    bookingResponse.setRental(rentalResponse);
+
+    return bookingResponse;
   }
 
   @Override

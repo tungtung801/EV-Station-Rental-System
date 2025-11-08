@@ -25,4 +25,5 @@ public class BookingResponse {
   java.math.BigDecimal expectedTotal;
   BookingStatusEnum status;
   LocalDateTime createdAt;
+  RentalResponse rental;
 }
