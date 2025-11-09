@@ -66,6 +66,10 @@ public class SecurityConfig {
                                                 "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/api/auth/**")
                                         .permitAll()
 
+                                        // Cho phép truy cập public vào thư mục uploads để hiển thị ảnh
+                                        .requestMatchers("/uploads/**")
+                                        .permitAll()
+
                                         // RoleController
                                         .requestMatchers("/api/roles/**")
                                         .hasAuthority("admin")
@@ -100,13 +104,13 @@ public class SecurityConfig {
                                         .requestMatchers("/api/vehicle-models/**")
                                         .hasAuthority("admin")
 
-                                        // VehicleController
+                                        // VehicleController - CHO PHÉP NGƯỜI DÙNG KHÔNG CẦN ĐĂNG NHẬP XEM VEHICLES
                                         .requestMatchers(
                                                 HttpMethod.GET,
                                                 "/api/vehicles",
                                                 "/api/vehicles/*",
                                                 "/api/vehicles/*/active-bookings")
-                                        .hasAnyAuthority("user", "admin", "staff")
+                                        .permitAll()
                                         .requestMatchers("/api/vehicles/**")
                                         .hasAuthority("admin")
 

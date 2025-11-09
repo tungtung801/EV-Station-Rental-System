@@ -91,10 +91,10 @@ public class VNPayReturnController {
 
                     if (bookingId != null) {
                         // Tìm rental được tạo từ booking này
+                        // Cách tốt hơn: lấy tất cả rentals và tìm cái match với bookingId
+                        var allRentals = rentalService.getAllRentals();
                         var rentalOptional =
-                                rentalService
-                                        .getRentalsByRenterId(paymentResponse.getPayerId())
-                                        .stream()
+                                allRentals.stream()
                                         .filter(
                                                 rental ->
                                                         rental.getBookingId() != null
@@ -102,6 +102,9 @@ public class VNPayReturnController {
                                         .findFirst();
                         if (rentalOptional.isPresent()) {
                             rentalId = rentalOptional.get().getRentalId();
+                            System.out.println("Found rentalId: " + rentalId + " for bookingId: " + bookingId);
+                        } else {
+                            System.out.println("No rental found for bookingId: " + bookingId);
                         }
                     }
 
