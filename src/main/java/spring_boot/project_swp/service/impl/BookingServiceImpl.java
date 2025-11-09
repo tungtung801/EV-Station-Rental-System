@@ -33,13 +33,11 @@ import spring_boot.project_swp.exception.Print_Exception.UserNotVerifiedExceptio
 import spring_boot.project_swp.mapper.BookingMapper;
 import spring_boot.project_swp.repository.BookingRepository;
 import spring_boot.project_swp.repository.PaymentRepository;
-import spring_boot.project_swp.repository.StationRepository;
 import spring_boot.project_swp.repository.UserProfileRepository;
 import spring_boot.project_swp.repository.UserRepository;
 import spring_boot.project_swp.repository.VehicleRepository;
 import spring_boot.project_swp.service.BookingService;
 import spring_boot.project_swp.service.PaymentService;
-import spring_boot.project_swp.service.RentalService;
 
 @Service
 @RequiredArgsConstructor
@@ -52,10 +50,9 @@ public class BookingServiceImpl implements BookingService {
   final UserRepository userRepository;
   final VehicleRepository vehicleRepository;
   final UserProfileRepository userProfileRepository;
-  final StationRepository stationRepository;
   @Lazy final PaymentService paymentService;
   final PaymentRepository paymentRepository;
-    private final RentalServiceImpl rentalServiceImpl;
+  private final RentalServiceImpl rentalServiceImpl;
 
     @Override
   public BookingResponse createBooking(String email, BookingRequest request) {
@@ -88,7 +85,7 @@ public class BookingServiceImpl implements BookingService {
 
     List<Booking> conflictingBookings =
         bookingRepository.findByVehicle_VehicleIdAndStartTimeBeforeAndEndTimeAfterAndStatusNotIn(
-            request.getVehicleId().longValue(),
+            request.getVehicleId(),
             request.getEndTime(),
             request.getStartTime(),
             List.of(BookingStatusEnum.CANCELLED, BookingStatusEnum.COMPLETED));
@@ -111,31 +108,33 @@ public class BookingServiceImpl implements BookingService {
     booking.setDepositPercent(BigDecimal.valueOf(0.1)); // 10% deposit
     booking.setBookingType(request.getBookingType());
 
-    // Set initial status based on booking type
-    if (request.getBookingType() == BookingTypeEnum.ONLINE
-        || request.getBookingType() == BookingTypeEnum.FLEXIBLE) {
-      booking.setStatus(BookingStatusEnum.PENDING_DEPOSIT);
-    } else if (request.getBookingType() == BookingTypeEnum.OFFLINE) {
-      booking.setStatus(BookingStatusEnum.DEPOSIT_PAID);
-    }
+    // Set initial status as PENDING_DEPOSIT for all booking types
+    // All bookings require staff/admin confirmation before payment/rental creation
+    booking.setStatus(BookingStatusEnum.PENDING_DEPOSIT);
 
     Booking savedBooking = bookingRepository.save(booking);
 
-    // Create deposit payment only for ONLINE or FLEXIBLE bookings
-    if (request.getBookingType() == BookingTypeEnum.ONLINE
-        || request.getBookingType() == BookingTypeEnum.FLEXIBLE) {
-      PaymentRequest depositPaymentRequest = new PaymentRequest();
-      depositPaymentRequest.setBookingId(savedBooking.getBookingId());
-      depositPaymentRequest.setUserId(user.getUserId());
-      depositPaymentRequest.setPaymentType(PaymentTypeEnum.DEPOSIT);
-      depositPaymentRequest.setPaymentMethod(
-          PaymentMethodEnum.BANK_TRANSFER); // Mặc định là chuyển khoản ngân hàng
-      depositPaymentRequest.setAmount(
-          booking.getExpectedTotal().multiply(booking.getDepositPercent())); // Số tiền cọc
-      depositPaymentRequest.setNote("Deposit for booking " + savedBooking.getBookingId());
+    // Create deposit payment for all booking types
+    // OFFLINE: Staff will confirm later
+    // ONLINE/FLEXIBLE: User pays online via VNPay
+    PaymentRequest depositPaymentRequest = new PaymentRequest();
+    depositPaymentRequest.setBookingId(savedBooking.getBookingId());
+    depositPaymentRequest.setUserId(user.getUserId());
+    depositPaymentRequest.setPaymentType(PaymentTypeEnum.DEPOSIT);
 
-     paymentService.createDepositPayment(booking, user.getEmail(), depositPaymentRequest);
+    if (request.getBookingType() == BookingTypeEnum.OFFLINE) {
+      // For OFFLINE, mark as CASH payment (will be confirmed by staff)
+      depositPaymentRequest.setPaymentMethod(PaymentMethodEnum.CASH_ON_DELIVERY);
+    } else {
+      // For ONLINE/FLEXIBLE, use bank transfer
+      depositPaymentRequest.setPaymentMethod(PaymentMethodEnum.BANK_TRANSFER);
     }
+
+    depositPaymentRequest.setAmount(
+        booking.getExpectedTotal().multiply(booking.getDepositPercent())); // Số tiền cọc
+    depositPaymentRequest.setNote("Deposit for booking " + savedBooking.getBookingId());
+
+    paymentService.createDepositPayment(booking, user.getEmail(), depositPaymentRequest);
 
     return bookingMapper.toBookingResponse(savedBooking);
   }
@@ -156,7 +155,7 @@ public class BookingServiceImpl implements BookingService {
             .findByEmail(staffEmail)
             .orElseThrow(() -> new NotFoundException("Staff not found"));
 
-    List<Booking> bookings = new ArrayList<>();
+    List<Booking> bookings;
 
     // Nếu là ADMIN, hiển thị tất cả booking
     if (staff.getRole().getRoleName().equals("ADMIN")) {
@@ -207,7 +206,7 @@ public class BookingServiceImpl implements BookingService {
 
     List<Booking> allBookings =
         bookingRepository.findByVehicle_VehicleIdAndStartTimeBeforeAndEndTimeAfterAndStatusNotIn(
-            request.getVehicleId().longValue(),
+            request.getVehicleId(),
             request.getEndTime(),
             request.getStartTime(),
             List.of(BookingStatusEnum.CANCELLED, BookingStatusEnum.COMPLETED));
@@ -241,11 +240,6 @@ public class BookingServiceImpl implements BookingService {
             .findById(bookingId)
             .orElseThrow(() -> new NotFoundException("Booking not found"));
 
-    User user =
-        userRepository
-            .findByEmail(email)
-            .orElseThrow(() -> new NotFoundException("User not found with email: " + email));
-
     if (booking.getStatus().equals(request.getStatus())) {
       throw new ConflictException(
           "Booking is already in " + request.getStatus().name() + " status");
@@ -276,30 +270,38 @@ public class BookingServiceImpl implements BookingService {
       throw new ConflictException("Booking is not in PENDING_DEPOSIT status.");
     }
 
-    // Xử lý khác biệt giữa đặt xe trực tuyến và ngoại tuyến
-    if (booking.getBookingType() == BookingTypeEnum.ONLINE) {
-      // Tìm payment cọc liên quan đến booking này
-      Payment depositPayment =
-          paymentRepository
-              .findByBooking_BookingIdAndPaymentType(bookingId, PaymentTypeEnum.DEPOSIT)
-              .orElseThrow(
-                  () ->
-                      new NotFoundException(
-                          "Deposit payment not found for booking with id: " + bookingId));
+    // Find the deposit payment for this booking
+    Payment depositPayment =
+        paymentRepository
+            .findByBooking_BookingIdAndPaymentType(bookingId, PaymentTypeEnum.DEPOSIT)
+            .orElseThrow(
+                () ->
+                    new NotFoundException(
+                        "Deposit payment not found for booking with id: " + bookingId));
 
-      // Cập nhật trạng thái của payment cọc thành SUCCESS
-      paymentService.updatePaymentStatus(depositPayment.getPaymentId(), PaymentStatusEnum.SUCCESS);
-    } else if (booking.getBookingType() == BookingTypeEnum.OFFLINE) {
-      // Đặt xe ngoại tuyến không cần thanh toán đặt cọc, bỏ qua kiểm tra
-      log.info("Confirming offline booking without deposit payment: {}", bookingId);
-    }
+    // For all booking types (ONLINE, FLEXIBLE, OFFLINE):
+    // Staff/Admin confirms the payment
+    // Update payment status to SUCCESS
+    // This will automatically:
+    // 1. Update booking status to DEPOSIT_PAID
+    // 2. Create rental from booking
+    paymentService.updatePaymentStatus(depositPayment.getPaymentId(), PaymentStatusEnum.SUCCESS);
 
-    // Cập nhật trạng thái booking
-    booking.setStatus(BookingStatusEnum.DEPOSIT_PAID);
-    RentalResponse rentalResponse = rentalServiceImpl.createRentalFromBooking(bookingId);
+    // Retrieve the updated booking after payment status update
+    Booking updatedBooking =
+        bookingRepository
+            .findById(bookingId)
+            .orElseThrow(() -> new NotFoundException("Booking not found"));
 
-    // Tạo booking response và đưa rental vào
-    BookingResponse bookingResponse = bookingMapper.toBookingResponse(bookingRepository.save(booking));
+    // Retrieve the created rental (should already be created by updatePaymentStatus)
+    // Find rental by booking ID
+    RentalResponse rentalResponse = rentalServiceImpl.getAllRentals().stream()
+        .filter(rental -> rental.getBookingId() != null && rental.getBookingId().equals(bookingId))
+        .findFirst()
+        .orElseThrow(() -> new NotFoundException("Rental not found for this booking"));
+
+    // Create booking response and attach rental
+    BookingResponse bookingResponse = bookingMapper.toBookingResponse(updatedBooking);
     bookingResponse.setRental(rentalResponse);
 
     return bookingResponse;
