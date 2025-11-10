@@ -2,10 +2,12 @@ package spring_boot.project_swp.vnpay;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -14,10 +16,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import spring_boot.project_swp.dto.response.BookingResponse;
 import spring_boot.project_swp.dto.response.PaymentResponse;
+import spring_boot.project_swp.entity.Booking;
 import spring_boot.project_swp.entity.BookingStatusEnum;
 import spring_boot.project_swp.entity.PaymentStatusEnum;
 import spring_boot.project_swp.exception.NotFoundException;
+import spring_boot.project_swp.mapper.BookingMapper;
 import spring_boot.project_swp.service.BookingService;
 import spring_boot.project_swp.service.PaymentService;
 import spring_boot.project_swp.service.RentalService;
@@ -30,10 +35,16 @@ public class VNPayReturnController {
     @Value("${vnpay.hashSecret}")
     private String hashSecret;
 
-    @Autowired private PaymentService paymentService;
-    @Autowired private BookingService bookingService;
-    @Autowired private UserService userService;
-    @Autowired private RentalService rentalService;
+    @Autowired
+    private PaymentService paymentService;
+    @Autowired
+    private BookingService bookingService;
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private RentalService rentalService;
+    @Autowired
+    private BookingMapper bookingMapper;
 
     @Operation(
             summary = "Xử lý phản hồi trả về từ VNPay",
@@ -83,14 +94,18 @@ public class VNPayReturnController {
                     // Lưu ý: paymentService.updatePaymentStatus() sẽ tự động xử lý:
                     // - Cập nhật booking status thành DEPOSIT_PAID
                     // - Tạo rental từ booking
+
+                    Long bookingId = paymentResponse.getBookingId();
+                    Booking booking = bookingMapper.toBooking(bookingService.getBookingById(bookingId));
+                    bookingService.updateBookingStatus(bookingId, BookingStatusEnum.DEPOSIT_PAID);
+
                     paymentService.updatePaymentStatus(
                             paymentResponse.getPaymentId(), PaymentStatusEnum.SUCCESS);
 
 
                     // 3. Lấy rental ID từ booking
-                    Long bookingId = paymentResponse.getBookingId();
+                    rentalService.createRentalFromBooking(bookingId);
                     Long rentalId = null;
-
                     if (bookingId != null) {
                         // Tìm rental được tạo từ booking này
                         // Cách tốt hơn: lấy tất cả rentals và tìm cái match với bookingId

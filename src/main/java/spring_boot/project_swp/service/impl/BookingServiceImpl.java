@@ -248,6 +248,24 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    public BookingResponse updateBookingStatus(
+            Long bookingId, BookingStatusEnum newStatus) {
+        Booking booking =
+                bookingRepository
+                        .findById(bookingId)
+                        .orElseThrow(() -> new NotFoundException("Booking not found"));
+
+        if (booking.getStatus().equals(newStatus)) {
+            throw new ConflictException(
+                    "Booking is already in " + newStatus + " status");
+        }
+
+
+        booking.setStatus(newStatus);
+        return bookingMapper.toBookingResponse(bookingRepository.save(booking));
+    }
+
+    @Override
     @Transactional
     public BookingResponse confirmDepositPayment(Long bookingId, String staffEmail) {
 
