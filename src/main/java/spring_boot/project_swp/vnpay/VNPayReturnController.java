@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import spring_boot.project_swp.dto.response.PaymentResponse;
+import spring_boot.project_swp.entity.BookingStatusEnum;
 import spring_boot.project_swp.entity.PaymentStatusEnum;
 import spring_boot.project_swp.exception.NotFoundException;
 import spring_boot.project_swp.service.BookingService;
@@ -84,6 +85,7 @@ public class VNPayReturnController {
                     // - Tạo rental từ booking
                     paymentService.updatePaymentStatus(
                             paymentResponse.getPaymentId(), PaymentStatusEnum.SUCCESS);
+
 
                     // 3. Lấy rental ID từ booking
                     Long bookingId = paymentResponse.getBookingId();

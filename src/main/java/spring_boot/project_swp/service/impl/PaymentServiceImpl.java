@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import spring_boot.project_swp.dto.request.BookingStatusUpdateRequest;
 import spring_boot.project_swp.dto.request.PaymentRequest;
 import spring_boot.project_swp.dto.response.PaymentResponse;
 import spring_boot.project_swp.dto.response.UserResponse;
@@ -42,7 +42,9 @@ public class PaymentServiceImpl implements PaymentService {
   private final UserService userService;
   private final UserMapper userMapper;
   private final RoleService roleService;
-  @Lazy private final RentalService rentalService;
+  // @Lazy private final BookingService bookingService;
+  private final RentalService rentalService;
+  private final BookingMapper bookingMapper;
   private final BookingRepository bookingRepository;
 
   @Override
@@ -73,18 +75,25 @@ public class PaymentServiceImpl implements PaymentService {
     BigDecimal amountToPay = BigDecimal.ZERO;
     BigDecimal totalCost = rental.getTotal(); // Assuming rental.getTotal() returns a double
 
-    // Calculate amount to pay based on payment type
-    if (request.getPaymentType() == PaymentTypeEnum.DEPOSIT) {
+    // Business rule: CASH_ON_DELIVERY cannot be used with DEPOSIT
+    if (request.getPaymentMethod() == PaymentMethodEnum.CASH_ON_DELIVERY
+        && request.getPaymentType() == PaymentTypeEnum.DEPOSIT) {
+      throw new ConflictException("CASH_ON_DELIVERY cannot be used with DEPOSIT payment type.");
+    }
+
+    // New Business rule: If CASH_ON_DELIVERY, paymentType must be FINAL_PAYMENT and amount must be
+    // 100%
+    if (request.getPaymentMethod() == PaymentMethodEnum.CASH_ON_DELIVERY) {
+      if (request.getPaymentType() != PaymentTypeEnum.FINAL) {
+        throw new ConflictException("For CASH_ON_DELIVERY, payment type must be FINAL_PAYMENT.");
+      }
+      amountToPay = totalCost; // Full amount for cash on delivery
+    } else if (request.getPaymentType() == PaymentTypeEnum.DEPOSIT) {
       // Use the pre-calculated deposit amount from the booking
       amountToPay = depositAmount;
     } else if (request.getPaymentType() == PaymentTypeEnum.FINAL) {
-      // For FINAL payment via CASH_ON_DELIVERY, amount is the full remaining amount
-      if (request.getPaymentMethod() == PaymentMethodEnum.CASH_ON_DELIVERY) {
-        amountToPay = totalCost; // Full amount for cash on delivery
-      } else {
-        // Calculate the remaining amount (total - deposit)
-        amountToPay = totalAmount.subtract(depositAmount);
-      }
+      // Calculate the remaining amount (total - deposit)
+      amountToPay = totalAmount.subtract(depositAmount);
     } else {
       // Handle other types of fees (e.g., penalties, additional services)
       // For now, assume it's the total amount if not deposit or final payment
@@ -145,29 +154,13 @@ public class PaymentServiceImpl implements PaymentService {
 
     // If payment is completed, handle different payment types
     if (status.equals(PaymentStatusEnum.SUCCESS)) {
-      if (payment.getPaymentType().equals(PaymentTypeEnum.DEPOSIT) && payment.getBooking() != null) {
-        // For deposit payment, update booking status to DEPOSIT_PAID and create rental
-        Long bookingId = payment.getBooking().getBookingId();
-        Booking bookingToUpdate =
-            bookingRepository
-                .findById(bookingId)
-                .orElseThrow(
-                    () -> new NotFoundException("Booking not found with id: " + bookingId));
-        bookingToUpdate.setStatus(BookingStatusEnum.DEPOSIT_PAID);
-        bookingRepository.save(bookingToUpdate);
-
-        // Create rental from booking automatically
-        try {
-          rentalService.createRentalFromBooking(bookingId);
-          log.info("Booking {} status updated to DEPOSIT_PAID and Rental created.", bookingId);
-        } catch (Exception e) {
-          log.error("Error creating rental for booking {}: {}", bookingId, e.getMessage());
-          // Don't throw exception here, rental creation might fail due to various reasons
-          // but payment should still be marked as success
-        }
-      } else if (payment.getPaymentType().equals(PaymentTypeEnum.FINAL) && payment.getRental() != null) {
-        // For final payment, update booking status to COMPLETED
+      if (payment.getPaymentType().equals(PaymentTypeEnum.FINAL) && payment.getRental() != null) {
+        // For final payment, update booking status to COMPLETED and create rental
         Long bookingId = payment.getRental().getBooking().getBookingId();
+        String userEmail = payment.getRental().getBooking().getUser().getEmail();
+        BookingStatusUpdateRequest bookingStatusUpdateRequest = new BookingStatusUpdateRequest();
+        bookingStatusUpdateRequest.setStatus(BookingStatusEnum.COMPLETED);
+        // bookingService.updateBookingStatus(bookingId, userEmail, bookingStatusUpdateRequest);
         Booking bookingToUpdate =
             bookingRepository
                 .findById(bookingId)
@@ -175,8 +168,10 @@ public class PaymentServiceImpl implements PaymentService {
                     () -> new NotFoundException("Booking not found with id: " + bookingId));
         bookingToUpdate.setStatus(BookingStatusEnum.COMPLETED);
         bookingRepository.save(bookingToUpdate);
-        log.info("Booking {} status updated to COMPLETED.", bookingId);
+        // rentalService.createRentalFromBooking(bookingId); // Rental should already exist
+        log.info("Booking {} status updated to COMPLETED and Rental created.", bookingId);
       }
+      // For deposit payment, booking status will be updated in confirmDepositPayment method
     }
 
     return paymentMapper.toPaymentResponse(updatedPayment);
