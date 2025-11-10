@@ -22,6 +22,9 @@ public interface BookingMapper {
   @Mapping(target = "bookingType", source = "bookingType") // Explicitly map bookingType
   Booking toBooking(BookingRequest request);
 
+  // Map user fields (id + full name) into BookingResponse so frontend can display customer name
+  @Mapping(target = "userId", source = "user.userId")
+  @Mapping(target = "userName", source = "user.fullName")
   @Mapping(target = "vehicle", source = "vehicle")
   BookingResponse toBookingResponse(Booking booking);
 
