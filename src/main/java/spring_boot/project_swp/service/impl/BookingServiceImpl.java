@@ -151,7 +151,7 @@ public class BookingServiceImpl implements BookingService {
         List<Booking> bookings;
 
         // Nếu là ADMIN, hiển thị tất cả booking
-        if (staff.getRole().getRoleName().equals("admin")) {
+        if (staff.getRole().getRoleName().equalsIgnoreCase("Admin")) {
             bookings = bookingRepository.findAll();
         } else if (stationId != null) { // Nếu có stationId được cung cấp, lọc theo stationId đó
             bookings = bookingRepository.findByVehicle_Station_StationId(stationId);
