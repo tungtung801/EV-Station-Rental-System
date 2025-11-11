@@ -230,7 +230,9 @@ public class PaymentServiceImpl implements PaymentService {
 
     // Tạo đối tượng payment
     Payment payment = new Payment();
+
     payment.setPayer(user);
+    payment.setRental(booking.getRental());
     payment.setBooking(booking); // Lưu booking trực tiếp vào payment
     payment.setPaymentType(PaymentTypeEnum.DEPOSIT);
     payment.setPaymentMethod(request.getPaymentMethod());
@@ -329,7 +331,9 @@ public class PaymentServiceImpl implements PaymentService {
 
   @Override
   public Payment getPaymentByBookingId(Long bookingId){
-      Payment foundPayment = paymentRepository.findById(bookingId).orElseThrow(null);
-      return foundPayment;
+          return paymentRepository
+                  .findByBookingBookingId(bookingId)
+                  .orElseThrow(() -> new NotFoundException("Payment not found for booking id: " + bookingId));
+      }
   }
-}
+

@@ -76,6 +76,7 @@ public class VNPayController {
      paymentRequest.setBookingId(bookingId);
      paymentRequest.setUserId(userId);
      paymentRequest.setAmount(depositAmount);
+
      paymentRequest.setPaymentMethod(PaymentMethodEnum.BANK_TRANSFER); // Or get from request
 //      vnp_TxnRef sẽ được tạo và gán bên trong createDepositPayment
       spring_boot.project_swp.dto.response.PaymentResponse paymentResponse =
