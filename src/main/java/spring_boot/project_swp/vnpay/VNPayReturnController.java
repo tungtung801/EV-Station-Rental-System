@@ -126,7 +126,10 @@ public class VNPayReturnController {
                     }
 
                     // 4. Trả về response với rental ID
-                    String responseMessage = "Giao dịch thành công! Rental ID: " + rentalId;
+                    String transactionCode = paymentResponse.getTransactionCode();
+                    String responseMessage = "Giao dịch thành công! Rental ID: " + rentalId + "transactionCode: " + transactionCode;
+
+
                     return ResponseEntity.ok(responseMessage);
 
                 } catch (NotFoundException e) {
@@ -164,11 +167,14 @@ public class VNPayReturnController {
 
             if (rentalOptional.isPresent()) {
                 Long rentalId = rentalOptional.get().getRentalId();
+                String transactionCode = paymentService.getPaymentByBookingId(bookingId).getTransactionCode();
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
                 response.put("rentalId", rentalId);
                 response.put("bookingId", bookingId);
                 response.put("message", "Lấy Rental ID thành công!");
+                response.put("transactionCode", transactionCode);
+                response.put("paymentMethod", "BANK_TRANSFER");
                 return ResponseEntity.ok(response);
             } else {
                 Map<String, Object> response = new HashMap<>();

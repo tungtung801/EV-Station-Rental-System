@@ -1,6 +1,7 @@
 package spring_boot.project_swp.service.impl;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -289,6 +290,9 @@ public class PaymentServiceImpl implements PaymentService {
     payment.setPaymentMethod(request.getPaymentMethod());
     payment.setAmount(finalAmount);
     payment.setStatus(PaymentStatusEnum.PENDING);
+    payment.setBooking(rental.getBooking());
+    payment.setConfirmedAt(LocalDateTime.now());
+    payment.setNote(request.getNote());
     // payment.setTransactionTime(java.time.LocalDateTime.now()); // Removed as createdAt is
     // auto-generated
     payment.setConfirmedBy(processedByStaff);
