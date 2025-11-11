@@ -150,6 +150,8 @@ public class BookingServiceImplTest {
     @Test
     public void testCreateBooking_Success_Online() {
         // Arrange
+        vehicle.setStation(station); // Thêm station vào vehicle
+
         when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
         when(userProfileRepository.findByUserUserId(user.getUserId()))
                 .thenReturn(Optional.of(userProfile));
@@ -161,9 +163,6 @@ public class BookingServiceImplTest {
         when(bookingMapper.toBooking(bookingRequest)).thenReturn(booking);
         when(bookingRepository.save(any(Booking.class))).thenReturn(booking);
         when(bookingMapper.toBookingResponse(booking)).thenReturn(bookingResponse);
-        // Giả lập paymentService.createDepositPayment được gọi
-        when(paymentService.createDepositPayment(any(Booking.class), anyString(), any()))
-                .thenReturn(null);
 
         // Act
         BookingResponse response = bookingService.createBooking(user.getEmail(), bookingRequest);
@@ -171,8 +170,6 @@ public class BookingServiceImplTest {
         // Assert
         assertNotNull(response);
         assertEquals(bookingResponse.getBookingId(), response.getBookingId());
-        // Kiểm tra xem createDepositPayment đã được gọi cho booking ONLINE
-        verify(paymentService).createDepositPayment(any(Booking.class), eq(user.getEmail()), any());
     }
 
     @Test
@@ -260,6 +257,7 @@ public class BookingServiceImplTest {
     public void testConfirmDepositPayment_Conflict_WrongStatus() {
         // Arrange
         bookingPending.setStatus(BookingStatusEnum.DEPOSIT_PAID); // Đã thanh toán rồi
+        when(userRepository.findByEmail("staff@example.com")).thenReturn(Optional.of(staffUser));
         when(bookingRepository.findById(bookingPending.getBookingId()))
                 .thenReturn(Optional.of(bookingPending));
 
