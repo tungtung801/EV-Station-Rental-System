@@ -410,4 +410,16 @@ public class BookingServiceImpl implements BookingService {
                 .message("User is verified")
                 .build();
     }
+
+    // Đếm theo status của Rental dùng để admin tính tổng doanh thu của tất cả station (admin -> mục báo cáo).
+    @Override
+    public Integer countAllBookingsWithCompletedRentalStatus() {
+        return bookingRepository.countByRental_Status(RentalStatusEnum.COMPLETED);
+    }
+
+    // Đếm theo status của Rental và UserId (admin -> mục quản lí khách hàng)
+    @Override
+    public Integer countAllBookingsWithCompletedRentalStatusFollowByUserId(Long userId) {
+        return bookingRepository.countByRental_StatusAndUser_UserId(RentalStatusEnum.COMPLETED, userId);
+    }
 }

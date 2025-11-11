@@ -55,6 +55,7 @@ public class SecurityConfig {
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
+
     // ✅ BƯỚC 1: THÊM BEAN CẤU HÌNH CORS
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -173,8 +174,12 @@ public class SecurityConfig {
                                         .requestMatchers(HttpMethod.POST, "/api/bookings")
                                         .hasAnyAuthority("user", "admin", "staff")
                                         .requestMatchers(
-                                                HttpMethod.GET, "/api/bookings", "/api/bookings/*", "/api/bookings/user/*")
+                                                HttpMethod.GET, "/api/bookings",
+                                                "/api/bookings/*",
+                                                "/api/bookings/user/*")
                                         .hasAnyAuthority("user", "admin", "staff")
+                                        .requestMatchers(HttpMethod.GET, "/api/bookings/count-completed-rentals",
+                                                "/api/bookings/user/count-completed-rentals/*").hasAuthority("admin")
                                         .requestMatchers(HttpMethod.PUT, "/api/bookings/*/cancel")
                                         .hasAuthority("user")
                                         .requestMatchers(HttpMethod.PUT, "/api/bookings/*/confirm-deposit")
