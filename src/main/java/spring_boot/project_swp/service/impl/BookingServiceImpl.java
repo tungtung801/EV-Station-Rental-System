@@ -281,12 +281,19 @@ public class BookingServiceImpl implements BookingService {
         // pass neu: id station staff = booking vehicle.station.id
         // fail neu nguoc lai pass.
 
-        Station staffStation = confirmByStaff.getStation();
-        Station vehicleStation = booking.getVehicle().getStation();
+        if (!confirmByStaff.getRole().getRoleName().equalsIgnoreCase("Staff") &&
+                !confirmByStaff.getRole().getRoleName().equalsIgnoreCase("Admin")) {
+            throw new ConflictException("Only staff or admin can confirm deposit payments.");
+        }
 
-        if (!staffStation.equals(vehicleStation)) {
-            throw new ConflictException("Staff at station '" + staffStation.getStationName() +
-                    "' cannot confirm booking for a vehicle at station '" + vehicleStation.getStationName() + "'.");
+        if (confirmByStaff.getRole().getRoleName().equalsIgnoreCase("Staff")) {
+            Station staffStation = confirmByStaff.getStation();
+            Station vehicleStation = booking.getVehicle().getStation();
+
+            if (!staffStation.equals(vehicleStation)) {
+                throw new ConflictException("Staff at station '" + staffStation.getStationName() +
+                        "' cannot confirm booking for a vehicle at station '" + vehicleStation.getStationName() + "'.");
+            }
         }
 
         // ĐÃ VƯỢT QUA 2 MÀN KIỂM TRA VÀ ĐÃ HỢP LỆ
