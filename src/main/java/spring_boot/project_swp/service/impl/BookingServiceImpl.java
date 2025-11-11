@@ -127,7 +127,10 @@ public class BookingServiceImpl implements BookingService {
                 booking.getExpectedTotal().multiply(booking.getDepositPercent())); // Số tiền cọc
         depositPaymentRequest.setNote("Deposit for booking " + savedBooking.getBookingId());
 
-        paymentService.createDepositPayment(booking, user.getEmail(), depositPaymentRequest);
+        if (request.getBookingType() == BookingTypeEnum.ONLINE || request.getBookingType() == BookingTypeEnum.FLEXIBLE) {
+            // For OFFLINE, mark as CASH payment (will be confirmed by staff)
+            paymentService.createDepositPayment(booking, user.getEmail(), depositPaymentRequest);
+        }
 
         return bookingMapper.toBookingResponse(savedBooking);
     }
