@@ -76,16 +76,16 @@ public class UserProfileServiceImplTest {
         when(fileStorageService.saveFile(idCardFile)).thenReturn(savedFileName);
         when(userProfileRepository.save(any(UserProfile.class))).thenReturn(userProfile);
 
+        // Assert
+        // Bắt đối tượng UserProfile được truyền vào hàm save
+        ArgumentCaptor<UserProfile> userProfileCaptor = ArgumentCaptor.forClass(UserProfile.class);
+        verify(userProfileRepository).save(userProfileCaptor.capture());
+
         // Giả lập mapper sẽ map trường 'bio'
         doNothing().when(userProfileMapper).updateUserProfileFromRequest(any(), any());
 
         // Act
         userProfileService.updateUserProfile(userId, userProfileRequest);
-
-        // Assert
-        // Bắt đối tượng UserProfile được truyền vào hàm save
-        ArgumentCaptor<UserProfile> userProfileCaptor = ArgumentCaptor.forClass(UserProfile.class);
-        verify(userProfileRepository).save(userProfileCaptor.capture());
 
         UserProfile capturedProfile = userProfileCaptor.getValue();
 

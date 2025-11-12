@@ -68,6 +68,25 @@ public class RentalServiceImplTest {
                 .build();
     }
 
+
+
+    @Test
+    public void testConfirmReturn_Conflict_StaffNotInStation() {
+        // Arrange
+        // Staff ở trạm 2, nhưng xe (và trạm của xe) ở trạm 1
+        Station staffStation = Station.builder().stationId(2L).build();
+        staff.setStation(staffStation);
+
+        when(rentalRepository.findById(1L)).thenReturn(Optional.of(rental));
+        when(userRepository.findByEmail("staff@example.com")).thenReturn(Optional.of(staff));
+
+        // Act & Assert
+        Exception ex = assertThrows(ConflictException.class, () -> {
+            rentalService.confirmReturn(1L, "staff@example.com");
+        });
+        assertEquals("Nhân viên nhận xe không thuộc trạm của xe.", ex.getMessage());
+    }
+
     // --- Test 9: Rental Hoàn Tất ---
     @Test
     public void testConfirmReturn_Success() {
@@ -121,22 +140,5 @@ public class RentalServiceImplTest {
             rentalService.confirmReturn(1L, "staff@example.com");
         });
         assertEquals("Rental is not in IN_PROGRESS status", ex.getMessage());
-    }
-
-    @Test
-    public void testConfirmReturn_Conflict_StaffNotInStation() {
-        // Arrange
-        // Staff ở trạm 2, nhưng xe (và trạm của xe) ở trạm 1
-        Station staffStation = Station.builder().stationId(2L).build();
-        staff.setStation(staffStation);
-
-        when(rentalRepository.findById(1L)).thenReturn(Optional.of(rental));
-        when(userRepository.findByEmail("staff@example.com")).thenReturn(Optional.of(staff));
-
-        // Act & Assert
-        Exception ex = assertThrows(ConflictException.class, () -> {
-            rentalService.confirmReturn(1L, "staff@example.com");
-        });
-        assertEquals("Nhân viên nhận xe không thuộc trạm của xe.", ex.getMessage());
     }
 }

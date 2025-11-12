@@ -91,6 +91,21 @@ public class UserServiceImplTest {
         loginResponse.setEmail("login@example.com");
     }
 
+    @Test
+    public void testRegister_ConflictException() {
+        // Arrange
+        when(userRepository.existsByEmailOrPhoneNumber(registerRequest.getEmail(), registerRequest.getPhoneNumber()))
+                .thenReturn(true);
+
+        // Act & Assert
+        Exception ex = assertThrows(ConflictException.class, () -> {
+            userService.register(registerRequest);
+        });
+
+        assertEquals("Email or phone number already in use", ex.getMessage());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
     // --- Test 1: Đăng Kí ---
     @Test
     public void testRegister_Success() {
@@ -111,21 +126,6 @@ public class UserServiceImplTest {
         assertEquals(userForRegister.getEmail(), response.getEmail());
         verify(userRepository).save(any(User.class));
         verify(userProfileRepository).save(any(UserProfile.class));
-    }
-
-    @Test
-    public void testRegister_ConflictException() {
-        // Arrange
-        when(userRepository.existsByEmailOrPhoneNumber(registerRequest.getEmail(), registerRequest.getPhoneNumber()))
-                .thenReturn(true);
-
-        // Act & Assert
-        Exception ex = assertThrows(ConflictException.class, () -> {
-            userService.register(registerRequest);
-        });
-
-        assertEquals("Email or phone number already in use", ex.getMessage());
-        verify(userRepository, never()).save(any(User.class));
     }
 
     // --- Test 2: Đăng Nhập ---

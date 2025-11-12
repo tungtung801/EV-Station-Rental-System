@@ -172,6 +172,28 @@ public class BookingServiceImplTest {
         assertEquals(bookingResponse.getBookingId(), response.getBookingId());
     }
 
+
+    @Test
+    public void testConfirmDepositPayment_Conflict_WrongStatus() {
+        // Arrange
+        bookingPending.setStatus(BookingStatusEnum.DEPOSIT_PAID); // Đã thanh toán rồi
+        when(userRepository.findByEmail("staff@example.com")).thenReturn(Optional.of(staffUser));
+        when(bookingRepository.findById(bookingPending.getBookingId()))
+                .thenReturn(Optional.of(bookingPending));
+
+        // Act & Assert
+        Exception ex =
+                assertThrows(
+                        ConflictException.class,
+                        () -> {
+                            bookingService.confirmDepositPayment(
+                                    bookingPending.getBookingId(), "staff@example.com");
+                        });
+        assertEquals("Booking is not in PENDING_DEPOSIT status.", ex.getMessage());
+    }
+
+
+
     @Test
     public void testCreateBooking_UserNotVerified() {
         // Arrange
@@ -253,22 +275,4 @@ public class BookingServiceImplTest {
         verify(bookingRepository, atLeast(2)).findById(bookingId);
     }
 
-    @Test
-    public void testConfirmDepositPayment_Conflict_WrongStatus() {
-        // Arrange
-        bookingPending.setStatus(BookingStatusEnum.DEPOSIT_PAID); // Đã thanh toán rồi
-        when(userRepository.findByEmail("staff@example.com")).thenReturn(Optional.of(staffUser));
-        when(bookingRepository.findById(bookingPending.getBookingId()))
-                .thenReturn(Optional.of(bookingPending));
-
-        // Act & Assert
-        Exception ex =
-                assertThrows(
-                        ConflictException.class,
-                        () -> {
-                            bookingService.confirmDepositPayment(
-                                    bookingPending.getBookingId(), "staff@example.com");
-                        });
-        assertEquals("Booking is not in PENDING_DEPOSIT status.", ex.getMessage());
-    }
 }
