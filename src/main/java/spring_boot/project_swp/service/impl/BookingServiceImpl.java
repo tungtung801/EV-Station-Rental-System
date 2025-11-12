@@ -76,6 +76,28 @@ public class BookingServiceImpl implements BookingService {
                     "User must upload either driving license or ID card before booking a vehicle.");
         }
 
+        // Validate start time is in the future
+        if(request.getStartTime().isBefore(LocalDateTime.now())){
+            throw new ConflictException("Start time must be in the future.");
+        }
+
+        // Validate end time is in the future
+        if(request.getEndTime().isBefore(LocalDateTime.now())){
+            throw new ConflictException("End time must be in the future.");
+        }
+
+        // Validate end time is after start time
+        if(request.getEndTime().isBefore(request.getStartTime()) || request.getEndTime().isEqual(request.getStartTime())){
+            throw new ConflictException("End time must be after start time.");
+        }
+
+        // Validate booking duration is not more than 1 month (30 days)
+        long durationDays = java.time.temporal.ChronoUnit.DAYS.between(request.getStartTime(), request.getEndTime());
+        if(durationDays > 30){
+            throw new ConflictException("Booking duration cannot exceed 30 days (1 month).");
+        }
+
+        // Check for vehicle conflicts
         List<Booking> conflictingBookings =
                 bookingRepository.findByVehicle_VehicleIdAndStartTimeBeforeAndEndTimeAfterAndStatusNotIn(
                         request.getVehicleId(),
@@ -199,6 +221,27 @@ public class BookingServiceImpl implements BookingService {
                 vehicleRepository
                         .findById(request.getVehicleId())
                         .orElseThrow(() -> new NotFoundException("Vehicle not found"));
+
+        // Validate start time is in the future
+        if(request.getStartTime().isBefore(LocalDateTime.now())){
+            throw new ConflictException("Start time must be in the future.");
+        }
+
+        // Validate end time is in the future
+        if(request.getEndTime().isBefore(LocalDateTime.now())){
+            throw new ConflictException("End time must be in the future.");
+        }
+
+        // Validate end time is after start time
+        if(request.getEndTime().isBefore(request.getStartTime()) || request.getEndTime().isEqual(request.getStartTime())){
+            throw new ConflictException("End time must be after start time.");
+        }
+
+        // Validate booking duration is not more than 1 month (30 days)
+        long durationDays = java.time.temporal.ChronoUnit.DAYS.between(request.getStartTime(), request.getEndTime());
+        if(durationDays > 30){
+            throw new ConflictException("Booking duration cannot exceed 30 days (1 month).");
+        }
 
         List<Booking> allBookings = conflictingBookingList(existingBooking);
         for (Booking otherBooking : allBookings) {
