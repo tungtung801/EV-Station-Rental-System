@@ -89,11 +89,13 @@ public class PaymentServiceImpl implements PaymentService {
             throw new ConflictException("For CASH_ON_DELIVERY, payment type must be FINAL_PAYMENT.");
         }
         amountToPay = totalCost; // Full amount for cash on delivery
-//    } else if (request.getPaymentType() == PaymentTypeEnum.DEPOSIT) {
-//      // Use the pre-calculated deposit amount from the booking
+    } else if (request.getPaymentType() == PaymentTypeEnum.DEPOSIT) {
+        throw new ConflictException("For DEPOSIT, payment DO NOT SUPPORT.");
+      // Use the pre-calculated deposit amount from the booking
 //      amountToPay = depositAmount;
-//    } else if (request.getPaymentType() == PaymentTypeEnum.FINAL) {
-//      // Calculate the remaining amount (total - deposit)
+    } else if (request.getPaymentType() == PaymentTypeEnum.FINAL) {
+      // Calculate the remaining amount (total - deposit)
+        throw new ConflictException("For FINAL PAYMENT, payment DO NOT SUPPORT.");
 //      amountToPay = totalAmount.subtract(depositAmount);
     } else {
       // Handle other types of fees (e.g., penalties, additional services)
@@ -198,9 +200,7 @@ public class PaymentServiceImpl implements PaymentService {
   @Override
   public PaymentResponse createDepositPayment(
       Booking booking, String userEmail, PaymentRequest request) {
-    // Tìm booking theo ID
-    // Booking booking = bookingMapper.toBooking(bookingService.getBookingById(bookingId)); // Xóa
-    // dòng này
+    // Kiểm tra booking có tồn tại
     if (booking == null) {
       throw new NotFoundException("Booking not found");
     }
@@ -208,6 +208,11 @@ public class PaymentServiceImpl implements PaymentService {
     // Kiểm tra trạng thái booking
     if (!booking.getStatus().equals(BookingStatusEnum.PENDING_DEPOSIT)) {
       throw new ConflictException("Booking is not in PENDING_DEPOSIT status");
+    }
+
+    // Kiểm tra payment type phải là FINAL (thanh toán đầy đủ)
+    if (request.getPaymentType() != PaymentTypeEnum.FINAL) {
+      throw new ConflictException("Payment type must be FINAL. Deposit payment is no longer supported.");
     }
 
     // Tìm user thanh toán
@@ -221,24 +226,18 @@ public class PaymentServiceImpl implements PaymentService {
     // Tìm nhân viên xử lý thanh toán
     User processedByStaff = getProcessedByStaff(request.getConfirmedById());
 
-    // Tính số tiền cọc
-    BigDecimal depositAmount =
-        booking
-            .getExpectedTotal()
-            .multiply(booking.getDepositPercent())
-            .divide(BigDecimal.valueOf(100), 2, BigDecimal.ROUND_HALF_UP);
+    // Tính tổng số tiền thanh toán (toàn bộ - không còn đặt cọc)
+    BigDecimal totalAmount = booking.getTotalAmount();
 
-    // Tạo đối tượng payment
+    // Tạo đối tượng payment với thanh toán đầy đủ
     Payment payment = new Payment();
-
     payment.setPayer(user);
     payment.setRental(booking.getRental());
-    payment.setBooking(booking); // Lưu booking trực tiếp vào payment
-    payment.setPaymentType(PaymentTypeEnum.DEPOSIT);
+    payment.setBooking(booking);
+    payment.setPaymentType(PaymentTypeEnum.FINAL); // Thanh toán đầy đủ
     payment.setPaymentMethod(request.getPaymentMethod());
-    payment.setAmount(depositAmount);
+    payment.setAmount(totalAmount); // Tổng số tiền booking
     payment.setStatus(PaymentStatusEnum.PENDING);
-    // payment.setTransactionTime(java.time.LocalDateTime.now()); // Removed as createdAt is
     // auto-generated
     payment.setConfirmedBy(processedByStaff);
 
@@ -249,7 +248,7 @@ public class PaymentServiceImpl implements PaymentService {
     // Lưu payment
     Payment savedPayment = paymentRepository.save(payment);
     log.info(
-        "Created deposit payment with id: {} for booking: {}",
+        "Created full payment with id: {} for booking: {}",
         savedPayment.getPaymentId(),
         booking.getBookingId());
 

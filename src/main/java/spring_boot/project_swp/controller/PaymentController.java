@@ -45,6 +45,20 @@ public class PaymentController {
         paymentService.createDepositPayment(booking, userEmail, request), HttpStatus.CREATED);
   }
 
+//    @PostMapping("/onlyPayment/{bookingId}")
+//    @Operation(
+//            summary = "Create a payment",
+//            description = "Creates a new payment for a booking.")
+//    public ResponseEntity<PaymentResponse> createPayment(
+//            @PathVariable Long bookingId, @Valid @RequestBody PaymentRequest request) {
+//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//        String userEmail = authentication.getName();
+//        // Lấy đối tượng Booking từ bookingService và chuyển đổi sang Booking entity
+//        Booking booking = bookingMapper.toBooking(bookingService.getBookingById(bookingId));
+//        return new ResponseEntity<>(
+//                paymentService.createPayment(booking, userEmail, request), HttpStatus.CREATED);
+//    }
+
   @PostMapping("/final/{rentalId}")
   @Operation(
       summary = "Create a final payment",
