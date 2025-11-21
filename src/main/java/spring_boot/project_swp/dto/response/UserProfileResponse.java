@@ -23,5 +23,5 @@ public class UserProfileResponse {
   String idCardUrl;
   UserProfileStatusEnum status;
   String bio;
-  String preferences;
+  String reason;
 }

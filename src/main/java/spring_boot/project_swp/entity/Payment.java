@@ -3,12 +3,7 @@ package spring_boot.project_swp.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -27,11 +22,15 @@ public class Payment {
   Long paymentId;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "BookingId")
+  @JoinColumn(name = "BookingId") // Nullable (nếu thanh toán phạt lẻ)
+  @ToString.Exclude
+  @EqualsAndHashCode.Exclude
   Booking booking;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "RentalId")
+  @JoinColumn(name = "RentalId") // Nullable (nếu thanh toán trước khi nhận xe)
+  @ToString.Exclude
+  @EqualsAndHashCode.Exclude
   Rental rental;
 
   @Column(name = "Amount", precision = 12, scale = 2, nullable = false)
@@ -47,11 +46,14 @@ public class Payment {
 
   @Enumerated(EnumType.STRING)
   @Column(name = "Status", length = 20, nullable = false)
-  PaymentStatusEnum status;
+  @Builder.Default
+  PaymentStatusEnum status = PaymentStatusEnum.PENDING; // Mặc định Pending
 
+  // Người xác nhận thanh toán (Staff)
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "StaffId")
   @ToString.Exclude
+  @EqualsAndHashCode.Exclude
   User confirmedBy;
 
   @Column(name = "Note", length = 255)
@@ -64,11 +66,13 @@ public class Payment {
   @Column(name = "ConfirmedAt")
   LocalDateTime confirmedAt;
 
-  @Column(name = "TransactionCode", length = 150)
+  @Column(name = "TransactionCode", length = 150) // Mã GD VNPay
   String transactionCode;
 
+  // Người trả tiền
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "UserId")
   @ToString.Exclude
-  private User payer;
+  @EqualsAndHashCode.Exclude
+  User payer;
 }

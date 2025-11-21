@@ -1,9 +1,6 @@
 package spring_boot.project_swp.dto.response;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Data
@@ -11,10 +8,10 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class VehicleModelResponse {
-  private Long modelId;
-  private String modelName;
-  private String brand;
-  private String type;
-  private int capacityKWh;
-  private String description;
+  Long modelId;
+  String modelName;
+  String brand;
+  String type;
+  int capacityKWh;
+  String description;
 }

@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import spring_boot.project_swp.entity.UserProfileStatusEnum;
 
 @Data
 @AllArgsConstructor
@@ -19,4 +20,6 @@ public class UserResponse {
   String roleName;
   Boolean accountStatus;
   LocalDateTime createdAt;
+  String stationName;
+  UserProfileStatusEnum kycStatus;
 }

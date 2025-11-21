@@ -5,13 +5,13 @@ import spring_boot.project_swp.dto.request.VehicleModelRequest;
 import spring_boot.project_swp.dto.response.VehicleModelResponse;
 
 public interface VehicleModelService {
-  public List<VehicleModelResponse> getAllVehicleModels();
+  List<VehicleModelResponse> getAllVehicleModels();
 
-  public VehicleModelResponse getVehicleModelById(Long id);
+  VehicleModelResponse getVehicleModelById(Long id);
 
-  public VehicleModelResponse addVehicleModel(VehicleModelRequest request);
+  VehicleModelResponse addVehicleModel(VehicleModelRequest request);
 
-  public VehicleModelResponse updateVehicleModel(Long id, VehicleModelRequest request);
+  VehicleModelResponse updateVehicleModel(Long id, VehicleModelRequest request);
 
-  public void deleteVehicleModel(Long id);
+  void deleteVehicleModel(Long id);
 }

@@ -1,342 +1,98 @@
 package spring_boot.project_swp.config;
 
-import java.math.BigDecimal;
-import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import spring_boot.project_swp.dto.request.RoleRequest;
-import spring_boot.project_swp.entity.Location;
-import spring_boot.project_swp.entity.Station;
-import spring_boot.project_swp.entity.StationStatusEnum;
-import spring_boot.project_swp.entity.User;
-import spring_boot.project_swp.entity.Vehicle;
-import spring_boot.project_swp.entity.VehicleModel;
-import spring_boot.project_swp.repository.DiscountRepository;
-import spring_boot.project_swp.repository.LocationRepository;
-import spring_boot.project_swp.repository.RoleRepository;
-import spring_boot.project_swp.repository.StationRepository;
-import spring_boot.project_swp.repository.UserRepository;
-import spring_boot.project_swp.repository.VehicleModelRepository;
-import spring_boot.project_swp.repository.VehicleRepository;
-import spring_boot.project_swp.service.RoleService;
+import org.springframework.transaction.annotation.Transactional;
+import spring_boot.project_swp.entity.*;
+import spring_boot.project_swp.repository.*;
+import java.math.BigDecimal;
 
 @Component
-@AllArgsConstructor
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class DataInitializer implements CommandLineRunner {
-  private final UserRepository userRepository;
-  private final DiscountRepository discountRepository;
-  private final RoleRepository roleRepository;
-  private final RoleService roleService;
-  private final LocationRepository locationRepository;
-  private final VehicleModelRepository vehicleModelRepository;
-  private final StationRepository stationRepository;
-  private final VehicleRepository vehicleRepository;
+
+  final RoleRepository roleRepository;
+  final UserRepository userRepository;
+  final UserProfileRepository userProfileRepository;
+  final LocationRepository locationRepository;
+  final PasswordEncoder passwordEncoder;
 
   @Override
+  @Transactional
   public void run(String... args) throws Exception {
-    if (roleService.findByRoleName("admin").isEmpty()) {
-      RoleRequest adminRoleRequest = new RoleRequest();
-      adminRoleRequest.setRoleName("admin");
-      roleService.createRole(adminRoleRequest);
-
-      RoleRequest staffRoleRequest = new RoleRequest();
-      staffRoleRequest.setRoleName("staff");
-      roleService.createRole(staffRoleRequest);
-
-      RoleRequest userRoleRequest = new RoleRequest();
-      userRoleRequest.setRoleName("user");
-      roleService.createRole(userRoleRequest);
+    // 1. TẠO CÁC ROLE CƠ BẢN (Nếu database chưa có)
+    if (roleRepository.count() == 0) {
+      roleRepository.save(Role.builder().roleName("Admin").build());
+      roleRepository.save(Role.builder().roleName("Staff").build());
+      roleRepository.save(Role.builder().roleName("User").build());
     }
 
-    /*
-    if (discountRepository.count() == 0) {
-      Discount sale20 =
-          Discount.builder()
-              .code("SALE20")
-              .description("20% off trên tất cả đơn thuê")
-              .amountPercentage(new BigDecimal("20.00"))
-              .startDate(LocalDateTime.now())
-              .endDate(LocalDateTime.now().plusMonths(1))
-              .usageLimit(100)
-              .isActive(true) // Thêm dòng này
-              .build();
+    // 2. TẠO TÀI KHOẢN ADMIN MẶC ĐỊNH (admin@gmail.com / 123456)
+    if (!userRepository.existsByEmailOrPhoneNumber("admin@gmail.com", null)) {
+      User admin = new User();
+      admin.setFullName("System Admin");
+      admin.setEmail("admin@gmail.com");
+      admin.setPhoneNumber("0000000000");
+      admin.setPassword(passwordEncoder.encode("123456")); // Password
+      admin.setAccountStatus(true);
 
-      Discount fixed100 =
-          Discount.builder()
-              .code("FIXED100")
-              .description("Giảm 100.000 VNĐ cho đơn thuê từ 3 ngày")
-              .amountFixed(new BigDecimal("100000"))
-              .minRentalDuration(3)
-              .startDate(LocalDateTime.now())
-              .endDate(LocalDateTime.now().plusMonths(2))
-              .isActive(true) // Thêm dòng này
-              .build();
+      // Gán quyền Admin
+      Role adminRole = roleRepository.findByRoleName("Admin").orElseThrow();
+      admin.setRole(adminRole);
 
-      Discount longRent =
-          Discount.builder()
-              .code("LONGRENT")
-              .description("15% off cho thuê từ 7 ngày")
-              .amountPercentage(new BigDecimal("15.00"))
-              .minRentalDuration(7)
-              .startDate(LocalDateTime.now())
-              .endDate(LocalDateTime.now().plusMonths(1))
-              .isActive(true) // Thêm dòng này
-              .build();
+      User savedAdmin = userRepository.save(admin);
 
-      Discount limited50 =
-          Discount.builder()
-              .code("LIMITED50")
-              .description("25% off (chỉ 50 lượt)")
-              .amountPercentage(new BigDecimal("25.00"))
-              .startDate(LocalDateTime.now())
-              .endDate(LocalDateTime.now().plusWeeks(3))
-              .usageLimit(50)
-              .isActive(true) // Thêm dòng này
-              .build();
+      // Tạo Profile mặc định cho Admin (Status = VERIFIED)
+      // Phải có cái này để tránh lỗi NullPointerException khi Admin đăng nhập
+      UserProfile profile = new UserProfile();
+      profile.setUser(savedAdmin);
+      profile.setStatus(UserProfileStatusEnum.VERIFIED);
+      userProfileRepository.save(profile);
 
-      discountRepository.saveAll(List.of(sale20, fixed100, longRent, limited50));
-    }
-    */
-
-    if (userRepository.findByEmail("admin@gmail.com").isEmpty()) {
-      User adminUser = new User();
-      adminUser.setFullName("Admin User");
-      adminUser.setEmail("admin@gmail.com");
-      adminUser.setPhoneNumber("0123456789");
-      adminUser.setPassword("123"); // Mật khẩu chung
-      adminUser.setRole(roleRepository.findByRoleName("admin").orElse(null));
-      userRepository.save(adminUser);
+      System.out.println(">>> ADMIN CREATED: admin@gmail.com / 123456");
     }
 
-    if (userRepository.findByEmail("staff@gmail.com").isEmpty()) {
-      User staffUser = new User();
-      staffUser.setFullName("Staff User");
-      staffUser.setEmail("staff@gmail.com");
-      staffUser.setPhoneNumber("0987654321");
-      staffUser.setPassword("123"); // Mật khẩu chung
-      staffUser.setRole(roleRepository.findByRoleName("staff").orElse(null));
-      userRepository.save(staffUser);
-    }
-
-    if (userRepository.findByEmail("user@gmail.com").isEmpty()) {
-      User normalUser = new User();
-      normalUser.setFullName("Normal User");
-      normalUser.setEmail("user@gmail.com");
-      normalUser.setPhoneNumber("0112233445");
-      normalUser.setPassword("123"); // Mật khẩu chung
-      normalUser.setRole(roleRepository.findByRoleName("user").orElse(null));
-      userRepository.save(normalUser);
-    }
-    if (locationRepository.findByLocationName("Hà Nội").isEmpty()) {
-      Location hanoi =
-          Location.builder().locationName("Hà Nội").locationType("City").isActive(true).build();
-      locationRepository.save(hanoi);
-    }
-
-    if (locationRepository.findByLocationName("Đà Nẵng").isEmpty()) {
-      Location danang =
-          Location.builder().locationName("Đà Nẵng").locationType("City").isActive(true).build();
-      locationRepository.save(danang);
-    }
-
-    if (locationRepository.findByLocationName("Hồ Chí Minh").isEmpty()) {
-      Location hcm =
-          Location.builder()
-              .locationName("Hồ Chí Minh")
-              .locationType("City")
-              .isActive(true)
-              .build();
+    // 3. TẠO DỮ LIỆU LOCATION MẪU (HCM, Hà Nội, Đà Nẵng)
+    if (locationRepository.count() == 0) {
+      // Thành phố Hồ Chí Minh
+      Location hcm = Location.builder()
+          .locationName("Thành phố Hồ Chí Minh")
+          .locationType("City")
+          .latitude(new BigDecimal("10.78"))
+          .longitude(new BigDecimal("106.70"))
+          .radius(new BigDecimal("50.00"))
+          .isActive(true)
+          .build();
       locationRepository.save(hcm);
-    }
 
-    Location hanoi =
-        locationRepository
-            .findByLocationName("Hà Nội")
-            .orElseGet(
-                () -> {
-                  Location newHanoi =
-                      Location.builder()
-                          .locationName("Hà Nội")
-                          .locationType("City")
-                          .isActive(true)
-                          .build();
-                  return locationRepository.save(newHanoi);
-                });
+      // Hà Nội
+      Location hanoi = Location.builder()
+          .locationName("Hà Nội")
+          .locationType("City")
+          .latitude(new BigDecimal("21.03"))
+          .longitude(new BigDecimal("105.85"))
+          .radius(new BigDecimal("50.00"))
+          .isActive(true)
+          .build();
+      locationRepository.save(hanoi);
 
-    Location hoanKiem =
-        locationRepository
-            .findByLocationNameAndParent("Hoàn Kiếm", hanoi)
-            .orElseGet(
-                () -> {
-                  Location newHoanKiem =
-                      Location.builder()
-                          .locationName("Hoàn Kiếm")
-                          .locationType("District")
-                          .parent(hanoi)
-                          .isActive(true)
-                          .build();
-                  return locationRepository.save(newHoanKiem);
-                });
+      // Đà Nẵng
+      Location danang = Location.builder()
+          .locationName("Đà Nẵng")
+          .locationType("City")
+          .latitude(new BigDecimal("16.07"))
+          .longitude(new BigDecimal("108.23"))
+          .radius(new BigDecimal("50.00"))
+          .isActive(true)
+          .build();
+      locationRepository.save(danang);
 
-    Location baDinh =
-        locationRepository
-            .findByLocationNameAndParent("Ba Đình", hanoi)
-            .orElseGet(
-                () -> {
-                  Location newBaDinh =
-                      Location.builder()
-                          .locationName("Ba Đình")
-                          .locationType("District")
-                          .parent(hanoi)
-                          .isActive(true)
-                          .build();
-                  return locationRepository.save(newBaDinh);
-                });
-
-    Location hangTrong =
-        locationRepository
-            .findByLocationNameAndParent("Hàng Trống", hoanKiem)
-            .orElseGet(
-                () -> {
-                  Location newHangTrong =
-                      Location.builder()
-                          .locationName("Hàng Trống")
-                          .locationType("Ward")
-                          .parent(hoanKiem)
-                          .isActive(true)
-                          .build();
-                  return locationRepository.save(newHangTrong);
-                });
-
-    Location phucTan =
-        locationRepository
-            .findByLocationNameAndParent("Phúc Tân", hoanKiem)
-            .orElseGet(
-                () -> {
-                  Location newPhucTan =
-                      Location.builder()
-                          .locationName("Phúc Tân")
-                          .locationType("Ward")
-                          .parent(hoanKiem)
-                          .isActive(true)
-                          .build();
-                  return locationRepository.save(newPhucTan);
-                });
-
-    VehicleModel modelA = null;
-    if (vehicleModelRepository.findByModelName("Xe Dap Dien A").isEmpty()) {
-      modelA =
-          VehicleModel.builder()
-              .modelName("Xe Dap Dien A")
-              .description("Model A electric bike")
-              .brand("VinFast")
-              .type("Electric Bicycle")
-              .capacityKWh(10)
-              .build();
-      modelA = vehicleModelRepository.save(modelA);
-    } else {
-      modelA = vehicleModelRepository.findByModelName("Xe Dap Dien A").get();
-    }
-
-    VehicleModel modelB = null;
-    if (vehicleModelRepository.findByModelName("Xe May Dien B").isEmpty()) {
-      modelB =
-          VehicleModel.builder()
-              .modelName("Xe May Dien B")
-              .description("Model B electric scooter")
-              .brand("VinFast")
-              .type("Electric Scooter")
-              .capacityKWh(20)
-              .build();
-      modelB = vehicleModelRepository.save(modelB);
-    } else {
-      modelB = vehicleModelRepository.findByModelName("Xe May Dien B").get();
-    }
-
-    Station station1;
-    station1 =
-        stationRepository
-            .findStationByStationName("Station Hoan Kiem 1")
-            .orElseGet(
-                () -> {
-                  Station newStation1 =
-                      Station.builder()
-                          .stationName("Station Hoan Kiem 1")
-                          .address("123 Hang Trong, Hoan Kiem")
-                          .totalDocks(10)
-                          .availableDocks(10)
-                          .isActive(StationStatusEnum.ACTIVE)
-                          .location(hangTrong)
-                          .build();
-                  return stationRepository.save(newStation1);
-                });
-
-    Station station2 =
-        stationRepository
-            .findStationByStationName("Station Hoan Kiem 2")
-            .orElseGet(
-                () -> {
-                  Station newStation2 =
-                      Station.builder()
-                          .stationName("Station Hoan Kiem 2")
-                          .address("456 Phuc Tan, Hoan Kiem")
-                          .totalDocks(15)
-                          .availableDocks(15)
-                          .isActive(StationStatusEnum.ACTIVE)
-                          .location(phucTan)
-                          .build();
-                  return stationRepository.save(newStation2);
-                });
-
-    if (modelA != null
-        && station1 != null
-        && vehicleRepository.findByLicensePlate("29-A1 123.45").isEmpty()) {
-      Vehicle vehicle1 =
-          Vehicle.builder()
-              .licensePlate("29-A1 123.45")
-              .batteryCapacity(100)
-              .currentBattery(80)
-              .vehicleStatus("Available")
-              .pricePerHour(BigDecimal.valueOf(15000.0))
-              .pricePerDay(BigDecimal.valueOf(15000.0 * 8)) // Thêm dòng này
-              .vehicleModel(modelA)
-              .station(station1)
-              .build();
-      vehicleRepository.save(vehicle1);
-    }
-
-    if (modelB != null
-        && station1 != null
-        && vehicleRepository.findByLicensePlate("29-B1 678.90").isEmpty()) {
-      Vehicle vehicle2 =
-          Vehicle.builder()
-              .licensePlate("29-B1 678.90")
-              .batteryCapacity(120)
-              .currentBattery(90)
-              .vehicleStatus("Available")
-              .pricePerHour(BigDecimal.valueOf(20000.0))
-              .pricePerDay(BigDecimal.valueOf(20000.0 * 8)) // Thêm dòng này
-              .vehicleModel(modelB)
-              .station(station1)
-              .build();
-      vehicleRepository.save(vehicle2);
-    }
-
-    if (modelA != null
-        && station2 != null
-        && vehicleRepository.findByLicensePlate("30-C1 111.22").isEmpty()) {
-      Vehicle vehicle3 =
-          Vehicle.builder()
-              .licensePlate("30-C1 111.22")
-              .batteryCapacity(90)
-              .currentBattery(70)
-              .vehicleStatus("Available")
-              .pricePerHour(BigDecimal.valueOf(15000.0))
-              .pricePerDay(BigDecimal.valueOf(15000.0 * 8)) // Thêm dòng này
-              .vehicleModel(modelA)
-              .station(station2)
-              .build();
-      vehicleRepository.save(vehicle3);
+      System.out.println(">>> LOCATIONS CREATED: HCM, Hà Nội, Đà Nẵng");
     }
   }
 }

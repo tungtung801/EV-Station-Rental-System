@@ -14,6 +14,9 @@ import spring_boot.project_swp.entity.Discount;
     unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface DiscountMapper {
 
+  @Mapping(target = "discountId", ignore = true)
+  @Mapping(target = "currentUsage", ignore = true)
+  @Mapping(target = "rentalDiscounts", ignore = true)
   Discount toDiscount(DiscountRequest request);
 
   DiscountResponse toDiscountResponse(Discount discount);

@@ -3,12 +3,7 @@ package spring_boot.project_swp.entity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -23,69 +18,83 @@ public class User {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "UserId")
-  private Long userId;
+  Long userId;
 
   @Column(name = "FullName", nullable = false, length = 100, columnDefinition = "NVARCHAR(100)")
-  private String fullName;
+  String fullName;
 
   @Column(name = "Email", nullable = false, unique = true, length = 100)
-  private String email;
+  String email;
 
   @Column(name = "PhoneNumber", length = 20)
-  private String phoneNumber;
+  String phoneNumber;
 
   @Column(name = "Password", nullable = false, length = 255)
-  private String password;
+  String password;
 
   @Column(name = "AccountStatus", nullable = false)
   @Builder.Default
-  private Boolean accountStatus = true;
+  Boolean accountStatus = true; // True: Active, False: Locked
 
+  // --- PHẦN KYC (Xác minh danh tính) ---
   @Column(name = "IsVerified", nullable = false)
-    @Builder.Default
-  private Boolean isVerified = false;
+  @Builder.Default
+  Boolean isVerified = false;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "VerifiedBy")
-  private User verifiedBy;
+  @JoinColumn(name = "VerifiedBy") // Người duyệt (Staff/Admin)
+  @ToString.Exclude
+  @EqualsAndHashCode.Exclude
+  User verifiedBy;
 
   @Column(name = "VerifiedAt")
-  private LocalDateTime verifiedAt;
+  LocalDateTime verifiedAt;
+  // ------------------------------------
 
   @CreationTimestamp
   @Column(name = "CreatedAt", nullable = false, updatable = false)
-  private LocalDateTime createdAt;
+  LocalDateTime createdAt;
 
-  @ManyToOne(fetch = FetchType.EAGER)
+  @ManyToOne(fetch = FetchType.EAGER) // Eager để tiện lấy Role khi Login
   @JoinColumn(name = "RoleId", nullable = false)
   @ToString.Exclude
-  private Role role;
+  @EqualsAndHashCode.Exclude
+  Role role;
 
-  public User(Long userId) {
-    this.userId = userId;
-  }
+  // --- PHÂN BIỆT STAFF VÀ CUSTOMER ---
 
+  // Station chỉ dành cho STAFF (Customer sẽ null)
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "StationId")
+  @JoinColumn(name = "StationId", nullable = true)
   @ToString.Exclude
-  private Station station;
+  @EqualsAndHashCode.Exclude
+  Station station;
 
+  // Lịch sử thuê xe chỉ dành cho CUSTOMER (Staff có thể null hoặc rỗng)
   @OneToMany(mappedBy = "renter", cascade = CascadeType.ALL, orphanRemoval = true)
   @ToString.Exclude
-  private List<Rental> rentedRentals;
+  @EqualsAndHashCode.Exclude
+  List<Rental> rentedRentals;
 
+  // Việc làm của STAFF (Giao xe)
   @OneToMany(mappedBy = "pickupStaff", cascade = CascadeType.ALL, orphanRemoval = true)
   @ToString.Exclude
-  private List<Rental> pickupStaffRentals;
+  @EqualsAndHashCode.Exclude
+  List<Rental> pickupStaffRentals;
 
+  // Việc làm của STAFF (Nhận xe)
   @OneToMany(mappedBy = "returnStaff", cascade = CascadeType.ALL, orphanRemoval = true)
   @ToString.Exclude
-  private List<Rental> returnStaffRentals;
+  @EqualsAndHashCode.Exclude
+  List<Rental> returnStaffRentals;
 
+  // Profile chi tiết (Bằng lái, CCCD...)
   @OneToOne(
       mappedBy = "user",
       fetch = FetchType.LAZY,
       cascade = CascadeType.ALL,
       orphanRemoval = true)
+  @ToString.Exclude
+  @EqualsAndHashCode.Exclude
   UserProfile profile;
 }

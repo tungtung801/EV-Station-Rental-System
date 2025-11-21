@@ -5,19 +5,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor; // <--- SỬA
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import spring_boot.project_swp.dto.request.VehicleRequest;
 import spring_boot.project_swp.dto.request.VehicleUpdateRequest;
 import spring_boot.project_swp.dto.response.BookingResponse;
@@ -27,15 +20,16 @@ import spring_boot.project_swp.service.VehicleService;
 
 @RestController
 @RequestMapping("/api/vehicles")
-@AllArgsConstructor
+@RequiredArgsConstructor // <--- Dùng cái này
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Tag(name = "Vehicle APIs", description = "APIs for managing vehicles")
 public class VehicleController {
+
   final VehicleService vehicleService;
-  final BookingService bookingService;
+  final BookingService bookingService; // Lưu ý: Em cần tạo BookingService sau
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @Operation(summary = "Create a new vehicle", description = "Adds a new vehicle to the system.")
+  @Operation(summary = "Create a new vehicle")
   public ResponseEntity<VehicleResponse> createVehicle(
       @Valid @ModelAttribute VehicleRequest request) {
     VehicleResponse newVehicle = vehicleService.addVehicle(request);
@@ -43,9 +37,7 @@ public class VehicleController {
   }
 
   @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @Operation(
-      summary = "Update vehicle details",
-      description = "Updates an existing vehicle's information.")
+  @Operation(summary = "Update vehicle details")
   public ResponseEntity<VehicleResponse> updateVehicle(
       @PathVariable Long id, @ModelAttribute VehicleUpdateRequest request) {
     VehicleResponse updated = vehicleService.updateVehicle(id, request);
@@ -53,32 +45,27 @@ public class VehicleController {
   }
 
   @DeleteMapping("/{id}")
-  @Operation(summary = "Delete a vehicle", description = "Deletes a vehicle by its unique ID.")
+  @Operation(summary = "Delete a vehicle")
   public ResponseEntity<Void> deleteVehicle(@PathVariable Long id) {
     vehicleService.deleteVehicle(id);
     return ResponseEntity.noContent().build();
   }
 
   @GetMapping
-  @Operation(
-      summary = "Get all vehicles",
-      description = "Retrieves a list of all registered vehicles.")
+  @Operation(summary = "Get all vehicles")
   public ResponseEntity<List<VehicleResponse>> getAllVehicles() {
     return ResponseEntity.ok(vehicleService.findAll());
   }
 
   @GetMapping("/{id}")
-  @Operation(
-      summary = "Get vehicle by ID",
-      description = "Retrieves a vehicle's details by its unique ID.")
+  @Operation(summary = "Get vehicle by ID")
   public ResponseEntity<VehicleResponse> getVehicleById(@PathVariable Long id) {
     return ResponseEntity.ok(vehicleService.findById(id));
   }
 
-  @GetMapping("/{vehicleId}/active-bookings") // URL mới: /api/vehicles/{vehicleId}/active-bookings
-  @Operation(
-      summary = "Get active bookings for a vehicle",
-      description = "Retrieves a list of active bookings for a specific vehicle.")
+  // API này phụ thuộc vào BookingService (Em nhớ làm phần Booking tiếp theo nhé)
+  @GetMapping("/{vehicleId}/active-bookings")
+  @Operation(summary = "Get active bookings for a vehicle")
   public ResponseEntity<List<BookingResponse>> get3OnGoingBookings(@PathVariable Long vehicleId) {
     return ResponseEntity.ok(bookingService.get3OnGoingBookingsOfVehicle(vehicleId));
   }

@@ -2,21 +2,22 @@ package spring_boot.project_swp.service.impl;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import java.security.Key;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import javax.crypto.SecretKey;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import spring_boot.project_swp.entity.User;
-import spring_boot.project_swp.security.JwtKeyUtils;
 import spring_boot.project_swp.service.JwtService;
 
 @Service
+@Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class JwtServiceImpl implements JwtService {
 
@@ -29,6 +30,11 @@ public class JwtServiceImpl implements JwtService {
   @Value("${application.security.jwt.refresh-token.expiration}")
   long refreshExpiration;
 
+  private SecretKey getSignInKey() {
+    byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+    return Keys.hmacShaKeyFor(keyBytes);
+  }
+
   @Override
   public String extractUserName(String token) {
     return extractClaim(token, Claims::getSubject);
@@ -36,7 +42,7 @@ public class JwtServiceImpl implements JwtService {
 
   @Override
   public String generateToken(User user) {
-    return generateToken(new HashMap<>(), user);
+    return generateToken(java.util.Collections.emptyMap(), user);
   }
 
   public String generateToken(Map<String, Object> extraClaims, User user) {
@@ -50,11 +56,11 @@ public class JwtServiceImpl implements JwtService {
 
   private String buildToken(Map<String, Object> extraClaims, User user, long expiration) {
     return Jwts.builder()
-        .setClaims(extraClaims)
-        .setSubject(user.getEmail())
-        .setIssuedAt(new Date(System.currentTimeMillis()))
-        .setExpiration(new Date(System.currentTimeMillis() + expiration))
-        .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+        .claims(extraClaims)
+        .subject(user.getEmail())
+        .issuedAt(new Date(System.currentTimeMillis()))
+        .expiration(new Date(System.currentTimeMillis() + expiration))
+        .signWith(getSignInKey()) // Cú pháp mới
         .compact();
   }
 
@@ -72,16 +78,28 @@ public class JwtServiceImpl implements JwtService {
     return extractClaim(token, Claims::getExpiration);
   }
 
-  private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+  public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
     final Claims claims = extractAllClaims(token);
     return claimsResolver.apply(claims);
   }
 
   private Claims extractAllClaims(String token) {
-    return Jwts.parser().setSigningKey(getSignInKey()).build().parseClaimsJws(token).getBody();
+    return Jwts.parser() // Cú pháp mới 0.12.3
+        .verifyWith(getSignInKey())
+        .build()
+        .parseSignedClaims(token)
+        .getPayload();
   }
 
-  private Key getSignInKey() {
-    return JwtKeyUtils.hmacKey(secretKey);
+  @Override
+  public boolean validateToken(String token) {
+    try {
+      // Key phải lấy từ hàm getSignInKey()
+      io.jsonwebtoken.Jwts.parser().verifyWith(getSignInKey()).build().parseSignedClaims(token);
+      return true;
+    } catch (Exception e) {
+      log.error("Invalid JWT token: {}", e.getMessage());
+      return false;
+    }
   }
 }

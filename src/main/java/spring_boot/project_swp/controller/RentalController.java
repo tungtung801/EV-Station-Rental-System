@@ -13,95 +13,62 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import spring_boot.project_swp.dto.request.RentalConfirmPickupRequest;
-import spring_boot.project_swp.dto.request.RentalRequest;
 import spring_boot.project_swp.dto.response.RentalResponse;
 import spring_boot.project_swp.service.RentalService;
+import spring_boot.project_swp.service.UserService;
 
 @RestController
 @RequestMapping("/api/rentals")
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Tag(name = "Rental APIs", description = "APIs for managing vehicle rentals")
 public class RentalController {
 
-  RentalService rentalService;
+  final RentalService rentalService;
+  final UserService userService; // Để lấy ID từ Email
 
+  // 1. Tạo Rental từ Booking
   @PostMapping("/create-from-booking/{bookingId}")
-  @Operation(
-      summary = "Create a rental from a booking",
-      description = "Creates a new rental based on an existing booking.")
+  @Operation(summary = "Create a rental from a booking")
   public ResponseEntity<RentalResponse> createRentalFromBooking(@PathVariable Long bookingId) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String staffEmail = authentication.getName();
+    Long staffId = userService.getUserByEmail(staffEmail).getUserId();
+
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(rentalService.createRentalFromBooking(bookingId));
+        .body(rentalService.createRentalFromBooking(bookingId, staffId));
   }
 
+  // 2. Xác nhận Giao xe
   @PutMapping("/{rentalId}/confirm-pickup")
-  @Operation(
-      summary = "Confirm vehicle pickup",
-      description = "Confirms the pickup of a vehicle for a rental.")
+  @Operation(summary = "Confirm vehicle pickup")
   public ResponseEntity<RentalResponse> confirmPickup(
       @PathVariable Long rentalId, @RequestBody @Valid RentalConfirmPickupRequest request) {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    String staffEmail = authentication.getName();
-    RentalResponse re= this.rentalService.getRentalById(rentalId);
-    return ResponseEntity.ok(
-        rentalService.confirmPickup(re.getBookingId(), staffEmail, request.getContractUrl()));
+    return ResponseEntity.ok(rentalService.confirmPickup(rentalId, request));
   }
 
+  // 3. Xác nhận Trả xe (Hoàn tất)
   @PutMapping("/{rentalId}/confirm-return")
-  @Operation(
-      summary = "Confirm vehicle return",
-      description = "Confirms the return of a vehicle for a rental.")
-  public ResponseEntity<RentalResponse> confirmReturn(@PathVariable Long rentalId) {
+  @Operation(summary = "Confirm vehicle return")
+  public ResponseEntity<RentalResponse> confirmReturn(
+      @PathVariable Long rentalId, @RequestParam Long returnStationId) { // Cần trạm trả xe
+
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     String staffEmail = authentication.getName();
-    return ResponseEntity.ok(rentalService.confirmReturn(rentalId, staffEmail));
+    Long staffId = userService.getUserByEmail(staffEmail).getUserId();
+
+    return ResponseEntity.ok(rentalService.returnVehicle(rentalId, returnStationId, staffId));
   }
 
   @GetMapping("/{rentalId}")
-  @Operation(summary = "Get rental by ID", description = "Retrieves a rental by its unique ID.")
+  @Operation(summary = "Get rental by ID")
   public ResponseEntity<RentalResponse> getRentalById(@PathVariable Long rentalId) {
     return new ResponseEntity<>(rentalService.getRentalById(rentalId), HttpStatus.OK);
   }
 
   @GetMapping
-  @Operation(summary = "Get all rentals", description = "Retrieves a list of all rental records.")
+  @Operation(summary = "Get all rentals")
   public ResponseEntity<List<RentalResponse>> getAllRentals() {
     return new ResponseEntity<>(rentalService.getAllRentals(), HttpStatus.OK);
-  }
-
-  @GetMapping("/renter/{renterId}")
-  @Operation(
-      summary = "Get rentals by renter ID",
-      description = "Retrieves a list of rental records for a specific renter.")
-  public ResponseEntity<List<RentalResponse>> getRentalsByRenterId(@PathVariable Long renterId) {
-    return new ResponseEntity<>(rentalService.getRentalsByRenterId(renterId), HttpStatus.OK);
-  }
-
-  @GetMapping("/vehicle/{vehicleId}")
-  @Operation(
-      summary = "Get rentals by vehicle ID",
-      description = "Retrieves a list of rental records for a specific vehicle.")
-  public ResponseEntity<List<RentalResponse>> getRentalsByVehicleId(@PathVariable Long vehicleId) {
-    return new ResponseEntity<>(rentalService.getRentalsByVehicleId(vehicleId), HttpStatus.OK);
-  }
-
-  @PutMapping("/{rentalId}")
-  @Operation(
-      summary = "Update an existing rental",
-      description = "Updates an existing rental record.")
-  public ResponseEntity<RentalResponse> updateRental(
-      @PathVariable Long rentalId, @RequestBody @Valid RentalRequest request) {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    String userEmail = authentication.getName();
-    return new ResponseEntity<>(
-        rentalService.updateRental(rentalId, userEmail, request), HttpStatus.OK);
-  }
-
-  @DeleteMapping("/{rentalId}")
-  @Operation(summary = "Delete a rental", description = "Deletes a rental record by its ID.")
-  public ResponseEntity<Void> deleteRental(@PathVariable Long rentalId) {
-    rentalService.deleteRental(rentalId);
-    return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
 }

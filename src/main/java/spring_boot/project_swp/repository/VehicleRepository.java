@@ -7,5 +7,7 @@ import spring_boot.project_swp.entity.Vehicle;
 
 @Repository
 public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
+  boolean existsByLicensePlate(String licensePlate); // Dùng boolean cho gọn
+
   Optional<Vehicle> findByLicensePlate(String licensePlate);
 }

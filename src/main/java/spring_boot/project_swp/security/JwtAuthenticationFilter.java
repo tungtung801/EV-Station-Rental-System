@@ -15,13 +15,14 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import spring_boot.project_swp.service.JwtService; // Import Interface
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-  private final JwtTokenProvider jwtTokenProvider;
+  private final JwtService jwtService; // SỬA: Dùng Interface
 
   private final CustomUserDetailsService customUserDetailsService;
 
@@ -36,9 +37,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // validate token
     if (StringUtils.hasText(token)) {
       try {
-        if (jwtTokenProvider.validateToken(token)) {
+        if (jwtService.validateToken(token)) { // OK
           // get username from token
-          String username = jwtTokenProvider.getUsername(token);
+          String username =
+              jwtService.extractUserName(token); // SỬA: getUsername -> extractUserName
 
           // load user associated with token
           UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);

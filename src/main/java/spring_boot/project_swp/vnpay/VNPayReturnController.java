@@ -1,192 +1,113 @@
 package spring_boot.project_swp.vnpay;
 
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import spring_boot.project_swp.dto.response.BookingResponse;
-import spring_boot.project_swp.dto.response.PaymentResponse;
-import spring_boot.project_swp.entity.Booking;
+import spring_boot.project_swp.dto.request.BookingStatusUpdateRequest;
+import spring_boot.project_swp.dto.request.PaymentStatusUpdateRequest;
 import spring_boot.project_swp.entity.BookingStatusEnum;
 import spring_boot.project_swp.entity.PaymentStatusEnum;
-import spring_boot.project_swp.exception.NotFoundException;
-import spring_boot.project_swp.mapper.BookingMapper;
 import spring_boot.project_swp.service.BookingService;
 import spring_boot.project_swp.service.PaymentService;
-import spring_boot.project_swp.service.RentalService;
-import spring_boot.project_swp.service.UserService;
 
-@Tag(name = "VNPay APIs", description = "Các API liên quan đến xử lý thanh toán VNPay")
 @RestController
+@RequiredArgsConstructor
+@Tag(name = "VNPay APIs")
 public class VNPayReturnController {
 
-    @Value("${vnpay.hashSecret}")
-    private String hashSecret;
+  @Value("${vnpay.hashSecret}")
+  private String hashSecret;
 
-    @Autowired
-    private PaymentService paymentService;
-    @Autowired
-    private BookingService bookingService;
-    @Autowired
-    private UserService userService;
-    @Autowired
-    private RentalService rentalService;
-    @Autowired
-    private BookingMapper bookingMapper;
+  final PaymentService paymentService;
+  final BookingService bookingService;
 
-    @Operation(
-            summary = "Xử lý phản hồi trả về từ VNPay",
-            description =
-                    "Kiểm tra chữ ký, xác nhận trạng thái thanh toán và cập nhật thông tin thanh toán trong cơ sở dữ liệu")
-    @GetMapping("/vnpay_return")
-    public ResponseEntity<String> handleVNPayReturn(@RequestParam Map<String, String> allParams) {
-        String vnp_SecureHash = allParams.get("vnp_SecureHash");
-        allParams.remove("vnp_SecureHash");
+  @GetMapping("/vnpay_return")
+  public ResponseEntity<String> handleVNPayReturn(@RequestParam Map<String, String> allParams) {
+    // 1. Lấy và Xóa SecureHash ra khỏi params để check chữ ký
+    String vnp_SecureHash = allParams.get("vnp_SecureHash");
+    if (allParams.containsKey("vnp_SecureHashType")) {
+      allParams.remove("vnp_SecureHashType");
+    }
+    allParams.remove("vnp_SecureHash");
 
-        // Sắp xếp và tạo chuỗi hash
-        List<String> fieldNames = new ArrayList<>(allParams.keySet());
-        Collections.sort(fieldNames);
-        StringBuilder hashData = new StringBuilder();
+    // 2. Sắp xếp tham số và tạo chuỗi hash data
+    List<String> fieldNames = new ArrayList<>(allParams.keySet());
+    Collections.sort(fieldNames);
+    StringBuilder hashData = new StringBuilder();
+    Iterator<String> itr = fieldNames.iterator();
+    while (itr.hasNext()) {
+      String fieldName = itr.next();
+      String fieldValue = allParams.get(fieldName);
+      if ((fieldValue != null) && (fieldValue.length() > 0)) {
+        // Build hash data
+        hashData.append(fieldName);
+        hashData.append('=');
         try {
-            for (String fieldName : fieldNames) {
-                String fieldValue = allParams.get(fieldName);
-                if ((fieldValue != null) && (fieldValue.length() > 0)) {
-                    hashData.append(fieldName);
-                    hashData.append('=');
-                    hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
-                    hashData.append('&');
-                }
-            }
-            if (hashData.length() > 0) {
-                hashData.deleteCharAt(hashData.length() - 1);
-            }
+          hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
         } catch (UnsupportedEncodingException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Encoding error");
+          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Encoding Error");
         }
-
-        String mySecureHash = VnpayUtils.hmacSHA512(this.hashSecret, hashData.toString());
-
-        if (mySecureHash.equals(vnp_SecureHash)) {
-            String vnp_ResponseCode = allParams.get("vnp_ResponseCode");
-            String vnp_TxnRef = allParams.get("vnp_TxnRef");
-
-            if ("00".equals(vnp_ResponseCode)) {
-                try {
-
-                    System.out.println("vnp_TxnRef:" + vnp_TxnRef);
-                    // 1. Tìm payment bằng transaction code (vnp_TxnRef)
-                    PaymentResponse paymentResponse = paymentService.findPaymentByTransactionCode(vnp_TxnRef);
-                    System.out.println("paymentResponse: " + paymentResponse);
-
-                    // 2. Cập nhật trạng thái payment thành SUCCESS
-                    // Lưu ý: paymentService.updatePaymentStatus() sẽ tự động xử lý:
-                    // - Cập nhật booking status thành DEPOSIT_PAID
-                    // - Tạo rental từ booking
-
-                    Long bookingId = paymentResponse.getBookingId();
-                    Booking booking = bookingMapper.toBooking(bookingService.getBookingById(bookingId));
-                    bookingService.updateBookingStatus(bookingId, BookingStatusEnum.DEPOSIT_PAID);
-
-                    paymentService.updatePaymentStatus(
-                            paymentResponse.getPaymentId(), PaymentStatusEnum.SUCCESS);
-
-
-                    // 3. Lấy rental ID từ booking
-                    rentalService.createRentalFromBooking(bookingId);
-                    Long rentalId = null;
-                    if (bookingId != null) {
-                        // Tìm rental được tạo từ booking này
-                        // Cách tốt hơn: lấy tất cả rentals và tìm cái match với bookingId
-                        var allRentals = rentalService.getAllRentals();
-                        var rentalOptional =
-                                allRentals.stream()
-                                        .filter(
-                                                rental ->
-                                                        rental.getBookingId() != null
-                                                                && rental.getBookingId().equals(bookingId))
-                                        .findFirst();
-                        if (rentalOptional.isPresent()) {
-                            rentalId = rentalOptional.get().getRentalId();
-                            System.out.println("Found rentalId: " + rentalId + " for bookingId: " + bookingId);
-                        } else {
-                            System.out.println("No rental found for bookingId: " + bookingId);
-                        }
-                    }
-
-                    // 4. Trả về response với rental ID
-                    String transactionCode = paymentResponse.getTransactionCode();
-                    String responseMessage = "Giao dịch thành công! Rental ID: " + rentalId + "transactionCode: " + transactionCode;
-
-
-                    return ResponseEntity.ok(responseMessage);
-
-                } catch (NotFoundException e) {
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-                } catch (Exception e) {
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body("Lỗi hệ thống khi cập nhật trạng thái thanh toán: " + e.getMessage());
-                }
-            } else {
-                // Giao dịch thất bại
-                // TODO: Cập nhật trạng thái payment/booking nếu cần và chuyển hướng
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body("Giao dịch thất bại. Mã lỗi: " + vnp_ResponseCode);
-            }
-        } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Chữ ký không hợp lệ!");
+        if (itr.hasNext()) {
+          hashData.append('&');
         }
+      }
     }
 
-    @GetMapping("/api/get-rental-by-booking")
-    @Operation(
-            summary = "Get rental ID by booking ID",
-            description = "Retrieves rental ID for a given booking after successful payment")
-    public ResponseEntity<?> getRentalByBooking(@RequestParam Long bookingId) {
+    // 3. Validate Chữ ký (Checksum)
+    String calculatedHash = VnpayUtils.hmacSHA512(hashSecret, hashData.toString());
+
+    if (calculatedHash.equals(vnp_SecureHash)) {
+      // Checksum hợp lệ -> Kiểm tra trạng thái giao dịch
+      String vnp_ResponseCode = allParams.get("vnp_ResponseCode");
+
+      if ("00".equals(vnp_ResponseCode)) {
+        // Giao dịch THÀNH CÔNG (Success)
         try {
-            // Query rental trực tiếp từ bookingId
-            var booking = bookingService.getBookingById(bookingId);
-            var rentalService_local = rentalService;
+          // Parse ID từ các trường tham chiếu
+          String vnp_TxnRef = allParams.get("vnp_TxnRef"); // PAY_123_timestamp
+          Long paymentId = Long.parseLong(vnp_TxnRef.split("_")[1]);
 
-            // Lấy tất cả rentals và tìm cái match với bookingId
-            var allRentals = rentalService_local.getAllRentals();
-            var rentalOptional = allRentals.stream()
-                    .filter(rental -> rental.getBookingId() != null && rental.getBookingId().equals(bookingId))
-                    .findFirst();
+          // Lấy BookingID từ vnp_OrderInfo (Format: "Thanh toan Booking:123")
+          String orderInfo = allParams.get("vnp_OrderInfo");
+          Long bookingId = Long.parseLong(orderInfo.split(":")[1].trim());
 
-            if (rentalOptional.isPresent()) {
-                Long rentalId = rentalOptional.get().getRentalId();
-                String transactionCode = paymentService.getPaymentByBookingId(bookingId).getTransactionCode();
-                Map<String, Object> response = new HashMap<>();
-                response.put("success", true);
-                response.put("rentalId", rentalId);
-                response.put("bookingId", bookingId);
-                response.put("message", "Lấy Rental ID thành công!");
-                response.put("transactionCode", transactionCode);
-                response.put("paymentMethod", "BANK_TRANSFER");
-                return ResponseEntity.ok(response);
-            } else {
-                Map<String, Object> response = new HashMap<>();
-                response.put("success", false);
-                response.put("message", "Không tìm thấy rental cho booking này");
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-            }
+          // A. Update Payment -> SUCCESS
+          PaymentStatusUpdateRequest payReq = new PaymentStatusUpdateRequest();
+          payReq.setStatus(PaymentStatusEnum.SUCCESS);
+          paymentService.updatePaymentStatus(paymentId, payReq);
+
+          // B. Update Booking -> CONFIRMED
+          BookingStatusUpdateRequest bookReq = new BookingStatusUpdateRequest();
+          bookReq.setStatus(BookingStatusEnum.CONFIRMED);
+
+          // Dùng email admin làm đại diện hệ thống update
+          bookingService.updateBookingStatus(bookingId, "admin@gmail.com", bookReq);
+
+          return ResponseEntity.ok(
+              "Thanh toán thành công! Đơn hàng #" + bookingId + " đã được xác nhận.");
+
         } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Lỗi: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+              .body("Lỗi xử lý dữ liệu: " + e.getMessage());
         }
+      } else {
+        // Giao dịch THẤT BẠI (Do thẻ lỗi, hủy, v.v...)
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body("Giao dịch thất bại. Mã lỗi VNPay: " + vnp_ResponseCode);
+      }
+    } else {
+      // Checksum SAI -> Có dấu hiệu giả mạo
+      return ResponseEntity.status(HttpStatus.FORBIDDEN)
+          .body("Chữ ký không hợp lệ (Invalid Checksum)!");
     }
+  }
 }

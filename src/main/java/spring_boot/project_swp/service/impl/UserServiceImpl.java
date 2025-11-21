@@ -3,33 +3,31 @@ package spring_boot.project_swp.service.impl;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import spring_boot.project_swp.dto.request.StaffRegistrationRequest; // <--- DTO CHUẨN
 import spring_boot.project_swp.dto.request.UserLoginRequest;
 import spring_boot.project_swp.dto.request.UserRegistrationRequest;
 import spring_boot.project_swp.dto.request.UserUpdateRequest;
 import spring_boot.project_swp.dto.response.UserLoginResponse;
 import spring_boot.project_swp.dto.response.UserRegistrationResponse;
 import spring_boot.project_swp.dto.response.UserResponse;
-import spring_boot.project_swp.entity.Station;
-import spring_boot.project_swp.entity.User;
-import spring_boot.project_swp.entity.UserProfile;
-import spring_boot.project_swp.entity.UserProfileStatusEnum;
+import spring_boot.project_swp.entity.*;
 import spring_boot.project_swp.exception.ConflictException;
 import spring_boot.project_swp.exception.NotFoundException;
 import spring_boot.project_swp.mapper.UserMapper;
-import spring_boot.project_swp.repository.StationRepository;
-import spring_boot.project_swp.repository.UserProfileRepository;
-import spring_boot.project_swp.repository.UserRepository;
+import spring_boot.project_swp.repository.*;
 import spring_boot.project_swp.service.FileStorageService;
 import spring_boot.project_swp.service.JwtService;
 import spring_boot.project_swp.service.RoleService;
 import spring_boot.project_swp.service.UserService;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserServiceImpl implements UserService {
 
@@ -37,62 +35,112 @@ public class UserServiceImpl implements UserService {
   final RoleService roleService;
   final UserMapper userMapper;
   final UserProfileRepository userProfileRepository;
-  final JwtService jwtService;
   final StationRepository stationRepository;
+  final JwtService jwtService;
   final FileStorageService fileStorageService;
+  final PasswordEncoder passwordEncoder;
 
+  private static final String ROLE_USER = "User";
+  private static final String ROLE_STAFF = "Staff";
+
+  // =================================================================
+  // 1. ĐĂNG KÝ KHÁCH HÀNG (PUBLIC)
+  // =================================================================
   @Override
-  public UserRegistrationResponse register(UserRegistrationRequest request) {
-    return registerUser(request, "User");
-  }
-
-  @Override
-  public UserRegistrationResponse registerStaff(UserRegistrationRequest request) {
-    return registerUser(request, "staff");
-  }
-
-  private UserRegistrationResponse registerUser(UserRegistrationRequest request, String roleName) {
+  @Transactional
+  public UserRegistrationResponse registerCustomer(UserRegistrationRequest request) {
     if (userRepository.existsByEmailOrPhoneNumber(request.getEmail(), request.getPhoneNumber())) {
       throw new ConflictException("Email or phone number already in use");
     }
+
+    // Map từ DTO UserRegistrationRequest sang Entity
     User user = userMapper.toUser(request);
-    user.setRole(roleService.getRoleByName(roleName));
 
-    if ("staff".equalsIgnoreCase(roleName) && request.getStationId() != null) {
-      Station station =
-          stationRepository
-              .findById(request.getStationId())
-              .orElseThrow(() -> new NotFoundException("Station not found"));
-      user.setStation(station);
-    }
+    // Mã hóa mật khẩu
+    user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-    User saved = userRepository.save(user);
+    // Set Role User
+    user.setRole(roleService.getRoleEntityByName(ROLE_USER));
+    user.setAccountStatus(true);
 
-    UserProfile userProfile = new UserProfile();
-    userProfile.setUser(saved);
-    userProfileRepository.save(userProfile);
+    // Lưu User
+    User savedUser = userRepository.save(user);
 
-    return new UserRegistrationResponse(saved.getUserId(), saved.getEmail());
+    // Tạo Profile rỗng
+    createEmptyProfile(savedUser);
+
+    return new UserRegistrationResponse(savedUser.getUserId(), savedUser.getEmail());
   }
 
+  // =================================================================
+  // 2. TẠO NHÂN VIÊN (ADMIN) - Dùng StaffRegistrationRequest
+  // =================================================================
+  @Override
+  @Transactional
+  public UserRegistrationResponse createStaff(StaffRegistrationRequest request) {
+    if (userRepository.existsByEmailOrPhoneNumber(request.getEmail(), request.getPhoneNumber())) {
+      throw new ConflictException("Email or phone number already in use");
+    }
+
+    // Map thủ công (Vì StaffRegistrationRequest khác UserRegistrationRequest)
+    User user = new User();
+    user.setFullName(request.getFullName());
+    user.setEmail(request.getEmail());
+    user.setPhoneNumber(request.getPhoneNumber());
+
+    // Mã hóa mật khẩu
+    user.setPassword(passwordEncoder.encode(request.getPassword()));
+    user.setAccountStatus(true);
+
+    // Set Role Staff
+    user.setRole(roleService.getRoleEntityByName(ROLE_STAFF));
+
+    // Set Station (Lấy từ request.getStationId)
+    Station station =
+        stationRepository
+            .findById(request.getStationId())
+            .orElseThrow(
+                () ->
+                    new NotFoundException("Station not found with id: " + request.getStationId()));
+    user.setStation(station);
+
+    User savedUser = userRepository.save(user);
+    createEmptyProfile(savedUser);
+
+    return new UserRegistrationResponse(savedUser.getUserId(), savedUser.getEmail());
+  }
+
+  // =================================================================
+  // 3. ĐĂNG NHẬP
+  // =================================================================
   @Override
   public UserLoginResponse login(UserLoginRequest request) {
     User user =
         userRepository
             .findByEmail(request.getEmail())
             .orElseThrow(() -> new ConflictException("Invalid email or password"));
-    if (!user.getPassword().equals(request.getPassword())) {
+
+    // So sánh mật khẩu đã mã hóa
+    if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
       throw new ConflictException("Invalid email or password");
     }
+
+    if (!user.getAccountStatus()) {
+      throw new ConflictException("Account is locked");
+    }
+
     String jwtToken = jwtService.generateToken(user);
-    UserLoginResponse userLoginResponse = userMapper.toUserLoginResponse(user);
-    userLoginResponse.setAccessToken(jwtToken);
-    return userLoginResponse;
+    UserLoginResponse response = userMapper.toUserLoginResponse(user);
+    response.setAccessToken(jwtToken);
+    return response;
   }
 
+  // =================================================================
+  // 4. QUẢN LÝ USER (CRUD)
+  // =================================================================
   @Override
   public List<UserResponse> getAllUsers() {
-    List<User> users = userRepository.findAllByRole_RoleNameIgnoreCase("user");
+    List<User> users = userRepository.findAllByRole_RoleNameIgnoreCase(ROLE_USER);
     List<UserResponse> userResponses = new ArrayList<>();
     for (User user : users) {
       userResponses.add(userMapper.toUserResponse(user));
@@ -102,7 +150,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public List<UserResponse> getAllStaff() {
-    List<User> staffs = userRepository.findAllByRole_RoleNameIgnoreCase("staff");
+    List<User> staffs = userRepository.findAllByRole_RoleNameIgnoreCase(ROLE_STAFF);
     List<UserResponse> staffResponses = new ArrayList<>();
     for (User staff : staffs) {
       staffResponses.add(userMapper.toUserResponse(staff));
@@ -129,14 +177,7 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public void deleteUser(Long userId) {
-    if (!userRepository.existsById(userId)) {
-      throw new NotFoundException("User not found with id: " + userId);
-    }
-    userRepository.deleteById(userId);
-  }
-
-  @Override
+  @Transactional
   public UserResponse updateUser(Long userId, UserUpdateRequest request) {
     User user =
         userRepository
@@ -155,26 +196,42 @@ public class UserServiceImpl implements UserService {
       throw new ConflictException("Phone number already in use");
     }
 
-    if (request.getEmail() != null) user.setEmail(request.getEmail());
-    if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
-    if (request.getFullName() != null) user.setFullName(request.getFullName());
-    if (request.getPassword() != null) user.setPassword(request.getPassword());
+    userMapper.updateUser(user, request);
+
+    // Nếu có đổi mật khẩu -> Mã hóa lại
+    if (request.getPassword() != null && !request.getPassword().isBlank()) {
+      user.setPassword(passwordEncoder.encode(request.getPassword()));
+    }
 
     User saved = userRepository.save(user);
     return userMapper.toUserResponse(saved);
   }
 
   @Override
+  @Transactional
+  public void deleteUser(Long userId) {
+    if (!userRepository.existsById(userId)) {
+      throw new NotFoundException("User not found with id: " + userId);
+    }
+    userRepository.deleteById(userId);
+  }
+
+  @Override
+  @Transactional
   public void updatePassword(String email, String newPassword) {
     User user =
         userRepository
             .findByEmail(email)
             .orElseThrow(() -> new NotFoundException("User not found with email: " + email));
-    user.setPassword(newPassword);
+    user.setPassword(passwordEncoder.encode(newPassword));
     userRepository.save(user);
   }
 
+  // =================================================================
+  // 5. UPLOAD KYC & HELPER
+  // =================================================================
   @Override
+  @Transactional
   public void uploadDocumentImage(Long userId, String documentType, MultipartFile file) {
     User user =
         userRepository
@@ -193,9 +250,21 @@ public class UserServiceImpl implements UserService {
       userProfile.setDrivingLicenseUrl(fileUrl);
     } else if ("idCard".equalsIgnoreCase(documentType)) {
       userProfile.setIdCardUrl(fileUrl);
+    } else {
+      throw new IllegalArgumentException("Invalid document type");
     }
 
+    // Reset về trạng thái chờ duyệt
     userProfile.setStatus(UserProfileStatusEnum.PENDING);
     userProfileRepository.save(userProfile);
+  }
+
+  private void createEmptyProfile(User user) {
+    UserProfile profile = new UserProfile();
+    profile.setUser(user);
+    // Nếu em chưa đổi tên Enum NULL -> dùng UserProfileStatusEnum.NULL
+    // Nếu đã đổi -> Dùng UserProfileStatusEnum.UNVERIFIED hoặc PENDING
+    profile.setStatus(UserProfileStatusEnum.PENDING);
+    userProfileRepository.save(profile);
   }
 }

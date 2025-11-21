@@ -1,28 +1,23 @@
 package spring_boot.project_swp.service;
 
 import java.util.List;
-import spring_boot.project_swp.dto.request.RentalRequest;
+import spring_boot.project_swp.dto.request.RentalConfirmPickupRequest;
 import spring_boot.project_swp.dto.response.RentalResponse;
 
 public interface RentalService {
+  // 1. Tạo Rental khi Booking được xác nhận (Admin/Staff bấm nút "Tạo phiếu thuê")
+  RentalResponse createRentalFromBooking(Long bookingId, Long staffId);
 
-  RentalResponse createRental(RentalRequest request);
+  // 1a. Tạo Rental tự động khi payment thành công (không cần staffId - dùng Admin user)
+  RentalResponse createRentalFromBookingAuto(Long bookingId);
+
+  // 2. Xác nhận giao xe (Khách đến lấy xe, Staff up ảnh hợp đồng)
+  RentalResponse confirmPickup(Long rentalId, RentalConfirmPickupRequest request);
+
+  // 3. Trả xe (Staff xác nhận xe đã về trạm)
+  RentalResponse returnVehicle(Long rentalId, Long returnStationId, Long staffId);
 
   RentalResponse getRentalById(Long rentalId);
 
   List<RentalResponse> getAllRentals();
-
-  List<RentalResponse> getRentalsByRenterId(Long renterId);
-
-  List<RentalResponse> getRentalsByVehicleId(Long vehicleId);
-
-  RentalResponse updateRental(Long rentalId, String userEmail, RentalRequest request);
-
-  void deleteRental(Long rentalId);
-
-  RentalResponse confirmPickup(Long bookingId, String staffEmail, String contractUrl);
-
-  RentalResponse confirmReturn(Long rentalId, String staffEmail);
-
-  RentalResponse createRentalFromBooking(Long bookingId);
 }

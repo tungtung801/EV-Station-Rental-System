@@ -3,12 +3,7 @@ package spring_boot.project_swp.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -28,16 +23,18 @@ public class Booking {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "UserId", nullable = false)
   @ToString.Exclude
+  @EqualsAndHashCode.Exclude
   User user;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "VehicleId", nullable = false)
   @ToString.Exclude
+  @EqualsAndHashCode.Exclude
   Vehicle vehicle;
 
-  @Column(name = "BookingType", nullable = false, length = 50)
+  @Column(name = "BookingType", nullable = false)
   @Enumerated(EnumType.STRING)
-  BookingTypeEnum bookingType;
+  BookingTypeEnum bookingType; // ONLINE / OFFLINE
 
   @Column(name = "StartTime", nullable = false)
   LocalDateTime startTime;
@@ -45,19 +42,13 @@ public class Booking {
   @Column(name = "EndTime", nullable = false)
   LocalDateTime endTime;
 
-  @Column(name = "TotalAmount", nullable = false, columnDefinition = "DECIMAL(19,4)")
+  @Column(name = "TotalAmount", nullable = false, precision = 19, scale = 4)
   BigDecimal totalAmount;
 
-  @Column(name = "DepositPercent", nullable = false, columnDefinition = "DECIMAL(5,2)")
-  BigDecimal depositPercent;
-
-  @Column(name = "ExpectedTotal", nullable = false, columnDefinition = "DECIMAL(19,4)")
-  BigDecimal expectedTotal;
-
-  @Column(name = "Status", nullable = false, length = 50)
+  @Column(name = "Status", nullable = false)
   @Enumerated(EnumType.STRING)
   @Builder.Default
-  BookingStatusEnum status = BookingStatusEnum.PENDING_DEPOSIT;
+  BookingStatusEnum status = BookingStatusEnum.PENDING; // Mặc định chờ
 
   @CreationTimestamp
   @Column(name = "CreatedAt", nullable = false, updatable = false)
@@ -69,5 +60,6 @@ public class Booking {
       orphanRemoval = true,
       fetch = FetchType.LAZY)
   @ToString.Exclude
+  @EqualsAndHashCode.Exclude
   Rental rental;
 }

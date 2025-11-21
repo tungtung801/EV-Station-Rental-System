@@ -17,13 +17,13 @@ public class BookingRequest {
   Long vehicleId;
 
   @NotNull(message = "Booking type cannot be null")
-  BookingTypeEnum bookingType;
+  BookingTypeEnum bookingType; // ONLINE / OFFLINE
 
   @NotNull(message = "Start time cannot be null")
-  @FutureOrPresent(message = "Start time must be in the present or future")
+  @FutureOrPresent
   LocalDateTime startTime;
 
   @NotNull(message = "End time cannot be null")
-  @FutureOrPresent(message = "End time must be in the present or future")
+  @FutureOrPresent
   LocalDateTime endTime;
 }

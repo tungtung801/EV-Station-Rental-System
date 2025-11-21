@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,28 +20,23 @@ import spring_boot.project_swp.service.UserService;
 
 @RestController
 @RequestMapping("/api/auth")
-@AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Tag(name = "Authentication APIs", description = "APIs for user authentication and registration")
 public class AuthController {
-  UserService userService;
 
-  // ------------ Register ----------
+  final UserService userService;
+
   @PostMapping("/register")
-  @Operation(
-      summary = "Register a new user",
-      description = "Registers a new user with the provided details.")
+  @Operation(summary = "Register a new customer account")
   public ResponseEntity<UserRegistrationResponse> register(
       @Valid @RequestBody UserRegistrationRequest request) {
-    UserRegistrationResponse response = userService.register(request);
+    UserRegistrationResponse response = userService.registerCustomer(request);
     return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
 
-  // ------------ Login ----------
   @PostMapping("/login")
-  @Operation(
-      summary = "User login",
-      description = "Authenticates a user and returns a login response.")
+  @Operation(summary = "User login")
   public ResponseEntity<UserLoginResponse> login(@Valid @RequestBody UserLoginRequest request) {
     UserLoginResponse response = userService.login(request);
     return new ResponseEntity<>(response, HttpStatus.OK);

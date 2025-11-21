@@ -7,13 +7,14 @@ import spring_boot.project_swp.dto.response.DiscountResponse;
 public interface DiscountService {
   DiscountResponse createDiscount(DiscountRequest request);
 
-  DiscountResponse getDiscountById(Long discountId);
-
   List<DiscountResponse> getAllDiscounts();
+
+  DiscountResponse getDiscountByCode(String code);
+
+  // BỔ SUNG 2 CÁI NÀY
+  DiscountResponse getDiscountById(Long discountId);
 
   DiscountResponse updateDiscount(Long discountId, DiscountRequest request);
 
-  void deleteDiscount(Long discountId);
-
-  DiscountResponse getDiscountByCode(String code);
+  void deleteDiscount(Long id);
 }

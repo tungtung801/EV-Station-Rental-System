@@ -1,20 +1,14 @@
 package spring_boot.project_swp.dto.request;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.*;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class UserRegistrationRequest {
+public class StaffRegistrationRequest {
   @NotBlank(message = "Full name is required")
   @Size(max = 50, message = "Full name must be at most 50 characters long")
   @Pattern(
@@ -40,4 +34,7 @@ public class UserRegistrationRequest {
           "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character")
   @Size(min = 6, message = "Password must be at least 6 characters long")
   String password;
+
+  @NotNull(message = "Station ID is required for Staff")
+  Long stationId; // <-- ĐÂY, NÓ PHẢI NẰM Ở ĐÂY
 }

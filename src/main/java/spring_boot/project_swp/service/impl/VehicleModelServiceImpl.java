@@ -2,9 +2,11 @@ package spring_boot.project_swp.service.impl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import spring_boot.project_swp.dto.request.VehicleModelRequest;
 import spring_boot.project_swp.dto.response.VehicleModelResponse;
 import spring_boot.project_swp.entity.VehicleModel;
@@ -15,70 +17,71 @@ import spring_boot.project_swp.repository.VehicleModelRepository;
 import spring_boot.project_swp.service.VehicleModelService;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class VehicleModelServiceImpl implements VehicleModelService {
-  private final VehicleModelRepository vehicleModelRepository;
-  private final VehicleModelMapper vehicleModelMapper;
+
+  final VehicleModelRepository vehicleModelRepository;
+  final VehicleModelMapper vehicleModelMapper;
 
   @Override
   public List<VehicleModelResponse> getAllVehicleModels() {
-    List<VehicleModel> vehicleModels = vehicleModelRepository.findAll();
+    List<VehicleModel> models = vehicleModelRepository.findAll();
     List<VehicleModelResponse> responses = new ArrayList<>();
-    for (VehicleModel vehicleModel : vehicleModels) {
-      responses.add(vehicleModelMapper.toVehicleModelResponse(vehicleModel));
+    for (VehicleModel model : models) {
+      responses.add(vehicleModelMapper.toVehicleModelResponse(model));
     }
     return responses;
   }
 
   @Override
   public VehicleModelResponse getVehicleModelById(Long id) {
-    Optional<VehicleModel> vehicleModel = vehicleModelRepository.findByModelId(id);
-    if (vehicleModel.isEmpty()) {
-      throw new NotFoundException("Vehicle model not found with ID: " + id);
-    }
-    return vehicleModelMapper.toVehicleModelResponse(vehicleModel.get());
+    VehicleModel model =
+        vehicleModelRepository
+            .findById(id)
+            .orElseThrow(() -> new NotFoundException("Model not found with ID: " + id));
+    return vehicleModelMapper.toVehicleModelResponse(model);
   }
 
   @Override
+  @Transactional
   public VehicleModelResponse addVehicleModel(VehicleModelRequest request) {
-    Optional<VehicleModel> existingVehicleModel =
-        vehicleModelRepository.findByModelName(request.getModelName());
-    if (existingVehicleModel.isPresent()) {
-      throw new ConflictException(
-          "Vehicle model with name '" + request.getModelName() + "' already exists.");
+    if (vehicleModelRepository.existsByModelName(request.getModelName())) {
+      throw new ConflictException("Model name '" + request.getModelName() + "' already exists.");
     }
-    VehicleModel vehicleModel = vehicleModelMapper.toVehicleModel(request);
-    VehicleModel savedVehicleModel = vehicleModelRepository.save(vehicleModel);
-    return vehicleModelMapper.toVehicleModelResponse(savedVehicleModel);
+    VehicleModel model = vehicleModelMapper.toVehicleModel(request);
+    return vehicleModelMapper.toVehicleModelResponse(vehicleModelRepository.save(model));
   }
 
   @Override
+  @Transactional
   public VehicleModelResponse updateVehicleModel(Long id, VehicleModelRequest request) {
-    Optional<VehicleModel> existingVehicleModelOptional = vehicleModelRepository.findByModelId(id);
-    if (existingVehicleModelOptional.isEmpty()) {
-      throw new NotFoundException("Vehicle model not found with ID: " + id);
-    }
+    VehicleModel existingModel =
+        vehicleModelRepository
+            .findById(id)
+            .orElseThrow(() -> new NotFoundException("Model not found with ID: " + id));
 
-    VehicleModel existingVehicleModel = existingVehicleModelOptional.get();
+    // Check trùng tên (trừ chính nó)
+    vehicleModelRepository
+        .findByModelName(request.getModelName())
+        .ifPresent(
+            duplicate -> {
+              if (!duplicate.getModelId().equals(id)) {
+                throw new ConflictException(
+                    "Model name '" + request.getModelName() + "' already exists.");
+              }
+            });
 
-    Optional<VehicleModel> vehicleModelWithSameName =
-        vehicleModelRepository.findByModelName(request.getModelName());
-    if (vehicleModelWithSameName.isPresent() && vehicleModelWithSameName.get().getModelId() != id) {
-      throw new ConflictException(
-          "Vehicle model with name '" + request.getModelName() + "' already exists.");
-    }
-
-    vehicleModelMapper.updateVehicleModelFromRequest(request, existingVehicleModel);
-    VehicleModel updatedVehicleModel = vehicleModelRepository.save(existingVehicleModel);
-    return vehicleModelMapper.toVehicleModelResponse(updatedVehicleModel);
+    vehicleModelMapper.updateVehicleModelFromRequest(request, existingModel);
+    return vehicleModelMapper.toVehicleModelResponse(vehicleModelRepository.save(existingModel));
   }
 
   @Override
+  @Transactional
   public void deleteVehicleModel(Long id) {
-    Optional<VehicleModel> vehicleModel = vehicleModelRepository.findByModelId(id);
-    if (vehicleModel.isEmpty()) {
-      throw new NotFoundException("Vehicle model not found with ID: " + id);
+    if (!vehicleModelRepository.existsById(id)) {
+      throw new NotFoundException("Model not found with ID: " + id);
     }
-    vehicleModelRepository.delete(vehicleModel.get());
+    vehicleModelRepository.deleteById(id);
   }
 }

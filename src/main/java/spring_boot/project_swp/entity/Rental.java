@@ -1,16 +1,10 @@
 package spring_boot.project_swp.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*; // Dùng *
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -30,63 +24,77 @@ public class Rental {
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "BookingId", nullable = false, unique = true)
   @ToString.Exclude
+  @EqualsAndHashCode.Exclude // Thêm cái này
   Booking booking;
 
+  // Giữ lại UserId, VehicleId để query nhanh (De-normalization)
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "UserId", nullable = false)
   @ToString.Exclude
+  @EqualsAndHashCode.Exclude
   User renter;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "VehicleId", nullable = false)
   @ToString.Exclude
+  @EqualsAndHashCode.Exclude
   Vehicle vehicle;
 
+  // Trạm giao/nhận
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "PickupStationId", nullable = false)
   @ToString.Exclude
+  @EqualsAndHashCode.Exclude
   Station pickupStation;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "ReturnStationId")
   @ToString.Exclude
+  @EqualsAndHashCode.Exclude
   Station returnStation;
 
+  // Nhân viên giao/nhận
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "PickupStaffId")
   @ToString.Exclude
+  @EqualsAndHashCode.Exclude
   User pickupStaff;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "ReturnStaffId")
   @ToString.Exclude
+  @EqualsAndHashCode.Exclude
   User returnStaff;
 
   @Column(name = "StartActual")
-  LocalDateTime startActual;
+  LocalDateTime startActual; // Giờ nhận xe thực tế
 
   @Column(name = "EndActual")
-  LocalDateTime endActual;
+  LocalDateTime endActual; // Giờ trả xe thực tế
 
-  @Column(name = "Total", columnDefinition = "DECIMAL(19,4)")
+  @Column(name = "Total", precision = 19, scale = 4)
   BigDecimal total;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "Status", length = 50)
-  RentalStatusEnum status;
+  @Builder.Default
+  RentalStatusEnum status = RentalStatusEnum.PENDING_PICKUP;
 
-  @Column(name = "ContractUrl", length = 255)
+  @Column(name = "ContractUrl", length = 500) // Tăng length lên
   String contractUrl;
 
   @CreationTimestamp
   @Column(name = "CreatedAt", nullable = false, updatable = false)
   LocalDateTime createdAt;
 
+  // List Payment (Bỏ JsonIgnore đi nhé)
   @OneToMany(mappedBy = "rental", cascade = CascadeType.ALL, orphanRemoval = true)
-  @JsonIgnore
+  @ToString.Exclude
+  @EqualsAndHashCode.Exclude
   List<Payment> payments;
 
   @OneToMany(mappedBy = "rental", cascade = CascadeType.ALL, orphanRemoval = true)
-  @JsonIgnore
+  @ToString.Exclude
+  @EqualsAndHashCode.Exclude
   List<RentalDiscounts> rentalDiscounts;
 }

@@ -4,17 +4,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*; // Dùng * cho gọn
 import lombok.experimental.FieldDefaults;
 
 @Entity
 @Table(name = "Roles")
-@Data
+@Data // Cẩn thận với cái này
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -23,14 +18,15 @@ public class Role {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "RoleId")
-  private Long roleId;
+  Long roleId; // Nên đồng nhất kiểu dữ liệu (Long)
 
   @Column(name = "RoleName", nullable = false, unique = true, length = 50)
-  private String roleName;
+  String roleName;
 
   @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
   @ToString.Exclude
+  @EqualsAndHashCode.Exclude // <--- THÊM CÁI NÀY để tránh lỗi HashCode
   @JsonIgnore
   @Builder.Default
-  private List<User> users = new ArrayList<>();
+  List<User> users = new ArrayList<>();
 }

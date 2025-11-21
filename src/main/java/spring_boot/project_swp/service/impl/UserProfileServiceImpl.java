@@ -6,12 +6,10 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
-import spring_boot.project_swp.dto.request.DocumentUploadRequest;
+import org.springframework.transaction.annotation.Transactional;
 import spring_boot.project_swp.dto.request.UserProfileRejectionRequest;
 import spring_boot.project_swp.dto.request.UserProfileRequest;
-import spring_boot.project_swp.dto.request.UserProfileVerificationRequest;
 import spring_boot.project_swp.dto.response.UserProfileResponse;
-import spring_boot.project_swp.dto.response.UserProfileVerificationResponse;
 import spring_boot.project_swp.entity.User;
 import spring_boot.project_swp.entity.UserProfile;
 import spring_boot.project_swp.entity.UserProfileStatusEnum;
@@ -74,6 +72,7 @@ public class UserProfileServiceImpl implements UserProfileService {
   }
 
   @Override
+  @Transactional
   public UserProfileResponse updateUserProfile(Long userId, UserProfileRequest request) {
     UserProfile userProfile =
         userProfileRepository
@@ -87,21 +86,21 @@ public class UserProfileServiceImpl implements UserProfileService {
                               () -> new NotFoundException("User not found with ID: " + userId));
                   UserProfile newProfile = new UserProfile();
                   newProfile.setUser(user);
+                  newProfile.setStatus(UserProfileStatusEnum.UNVERIFIED);
                   return newProfile;
                 });
 
-    // Handle driving license file upload
+    // Logic upload ảnh nằm ở đây rồi -> Không cần hàm riêng nữa
     if (request.getDrivingLicenseFile() != null && !request.getDrivingLicenseFile().isEmpty()) {
       String drivingLicenseUrl = fileStorageService.saveFile(request.getDrivingLicenseFile());
       userProfile.setDrivingLicenseUrl(drivingLicenseUrl);
-      userProfile.setStatus(UserProfileStatusEnum.PENDING); // Set status to PENDING
+      userProfile.setStatus(UserProfileStatusEnum.PENDING);
     }
 
-    // Handle ID card file upload
     if (request.getIdCardFile() != null && !request.getIdCardFile().isEmpty()) {
       String idCardUrl = fileStorageService.saveFile(request.getIdCardFile());
       userProfile.setIdCardUrl(idCardUrl);
-      userProfile.setStatus(UserProfileStatusEnum.PENDING); // Set status to PENDING
+      userProfile.setStatus(UserProfileStatusEnum.PENDING);
     }
 
     userProfileMapper.updateUserProfileFromRequest(request, userProfile);
@@ -111,6 +110,7 @@ public class UserProfileServiceImpl implements UserProfileService {
   }
 
   @Override
+  @Transactional
   public void deleteUserProfile(Long profileId) {
     if (!userProfileRepository.existsById(profileId)) {
       throw new NotFoundException("User profile not found with ID: " + profileId);
@@ -118,27 +118,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     userProfileRepository.deleteById(profileId);
   }
 
-  @Override
-  public void uploadVerificationDocuments(Long userId, DocumentUploadRequest request) {
-    UserProfile userProfile =
-        userProfileRepository
-            .findByUserUserId(userId)
-            .orElseThrow(
-                () -> new NotFoundException("User profile not found for user ID: " + userId));
-
-    if (request.getIdCardFile() != null && !request.getIdCardFile().isEmpty()) {
-      String idCardUrl = fileStorageService.saveFile(request.getIdCardFile());
-      userProfile.setIdCardUrl(idCardUrl);
-    }
-
-    if (request.getDrivingLicenseFile() != null && !request.getDrivingLicenseFile().isEmpty()) {
-      String drivingLicenseUrl = fileStorageService.saveFile(request.getDrivingLicenseFile());
-      userProfile.setDrivingLicenseUrl(drivingLicenseUrl);
-    }
-
-    userProfile.setStatus(UserProfileStatusEnum.PENDING);
-    userProfileRepository.save(userProfile);
-  }
+  // ĐÃ XÓA uploadVerificationDocuments
 
   @Override
   public UserProfileResponse getUserProfileStatus(Long userId) {
@@ -151,6 +131,7 @@ public class UserProfileServiceImpl implements UserProfileService {
   }
 
   @Override
+  @Transactional
   public UserProfileResponse approveUserProfile(Long userId) {
     UserProfile userProfile =
         userProfileRepository
@@ -159,11 +140,13 @@ public class UserProfileServiceImpl implements UserProfileService {
                 () -> new NotFoundException("User profile not found for user ID: " + userId));
 
     userProfile.setStatus(UserProfileStatusEnum.VERIFIED);
+    userProfile.setReason(null);
     userProfileRepository.save(userProfile);
     return userProfileMapper.toUserProfileResponse(userProfile);
   }
 
   @Override
+  @Transactional
   public UserProfileResponse rejectUserProfile(Long userId, UserProfileRejectionRequest request) {
     UserProfile userProfile =
         userProfileRepository
@@ -184,26 +167,5 @@ public class UserProfileServiceImpl implements UserProfileService {
             .findByEmail(email)
             .orElseThrow(() -> new NotFoundException("User not found with email: " + email));
     return user.getUserId();
-  }
-
-  @Override
-  public UserProfileVerificationResponse verifyOrRejectUserProfile(
-      UserProfileVerificationRequest request) {
-    UserProfile userProfile =
-        userProfileRepository
-            .findById(request.getProfileId())
-            .orElseThrow(
-                () ->
-                    new NotFoundException(
-                        "User profile not found with ID: " + request.getProfileId()));
-
-    if (request.getIsVerified()) {
-      userProfile.setStatus(UserProfileStatusEnum.VERIFIED);
-    } else {
-      userProfile.setStatus(UserProfileStatusEnum.REJECTED);
-      userProfile.setReason(request.getReason());
-    }
-    userProfileRepository.save(userProfile);
-    return userProfileMapper.toUserProfileVerificationResponse(userProfile);
   }
 }

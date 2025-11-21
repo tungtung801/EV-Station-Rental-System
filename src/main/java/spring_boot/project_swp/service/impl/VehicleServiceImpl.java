@@ -1,10 +1,12 @@
 package spring_boot.project_swp.service.impl;
 
-import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import spring_boot.project_swp.dto.request.VehicleRequest;
 import spring_boot.project_swp.dto.request.VehicleUpdateRequest;
 import spring_boot.project_swp.dto.response.VehicleResponse;
@@ -21,33 +23,43 @@ import spring_boot.project_swp.service.FileStorageService;
 import spring_boot.project_swp.service.VehicleService;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class VehicleServiceImpl implements VehicleService {
-  private final VehicleRepository vehicleRepository;
-  private final VehicleModelRepository vehicleModelRepository;
-  private final StationRepository stationRepository;
-  private final VehicleMapper vehicleMapper;
-  private final FileStorageService fileService;
+
+  final VehicleRepository vehicleRepository;
+  final VehicleModelRepository vehicleModelRepository;
+  final StationRepository stationRepository;
+  final VehicleMapper vehicleMapper;
+  final FileStorageService fileService;
 
   @Override
+  @Transactional
   public VehicleResponse addVehicle(VehicleRequest request) {
-    if (vehicleRepository.findByLicensePlate(request.getLicensePlate()).isPresent()) {
-      throw new ConflictException(
-          "Vehicle with license plate " + request.getLicensePlate() + " already exists");
+    if (vehicleRepository.existsByLicensePlate(request.getLicensePlate())) {
+      throw new ConflictException("License plate " + request.getLicensePlate() + " already exists");
     }
 
     Vehicle vehicle = vehicleMapper.toVehicle(request);
-    // Luôn tính toán và gán PricePerDay
-    vehicle.setPricePerDay(BigDecimal.valueOf(request.getPricePerHour() * 8));
+
 
     VehicleModel model =
         vehicleModelRepository
-            .findByModelId(request.getModelId())
-            .orElseThrow(() -> new NotFoundException("Vehicle model not found"));
+            .findById(request.getModelId())
+            .orElseThrow(
+                () -> new NotFoundException("Vehicle model not found: " + request.getModelId()));
+
     Station station =
         stationRepository
-            .findStationByStationId(request.getStationId())
-            .orElseThrow(() -> new NotFoundException("Station not found"));
+            .findById(request.getStationId())
+            .orElseThrow(
+                () ->
+                    new NotFoundException(
+                        "Station not found: "
+                            + request
+                                .getStationId())); // Sửa findStationByStationId -> findById (Jpa
+                                                   // chuẩn)
+
     vehicle.setVehicleModel(model);
     vehicle.setStation(station);
 
@@ -55,40 +67,34 @@ public class VehicleServiceImpl implements VehicleService {
       String imageUrl = fileService.saveFile(request.getImageFile());
       vehicle.setImageUrl(imageUrl);
     }
-    vehicle = vehicleRepository.save(vehicle);
-    return vehicleMapper.toVehicleResponse(vehicle);
+
+    return vehicleMapper.toVehicleResponse(vehicleRepository.save(vehicle));
   }
 
   @Override
+  @Transactional
   public VehicleResponse updateVehicle(Long id, VehicleUpdateRequest request) {
-    Optional<Vehicle> existingVehicleOptional = vehicleRepository.findById(id);
-    if (existingVehicleOptional.isEmpty()) {
-      throw new NotFoundException("Vehicle not found with ID: " + id);
-    }
+    Vehicle existingVehicle =
+        vehicleRepository
+            .findById(id)
+            .orElseThrow(() -> new NotFoundException("Vehicle not found with ID: " + id));
 
-    Vehicle existingVehicle = existingVehicleOptional.get();
-
-    if (request.getLicensePlate() != null && !request.getLicensePlate().isEmpty()) {
-      Optional<Vehicle> vehicleWithSameLicensePlate =
-          vehicleRepository.findByLicensePlate(request.getLicensePlate());
-      if (vehicleWithSameLicensePlate.isPresent()
-          && !vehicleWithSameLicensePlate.get().getVehicleId().equals(id)) {
+    // Check trùng biển số
+    if (request.getLicensePlate() != null
+        && !request.getLicensePlate().equals(existingVehicle.getLicensePlate())) {
+      if (vehicleRepository.existsByLicensePlate(request.getLicensePlate())) {
         throw new ConflictException(
-            "Vehicle with license plate '" + request.getLicensePlate() + "' already exists.");
+            "License plate '" + request.getLicensePlate() + "' already exists.");
       }
     }
 
     vehicleMapper.updateVehicleFromRequest(request, existingVehicle);
 
-    // Nếu pricePerHour được cập nhật, tính toán lại pricePerDay
-    if (request.getPricePerHour() != null) {
-      existingVehicle.setPricePerDay(BigDecimal.valueOf(request.getPricePerHour() * 8));
-    }
 
     if (request.getModelId() != null) {
       VehicleModel model =
           vehicleModelRepository
-              .findByModelId(request.getModelId())
+              .findById(request.getModelId())
               .orElseThrow(() -> new NotFoundException("Vehicle model not found"));
       existingVehicle.setVehicleModel(model);
     }
@@ -96,30 +102,36 @@ public class VehicleServiceImpl implements VehicleService {
     if (request.getStationId() != null) {
       Station station =
           stationRepository
-              .findStationByStationId(request.getStationId())
+              .findById(request.getStationId())
               .orElseThrow(() -> new NotFoundException("Station not found"));
       existingVehicle.setStation(station);
     }
+
     if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
       String imageUrl = fileService.saveFile(request.getImageFile());
       existingVehicle.setImageUrl(imageUrl);
     }
 
-    Vehicle updatedVehicle = vehicleRepository.save(existingVehicle);
-    return vehicleMapper.toVehicleResponse(updatedVehicle);
+    return vehicleMapper.toVehicleResponse(vehicleRepository.save(existingVehicle));
   }
 
   @Override
+  @Transactional
   public void deleteVehicle(Long vehicleId) {
     if (!vehicleRepository.existsById(vehicleId)) {
-      throw new NotFoundException("Vehicle not found");
+      throw new NotFoundException("Vehicle not found with ID: " + vehicleId);
     }
     vehicleRepository.deleteById(vehicleId);
   }
 
   @Override
   public List<VehicleResponse> findAll() {
-    return vehicleMapper.toVehicleResponseList(vehicleRepository.findAll());
+    List<Vehicle> vehicles = vehicleRepository.findAll();
+    List<VehicleResponse> responses = new ArrayList<>();
+    for (Vehicle v : vehicles) {
+      responses.add(vehicleMapper.toVehicleResponse(v));
+    }
+    return responses;
   }
 
   @Override

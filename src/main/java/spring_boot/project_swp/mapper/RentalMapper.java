@@ -7,24 +7,27 @@ import spring_boot.project_swp.entity.Rental;
 
 @Mapper(
     componentModel = MappingConstants.ComponentModel.SPRING,
-    uses = {MapperUtils.class},
+    // uses = {MapperUtils.class}, // Bỏ nếu ko dùng
     unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface RentalMapper {
 
+  // --- REQUEST TO ENTITY ---
+  // Các trường quan hệ (Booking, User, Vehicle...) sẽ được set trong Service
   @Mapping(target = "rentalId", ignore = true)
   @Mapping(target = "createdAt", ignore = true)
-  @Mapping(target = "startActual", ignore = true)
-  @Mapping(target = "endActual", ignore = true)
-  @Mapping(target = "total", ignore = true)
-  @Mapping(target = "booking", source = "bookingId")
-  @Mapping(target = "renter", source = "userId")
-  @Mapping(target = "vehicle", source = "vehicleId")
-  @Mapping(target = "pickupStation", source = "pickupStationId")
-  @Mapping(target = "returnStation", source = "returnStationId")
-  @Mapping(target = "pickupStaff", source = "pickupStaffId")
-  @Mapping(target = "returnStaff", source = "returnStaffId")
+  @Mapping(target = "booking", ignore = true)
+  @Mapping(target = "renter", ignore = true)
+  @Mapping(target = "vehicle", ignore = true)
+  @Mapping(target = "pickupStation", ignore = true)
+  @Mapping(target = "returnStation", ignore = true)
+  @Mapping(target = "pickupStaff", ignore = true)
+  @Mapping(target = "returnStaff", ignore = true)
+  @Mapping(target = "payments", ignore = true)
+  @Mapping(target = "rentalDiscounts", ignore = true)
   Rental toRental(RentalRequest request);
 
+  // --- ENTITY TO RESPONSE ---
+  // MapStruct tự lấy được các trường con (nested properties)
   @Mapping(source = "booking.bookingId", target = "bookingId")
   @Mapping(source = "renter.userId", target = "userId")
   @Mapping(source = "renter.fullName", target = "renterName")
@@ -40,17 +43,15 @@ public interface RentalMapper {
   @Mapping(source = "returnStaff.fullName", target = "returnStaffName")
   RentalResponse toRentalResponse(Rental rental);
 
+  // --- UPDATE ---
   @Mapping(target = "rentalId", ignore = true)
   @Mapping(target = "createdAt", ignore = true)
-  @Mapping(target = "startActual", ignore = true)
-  @Mapping(target = "endActual", ignore = true)
-  @Mapping(target = "total", ignore = true)
-  @Mapping(target = "booking", source = "bookingId")
-  @Mapping(target = "renter", source = "userId")
-  @Mapping(target = "vehicle", source = "vehicleId")
-  @Mapping(target = "pickupStaff", source = "pickupStaffId")
-  @Mapping(target = "returnStaff", source = "returnStaffId")
+  @Mapping(target = "booking", ignore = true)
+  @Mapping(target = "renter", ignore = true)
+  @Mapping(target = "vehicle", ignore = true)
   @Mapping(target = "pickupStation", ignore = true)
   @Mapping(target = "returnStation", ignore = true)
+  @Mapping(target = "pickupStaff", ignore = true)
+  @Mapping(target = "returnStaff", ignore = true)
   void updateRentalFromRequest(RentalRequest request, @MappingTarget Rental rental);
 }

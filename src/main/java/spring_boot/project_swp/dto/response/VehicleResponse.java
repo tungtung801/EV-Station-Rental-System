@@ -1,10 +1,7 @@
 package spring_boot.project_swp.dto.response;
 
 import java.math.BigDecimal;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Data
@@ -12,28 +9,32 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class VehicleResponse {
-  private Long vehicleId;
-  private String licensePlate;
-  private int batteryCapacity;
-  private int currentBattery;
-  private String vehicleStatus;
-  private BigDecimal pricePerHour;
-  private BigDecimal pricePerDay;
-  private ModelInfo model;
-  private StationInfo currentStation;
-  private String imageUrl;
+  Long vehicleId;
+  String licensePlate;
+  int currentBattery;
+  String vehicleStatus;
+  BigDecimal pricePerHour;
+  String imageUrl;
+
+  // Thông tin Model (Hãng, Loại, Dung lượng pin chuẩn)
+  ModelInfo model;
+
+  // Thông tin Station (Vị trí hiện tại)
+  StationInfo currentStation;
 
   @Data
   public static class ModelInfo {
-    private Long modelId;
-    private String modelName;
-    private String brand;
+    Long modelId;
+    String modelName;
+    String brand;
+    String type;
+    int capacityKWh; // Pin chuẩn của dòng xe
   }
 
   @Data
   public static class StationInfo {
-    private Long stationId;
-    private String stationName;
-    private String address;
+    Long stationId;
+    String stationName;
+    String address;
   }
 }

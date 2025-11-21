@@ -4,11 +4,7 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Entity
@@ -61,5 +57,7 @@ public class Discount {
   Boolean isActive = true; // Default value
 
   @OneToMany(mappedBy = "discount", cascade = CascadeType.ALL, orphanRemoval = true)
+  @ToString.Exclude // <--- THÊM
+  @EqualsAndHashCode.Exclude // <--- THÊM
   List<RentalDiscounts> rentalDiscounts;
 }

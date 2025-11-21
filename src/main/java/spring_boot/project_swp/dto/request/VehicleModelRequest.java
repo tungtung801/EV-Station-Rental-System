@@ -1,10 +1,7 @@
 package spring_boot.project_swp.dto.request;
 
-import jakarta.validation.constraints.Size;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.*;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Data
@@ -12,17 +9,22 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class VehicleModelRequest {
-  @Size(max = 100, message = "Model name cannot exceed 100 characters")
-  private String modelName;
+  @NotBlank
+  @Size(max = 100)
+  String modelName;
 
-  @Size(max = 100, message = "Brand cannot exceed 100 characters")
-  private String brand;
+  @NotBlank
+  @Size(max = 100)
+  String brand;
 
-  @Size(max = 100, message = "Type cannot exceed 100 characters")
-  private String type;
+  @NotBlank
+  @Size(max = 100)
+  String type;
 
-  private Integer capacityKWh;
+  @NotNull
+  @Min(1)
+  Integer capacityKWh; // Pin thiết kế
 
-  @Size(max = 500, message = "Description cannot exceed 500 characters")
-  private String description;
+  @Size(max = 500)
+  String description;
 }

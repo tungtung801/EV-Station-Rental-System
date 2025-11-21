@@ -2,28 +2,20 @@ package spring_boot.project_swp.service;
 
 import java.util.List;
 import spring_boot.project_swp.dto.request.PaymentRequest;
+import spring_boot.project_swp.dto.request.PaymentStatusUpdateRequest;
 import spring_boot.project_swp.dto.response.PaymentResponse;
-import spring_boot.project_swp.entity.Booking;
-import spring_boot.project_swp.entity.Payment;
-import spring_boot.project_swp.entity.PaymentStatusEnum;
-import spring_boot.project_swp.exception.ConflictException;
 
 public interface PaymentService {
-  PaymentResponse createPayment(PaymentRequest request) throws ConflictException;
+  // Tạo thanh toán (Cho cả Online và Offline)
+  PaymentResponse createPayment(PaymentRequest request);
 
-  PaymentResponse findPaymentById(Long paymentId);
+  // Xác nhận đã nhận tiền (Staff dùng cho Offline)
+  PaymentResponse confirmPayment(Long paymentId, Long staffId);
 
-  List<PaymentResponse> getPaymentsByRentalId(Long rentalId);
+  // Update trạng thái (Dùng cho IPN VNPay hoặc khi hủy/hoàn tiền)
+  PaymentResponse updatePaymentStatus(Long paymentId, PaymentStatusUpdateRequest request);
 
-  PaymentResponse updatePaymentStatus(Long paymentId, PaymentStatusEnum status);
+  List<PaymentResponse> getPaymentsByBookingId(Long bookingId);
 
-  PaymentResponse findPaymentByTransactionCode(String transactionCode);
-
-  Payment savePayment(Payment payment);
-
-  PaymentResponse createDepositPayment(Booking booking, String userEmail, PaymentRequest request);
-
-  PaymentResponse createFinalPayment(Long rentalId, String userEmail, PaymentRequest request);
-
-    Payment getPaymentByBookingId(Long bookingId);
+  List<PaymentResponse> getAllPayments();
 }

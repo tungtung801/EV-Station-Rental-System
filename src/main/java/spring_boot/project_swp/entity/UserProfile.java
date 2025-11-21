@@ -1,12 +1,7 @@
 package spring_boot.project_swp.entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Entity
@@ -24,6 +19,7 @@ public class UserProfile {
 
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "UserId", nullable = false)
+  @EqualsAndHashCode.Exclude
   @ToString.Exclude
   User user;
 
@@ -37,12 +33,9 @@ public class UserProfile {
   @Column(name = "Status", nullable = true, length = 50)
   UserProfileStatusEnum status;
 
-  @Column(name = "Reason", columnDefinition = "NTEXT")
+  @Column(name = "Reason", columnDefinition = "NVARCHAR(255)")
   String reason;
 
-  @Column(name = "Bio", columnDefinition = "NTEXT")
+  @Column(name = "Bio", columnDefinition = "NVARCHAR(500)")
   String bio;
-
-  @Column(name = "Preferences", columnDefinition = "NTEXT")
-  String preferences;
 }

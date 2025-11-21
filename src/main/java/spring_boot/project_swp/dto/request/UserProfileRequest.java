@@ -20,6 +20,4 @@ public class UserProfileRequest {
   MultipartFile idCardFile;
 
   String bio;
-
-  String preferences;
 }

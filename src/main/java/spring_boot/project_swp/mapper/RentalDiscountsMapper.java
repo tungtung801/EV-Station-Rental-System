@@ -11,12 +11,11 @@ import spring_boot.project_swp.entity.RentalDiscounts;
 
 @Mapper(
     componentModel = MappingConstants.ComponentModel.SPRING,
-    uses = {MapperUtils.class},
     unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface RentalDiscountsMapper {
 
-  @Mapping(target = "rental", source = "rentalId")
-  @Mapping(target = "discount", source = "discountId")
+  @Mapping(target = "rental", ignore = true) // Set trong Service
+  @Mapping(target = "discount", ignore = true) // Set trong Service
   RentalDiscounts toRentalDiscounts(RentalDiscountRequest request);
 
   @Mapping(target = "rentalId", source = "rental.rentalId")

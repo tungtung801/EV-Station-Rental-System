@@ -3,11 +3,7 @@ package spring_boot.project_swp.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Entity
@@ -23,11 +19,15 @@ public class RentalDiscounts {
   @Id
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "RentalId", referencedColumnName = "RentalId")
+  @ToString.Exclude // <--- THÊM
+  @EqualsAndHashCode.Exclude // <--- THÊM
   Rental rental;
 
   @Id
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "DiscountId", referencedColumnName = "DiscountId")
+  @ToString.Exclude // <--- THÊM
+  @EqualsAndHashCode.Exclude // <--- THÊM
   Discount discount;
 
   @Column(name = "AppliedAmount", precision = 10, scale = 2)

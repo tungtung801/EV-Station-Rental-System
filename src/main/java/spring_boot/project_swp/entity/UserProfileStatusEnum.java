@@ -1,7 +1,7 @@
 package spring_boot.project_swp.entity;
 
 public enum UserProfileStatusEnum {
-  NULL,
+  UNVERIFIED,
   VERIFIED,
   PENDING,
   REJECTED

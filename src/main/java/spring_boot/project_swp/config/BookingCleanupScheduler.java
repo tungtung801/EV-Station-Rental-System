@@ -10,6 +10,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import spring_boot.project_swp.entity.Booking;
 import spring_boot.project_swp.entity.BookingStatusEnum;
+import spring_boot.project_swp.entity.BookingTypeEnum;
 import spring_boot.project_swp.repository.BookingRepository;
 
 @Component
@@ -20,31 +21,44 @@ public class BookingCleanupScheduler {
 
   final BookingRepository bookingRepository;
 
-  // Chạy mỗi 5 phút để kiểm tra và hủy các booking PENDING_PAYMENT quá hạn
-  @Scheduled(fixedRate = 300000) // 300000 ms = 5 phút
-  public void cleanupPendingBookings() {
-    log.info("Bắt đầu chạy tác vụ dọn dẹp booking PENDING_PAYMENT...");
+  @Scheduled(fixedRate = 300000) // Chạy mỗi 5 phút
+  public void cleanupBookings() {
+    log.info(">>> [SCHEDULER] Bắt đầu dọn dẹp Booking...");
 
-    LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
-    List<Booking> pendingBookings =
-        bookingRepository.findByStatusAndCreatedAtBefore(
-            BookingStatusEnum.PENDING_DEPOSIT, fiveMinutesAgo);
+    // ---------------------------------------------------------
+    // CASE 1: Đơn ONLINE tạo xong nhưng không thanh toán (TREO)
+    // ---------------------------------------------------------
+    // Quá 5 phút kể từ lúc tạo và vẫn PENDING (chưa thanh toán)
+    LocalDateTime paymentDeadline = LocalDateTime.now().minusMinutes(5);
 
-    if (pendingBookings.isEmpty()) {
-      log.info("Không tìm thấy booking PENDING_PAYMENT nào quá hạn.");
-      return;
+    List<Booking> unpaidOnlineBookings =
+        bookingRepository.findByStatusAndBookingTypeAndCreatedAtBefore(
+            BookingStatusEnum.PENDING, BookingTypeEnum.ONLINE, paymentDeadline);
+
+    for (Booking b : unpaidOnlineBookings) {
+      b.setStatus(BookingStatusEnum.CANCELLED);
+      bookingRepository.save(b);
+      log.info("-> Hủy đơn Online chưa thanh toán: ID {}", b.getBookingId());
     }
 
-    log.info(
-        "Tìm thấy {} booking PENDING_PAYMENT quá hạn. Đang tiến hành hủy...",
-        pendingBookings.size());
+    // ---------------------------------------------------------
+    // CASE 2: Đơn (OFFLINE hoặc Online đã thanh toán) nhưng KHÁCH KHÔNG ĐẾN LẤY (NO-SHOW)
+    // ---------------------------------------------------------
+    // Quá giờ nhận xe (StartTime) 2 tiếng mà vẫn chưa chuyển sang IN_PROGRESS
+    // Chỉ check CONFIRMED (đã thanh toán/duyệt) để tránh cancel ONLINE chưa thanh toán 2 lần
+    LocalDateTime pickupDeadline = LocalDateTime.now().minusHours(2);
 
-    for (Booking booking : pendingBookings) {
-      booking.setStatus(BookingStatusEnum.CANCELLED);
-      bookingRepository.save(booking);
-      log.info("Booking với ID: {} đã được hủy do quá hạn thanh toán.", booking.getBookingId());
+    List<Booking> noShowBookings =
+        bookingRepository.findByStatusAndStartTimeBefore(
+            BookingStatusEnum.CONFIRMED, pickupDeadline);
+
+    for (Booking b : noShowBookings) {
+      b.setStatus(BookingStatusEnum.CANCELLED);
+      // Có thể thêm logic phạt tiền ở đây nếu muốn (với đơn đã trả tiền)
+      bookingRepository.save(b);
+      log.info("-> Hủy đơn No-Show (Quá giờ nhận xe): ID {}", b.getBookingId());
     }
 
-    log.info("Hoàn thành tác vụ dọn dẹp booking PENDING_PAYMENT.");
+    log.info("<<< [SCHEDULER] Kết thúc dọn dẹp.");
   }
 }

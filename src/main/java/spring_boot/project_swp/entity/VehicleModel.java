@@ -1,11 +1,7 @@
 package spring_boot.project_swp.entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Entity
@@ -19,20 +15,20 @@ public class VehicleModel {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "ModelId")
-  private Long modelId;
+  Long modelId;
 
   @Column(name = "ModelName", nullable = false, unique = true, length = 100)
-  private String modelName;
+  String modelName;
 
   @Column(name = "Brand", nullable = false, length = 100)
-  private String brand;
+  String brand; // VinFast, Yamaha...
 
   @Column(name = "Type", nullable = false, length = 100)
-  private String type;
+  String type; // Electric Scooter, Bike...
 
   @Column(name = "CapacityKWh", nullable = false)
-  private int capacityKWh;
+  int capacityKWh; // Dung lượng pin thiết kế
 
   @Column(name = "Description", length = 500)
-  private String description;
+  String description;
 }

@@ -11,4 +11,7 @@ public interface JwtService {
   String extractUserName(String token);
 
   boolean isTokenValid(String token, User user);
+
+  // THÊM HÀM NÀY (Để JwtAuthenticationFilter gọi)
+  boolean validateToken(String token);
 }

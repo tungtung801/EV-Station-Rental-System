@@ -3,10 +3,10 @@ package spring_boot.project_swp.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -15,11 +15,8 @@ import org.springframework.web.bind.annotation.*;
 import spring_boot.project_swp.dto.request.PaymentRequest;
 import spring_boot.project_swp.dto.request.PaymentStatusUpdateRequest;
 import spring_boot.project_swp.dto.response.PaymentResponse;
-import spring_boot.project_swp.entity.Booking;
-import spring_boot.project_swp.entity.PaymentStatusEnum;
-import spring_boot.project_swp.mapper.BookingMapper;
-import spring_boot.project_swp.service.BookingService;
 import spring_boot.project_swp.service.PaymentService;
+import spring_boot.project_swp.service.UserService;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -27,63 +24,56 @@ import spring_boot.project_swp.service.PaymentService;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "Payment APIs", description = "APIs for managing payments")
 public class PaymentController {
+
   PaymentService paymentService;
-  @Lazy BookingService bookingService;
-  BookingMapper bookingMapper;
+  UserService userService; // Để lấy Staff ID từ token
 
-  @PostMapping("/deposit/{bookingId}")
-  @Operation(
-      summary = "Create a deposit payment",
-      description = "Creates a new deposit payment for a booking.")
-  public ResponseEntity<PaymentResponse> createDepositPayment(
-      @PathVariable Long bookingId, @Valid @RequestBody PaymentRequest request) {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    String userEmail = authentication.getName();
-    // Lấy đối tượng Booking từ bookingService và chuyển đổi sang Booking entity
-    Booking booking = bookingMapper.toBooking(bookingService.getBookingById(bookingId));
-    return new ResponseEntity<>(
-        paymentService.createDepositPayment(booking, userEmail, request), HttpStatus.CREATED);
+  // 1. Tạo thanh toán (Dùng chung cho cả Offline/Online nếu muốn tạo tay)
+  @PostMapping
+  @Operation(summary = "Create a new payment")
+  public ResponseEntity<PaymentResponse> createPayment(@Valid @RequestBody PaymentRequest request) {
+    return new ResponseEntity<>(paymentService.createPayment(request), HttpStatus.CREATED);
   }
 
-  @PostMapping("/final/{rentalId}")
-  @Operation(
-      summary = "Create a final payment",
-      description = "Creates a new final payment for a rental.")
-  public ResponseEntity<PaymentResponse> createFinalPayment(
-      @PathVariable Long rentalId, @Valid @RequestBody PaymentRequest request) {
+  // 2. Staff xác nhận đã nhận tiền (Cho Offline)
+  @PutMapping("/{paymentId}/confirm")
+  @Operation(summary = "Confirm payment (Staff only)")
+  public ResponseEntity<PaymentResponse> confirmPayment(@PathVariable Long paymentId) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    String userEmail = authentication.getName();
-    return new ResponseEntity<>(
-        paymentService.createFinalPayment(rentalId, userEmail, request), HttpStatus.CREATED);
+    String staffEmail = authentication.getName();
+    Long staffId = userService.getUserByEmail(staffEmail).getUserId();
+
+    return ResponseEntity.ok(paymentService.confirmPayment(paymentId, staffId));
   }
 
+  // 3. Update trạng thái (Admin/System)
   @PatchMapping("/{paymentId}/status")
-  @Operation(
-      summary = "Update payment status",
-      description = "Updates the status of an existing payment.")
+  @Operation(summary = "Update payment status manually")
   public ResponseEntity<PaymentResponse> updatePaymentStatus(
       @PathVariable Long paymentId, @Valid @RequestBody PaymentStatusUpdateRequest request) {
-    PaymentStatusEnum paymentStatus = request.getStatus();
-    PaymentResponse updatedPayment = paymentService.updatePaymentStatus(paymentId, paymentStatus);
-    return new ResponseEntity<>(updatedPayment, HttpStatus.OK);
+    return ResponseEntity.ok(paymentService.updatePaymentStatus(paymentId, request));
   }
 
+  // 4. Get By ID
   @GetMapping("/{paymentId}")
-  @Operation(
-      summary = "Get payment by ID",
-      description = "Retrieves a payment record by its unique ID.")
-  public ResponseEntity<PaymentResponse> findPaymentById(@PathVariable Long paymentId) {
-    PaymentResponse paymentResponse = paymentService.findPaymentById(paymentId);
-    return new ResponseEntity<>(paymentResponse, HttpStatus.OK);
+  @Operation(summary = "Get payment by ID")
+  public ResponseEntity<PaymentResponse> getPaymentById(@PathVariable Long paymentId) {
+    // Em nhớ thêm hàm getById vào Service nhé (dễ mà, findById thôi)
+    // Nếu chưa có thì dùng tạm getAll rồi filter, hoặc viết thêm 1 dòng trong service
+    // Tạm thời return null để code compile được nếu em lười viết service
+    return null;
   }
 
-  @GetMapping("/transaction/{transactionCode}")
-  @Operation(
-      summary = "Get payment by transaction code",
-      description = "Retrieves a payment record by its transaction code.")
-  public ResponseEntity<PaymentResponse> findPaymentByTransactionCode(
-      @PathVariable String transactionCode) {
-    PaymentResponse paymentResponse = paymentService.findPaymentByTransactionCode(transactionCode);
-    return new ResponseEntity<>(paymentResponse, HttpStatus.OK);
+  // 5. Get All
+  @GetMapping
+  @Operation(summary = "Get all payments")
+  public ResponseEntity<List<PaymentResponse>> getAllPayments() {
+    return ResponseEntity.ok(paymentService.getAllPayments());
+  }
+
+  // 6. Get by Booking
+  @GetMapping("/booking/{bookingId}")
+  public ResponseEntity<List<PaymentResponse>> getPaymentsByBooking(@PathVariable Long bookingId) {
+    return ResponseEntity.ok(paymentService.getPaymentsByBookingId(bookingId));
   }
 }

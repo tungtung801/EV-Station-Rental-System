@@ -5,87 +5,72 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import spring_boot.project_swp.dto.request.UserRegistrationRequest;
+import spring_boot.project_swp.dto.request.StaffRegistrationRequest;
 import spring_boot.project_swp.dto.request.UserUpdateRequest;
 import spring_boot.project_swp.dto.response.UserRegistrationResponse;
 import spring_boot.project_swp.dto.response.UserResponse;
-import spring_boot.project_swp.mapper.UserMapper;
 import spring_boot.project_swp.service.FileStorageService;
-import spring_boot.project_swp.service.UserProfileService;
 import spring_boot.project_swp.service.UserService;
 
 @RestController
 @RequestMapping("/api/users")
-@AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@Tag(name = "User APIs", description = "APIs for managing user accounts and profiles")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Tag(name = "User APIs", description = "APIs for managing user accounts")
 public class UserController {
-  UserService userService;
-  private final UserProfileService userProfileService;
-  private final FileStorageService fileStorageService;
-  private final UserMapper userMapper;
+
+  final UserService userService;
+  final FileStorageService fileStorageService;
 
   @PostMapping(value = "/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @Operation(summary = "Upload user image", description = "Uploads a profile image for a user.")
+  @Operation(summary = "Upload user image")
   public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) {
     String filename = fileStorageService.saveFile(file);
     return ResponseEntity.ok(filename);
   }
 
   @GetMapping("/{id}")
-  @Operation(
-      summary = "Get user by ID",
-      description = "Retrieves a user's details by their unique ID.")
+  @Operation(summary = "Get user by ID")
   public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
-    UserResponse userResponse = userService.getUserById(id);
-    return new ResponseEntity<>(userResponse, HttpStatus.OK);
+    return new ResponseEntity<>(userService.getUserById(id), HttpStatus.OK);
   }
 
   @PutMapping("/{id}")
-  @Operation(
-      summary = "Update user details",
-      description = "Updates an existing user's information.")
+  @Operation(summary = "Update user details")
   public ResponseEntity<UserResponse> updateUser(
       @PathVariable Long id, @Valid @RequestBody UserUpdateRequest request) {
-    UserResponse response = userService.updateUser(id, request);
-    return new ResponseEntity<>(response, HttpStatus.OK);
+    return new ResponseEntity<>(userService.updateUser(id, request), HttpStatus.OK);
   }
 
   @PostMapping("/staff")
-  @Operation(
-      summary = "Create a new staff account",
-      description = "Registers a new staff member account.")
+  @Operation(summary = "Create a new staff account")
   public ResponseEntity<UserRegistrationResponse> createStaff(
-      @Valid @RequestBody UserRegistrationRequest request) {
-    UserRegistrationResponse response = userService.registerStaff(request);
+      @Valid @RequestBody StaffRegistrationRequest request) {
+    UserRegistrationResponse response = userService.createStaff(request);
     return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
 
   @GetMapping("/user")
-  @Operation(summary = "Get all users", description = "Retrieves a list of all registered users.")
+  @Operation(summary = "Get all users")
   public ResponseEntity<List<UserResponse>> getAllUsers() {
     return new ResponseEntity<>(userService.getAllUsers(), HttpStatus.OK);
   }
 
   @GetMapping("/staff")
-  @Operation(
-      summary = "Get all staff members",
-      description = "Retrieves a list of all staff members.")
+  @Operation(summary = "Get all staff members")
   public ResponseEntity<List<UserResponse>> getAllStaffs() {
     return new ResponseEntity<>(userService.getAllStaff(), HttpStatus.OK);
   }
 
   @DeleteMapping("/delete/{userId}")
-  @Operation(
-      summary = "Delete users with id",
-      description = "Delete the user with specificed userId inputed.")
+  @Operation(summary = "Delete users with id")
   public ResponseEntity<?> deleteUserWithId(@PathVariable Long userId) {
     userService.deleteUser(userId);
     return new ResponseEntity<>(HttpStatus.OK);
