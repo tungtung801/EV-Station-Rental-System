@@ -85,16 +85,16 @@ public class PaymentServiceImpl implements PaymentService {
     // New Business rule: If CASH_ON_DELIVERY, paymentType must be FINAL_PAYMENT and amount must be
     // 100%
     if (request.getPaymentMethod() == PaymentMethodEnum.CASH_ON_DELIVERY) {
-      if (request.getPaymentType() != PaymentTypeEnum.FINAL) {
-        throw new ConflictException("For CASH_ON_DELIVERY, payment type must be FINAL_PAYMENT.");
-      }
-      amountToPay = totalCost; // Full amount for cash on delivery
-    } else if (request.getPaymentType() == PaymentTypeEnum.DEPOSIT) {
-      // Use the pre-calculated deposit amount from the booking
-      amountToPay = depositAmount;
-    } else if (request.getPaymentType() == PaymentTypeEnum.FINAL) {
-      // Calculate the remaining amount (total - deposit)
-      amountToPay = totalAmount.subtract(depositAmount);
+        if (request.getPaymentType() != PaymentTypeEnum.FINAL) {
+            throw new ConflictException("For CASH_ON_DELIVERY, payment type must be FINAL_PAYMENT.");
+        }
+        amountToPay = totalCost; // Full amount for cash on delivery
+//    } else if (request.getPaymentType() == PaymentTypeEnum.DEPOSIT) {
+//      // Use the pre-calculated deposit amount from the booking
+//      amountToPay = depositAmount;
+//    } else if (request.getPaymentType() == PaymentTypeEnum.FINAL) {
+//      // Calculate the remaining amount (total - deposit)
+//      amountToPay = totalAmount.subtract(depositAmount);
     } else {
       // Handle other types of fees (e.g., penalties, additional services)
       // For now, assume it's the total amount if not deposit or final payment
