@@ -35,8 +35,6 @@ public class Vehicle {
     @Column(name = "PricePerHour", nullable = false, precision = 10, scale = 2)
     BigDecimal pricePerHour;
 
-    @Column(name = "Color", length = 50)
-    String color;
 
     @Column(name = "ImageUrl", length = 500)
     String imageUrl;

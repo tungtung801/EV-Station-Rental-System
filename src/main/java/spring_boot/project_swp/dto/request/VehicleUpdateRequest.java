@@ -20,8 +20,6 @@ public class VehicleUpdateRequest {
     @Size(max = 20, message = "License Plate too long")
     String licensePlate;
 
-    @Size(max = 50)
-    String color;
 
     @Min(value = 0, message = "Battery cannot be negative")
     @Max(value = 100, message = "Battery cannot exceed 100%")

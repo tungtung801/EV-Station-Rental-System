@@ -22,9 +22,6 @@ public class VehicleRequest {
     @Size(max = 20, message = "License Plate too long")
     String licensePlate;
 
-    @NotBlank(message = "Color cannot be null")
-    @Size(max = 50)
-    String color;
 
     @NotNull(message = "Current Battery cannot be null")
     @Min(value = 0, message = "Battery cannot be negative")

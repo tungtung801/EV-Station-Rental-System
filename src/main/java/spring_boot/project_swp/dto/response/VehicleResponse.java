@@ -12,7 +12,6 @@ import spring_boot.project_swp.entity.VehicleStatusEnum;
 public class VehicleResponse {
     Long vehicleId;
     String licensePlate;
-    String color; // <--- Đừng quên tôi
     int currentBattery;
     VehicleStatusEnum vehicleStatus;
     BigDecimal pricePerHour;

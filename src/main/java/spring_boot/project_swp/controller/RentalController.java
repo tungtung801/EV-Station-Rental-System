@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.*;
 import spring_boot.project_swp.dto.request.RentalConfirmPickupRequest;
 import spring_boot.project_swp.dto.request.RentalReturnRequest; // Nhớ import
 import spring_boot.project_swp.dto.response.RentalResponse;
+import spring_boot.project_swp.entity.User;
+import spring_boot.project_swp.exception.BadRequestException;
+import spring_boot.project_swp.repository.UserRepository;
 import spring_boot.project_swp.service.RentalService;
 import spring_boot.project_swp.service.UserService;
 
@@ -28,6 +31,7 @@ public class RentalController {
 
     final RentalService rentalService;
     final UserService userService;
+    final UserRepository userRepository;
 
     // Helper lấy Staff ID từ Token
     private Long getCurrentStaffId() {
@@ -54,14 +58,25 @@ public class RentalController {
     }
 
     // 3. Xác nhận Trả xe (Dùng JSON -> Dùng @RequestBody)
+    // Trong RentalController.java
+
     @PutMapping("/{rentalId}/confirm-return")
-    @Operation(summary = "Confirm vehicle return (Input Odometer & Surcharge)")
+    @Operation(summary = "Confirm vehicle return (Auto station from Staff)")
     public ResponseEntity<RentalResponse> confirmReturn(
             @PathVariable Long rentalId,
-            @RequestParam Long returnStationId,
-            @RequestBody @Valid RentalReturnRequest request) { // Thêm tham số này vào
+            @RequestBody @Valid RentalReturnRequest request) { // Bỏ @RequestParam returnStationId
 
-        return ResponseEntity.ok(rentalService.returnVehicle(rentalId, returnStationId, getCurrentStaffId(), request));
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String staffEmail = authentication.getName();
+        User staff = userRepository.findByEmail(staffEmail)
+                .orElseThrow(() -> new RuntimeException("Staff not found"));
+
+        if (staff.getStation() == null) {
+            throw new RuntimeException("Staff does not belong to any station!");
+        }
+        Long returnStationId = staff.getStation().getStationId();
+
+        return ResponseEntity.ok(rentalService.returnVehicle(rentalId, returnStationId, staff.getUserId(), request));
     }
 
     @GetMapping("/{rentalId}")
