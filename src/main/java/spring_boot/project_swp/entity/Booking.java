@@ -54,6 +54,13 @@ public class Booking {
   @Column(name = "CreatedAt", nullable = false, updatable = false)
   LocalDateTime createdAt;
 
+
+    @Column(name = "DiscountCode", length = 50)
+    String discountCode; // Lưu mã (VD: SALE50)
+
+    @Column(name = "DiscountAmount", precision = 19, scale = 4)
+    BigDecimal discountAmount; // Số tiền được giảm
+
   @OneToOne(
       mappedBy = "booking",
       cascade = CascadeType.ALL,

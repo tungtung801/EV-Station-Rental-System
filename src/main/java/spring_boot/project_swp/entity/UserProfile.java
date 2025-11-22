@@ -30,8 +30,9 @@ public class UserProfile {
   String idCardUrl;
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "Status", nullable = true, length = 50)
-  UserProfileStatusEnum status;
+  @Column(name = "Status", nullable = false, length = 50)
+          @Builder.Default
+  UserProfileStatusEnum status =UserProfileStatusEnum.UNVERIFIED;
 
   @Column(name = "Reason", columnDefinition = "NVARCHAR(255)")
   String reason;

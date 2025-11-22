@@ -11,16 +11,12 @@ import spring_boot.project_swp.entity.RentalStatusEnum;
 @Repository
 public interface RentalRepository extends JpaRepository<Rental, Long> {
 
-  List<Rental> findByRenter_UserId(Long userId);
+    List<Rental> findByRenter_UserId(Long userId);
 
-  List<Rental> findByVehicle_VehicleId(Long vehicleId);
+    List<Rental> findByVehicle_VehicleId(Long vehicleId);
 
-  Optional<Rental> findByBooking_BookingId(Long bookingId);
+    Optional<Rental> findByBooking_BookingId(Long bookingId);
 
-  List<Rental> findByVehicleVehicleIdAndStartActualBeforeAndEndActualAfterAndStatusNotIn(
-      Long vehicleId,
-      LocalDateTime endActual,
-      LocalDateTime startActual,
-      List<RentalStatusEnum> statuses);
     boolean existsByBookingBookingId(Long bookingId);
+
 }

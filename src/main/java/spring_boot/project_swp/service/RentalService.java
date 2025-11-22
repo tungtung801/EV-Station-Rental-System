@@ -2,6 +2,7 @@ package spring_boot.project_swp.service;
 
 import java.util.List;
 import spring_boot.project_swp.dto.request.RentalConfirmPickupRequest;
+import spring_boot.project_swp.dto.request.RentalReturnRequest;
 import spring_boot.project_swp.dto.response.RentalResponse;
 
 public interface RentalService {
@@ -12,10 +13,10 @@ public interface RentalService {
   RentalResponse createRentalFromBookingAuto(Long bookingId);
 
   // 2. Xác nhận giao xe (Khách đến lấy xe, Staff up ảnh hợp đồng)
-  RentalResponse confirmPickup(Long rentalId, RentalConfirmPickupRequest request);
+  RentalResponse confirmPickup(Long rentalId, Long staffId, RentalConfirmPickupRequest request);
 
   // 3. Trả xe (Staff xác nhận xe đã về trạm)
-  RentalResponse returnVehicle(Long rentalId, Long returnStationId, Long staffId);
+  RentalResponse returnVehicle(Long rentalId, Long returnStationId, Long staffId, RentalReturnRequest request);
 
   RentalResponse getRentalById(Long rentalId);
 

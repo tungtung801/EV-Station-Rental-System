@@ -19,5 +19,7 @@ public class UserProfileRequest {
 
   MultipartFile idCardFile;
 
+    String licenseNumber;
+
   String bio;
 }

@@ -11,7 +11,7 @@ import spring_boot.project_swp.entity.Booking;
 
 @Mapper(
     componentModel = MappingConstants.ComponentModel.SPRING,
-    uses = {VehicleMapper.class}, // Import để map VehicleResponse
+    uses = {VehicleMapper.class, RentalMapper.class}, // Import để map VehicleResponse
     unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface BookingMapper {
 
@@ -26,7 +26,8 @@ public interface BookingMapper {
   @Mapping(target = "userId", source = "user.userId")
   @Mapping(target = "userName", source = "user.fullName")
   @Mapping(target = "userPhone", source = "user.phoneNumber")
-  @Mapping(target = "vehicle", source = "vehicle") // MapStruct dùng VehicleMapper để map cái này
+  @Mapping(target = "vehicle", source = "vehicle")// MapStruct dùng VehicleMapper để map cái này
+  @Mapping(target = "paymentUrl", ignore = true) // Set tay trong Service (nếu có)
   BookingResponse toBookingResponse(Booking booking);
 
   List<BookingResponse> toBookingResponseList(List<Booking> bookings);

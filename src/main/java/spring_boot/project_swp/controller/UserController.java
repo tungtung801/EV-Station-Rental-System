@@ -29,12 +29,6 @@ public class UserController {
   final UserService userService;
   final FileStorageService fileStorageService;
 
-  @PostMapping(value = "/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @Operation(summary = "Upload user image")
-  public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) {
-    String filename = fileStorageService.saveFile(file);
-    return ResponseEntity.ok(filename);
-  }
 
   @GetMapping("/{id}")
   @Operation(summary = "Get user by ID")

@@ -1,35 +1,42 @@
 package spring_boot.project_swp.dto.request;
 
 import jakarta.validation.constraints.*;
+import java.math.BigDecimal; // Dùng cái này cho tiền!
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.web.multipart.MultipartFile;
+import spring_boot.project_swp.entity.VehicleStatusEnum;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class VehicleRequest {
-  @NotNull(message = "Model ID cannot be null")
-  Long modelId;
+    @NotNull(message = "Model ID cannot be null")
+    Long modelId;
 
-  @NotNull(message = "Station ID cannot be null")
-  Long stationId;
+    @NotNull(message = "Station ID cannot be null")
+    Long stationId;
 
-  @NotBlank(message = "License Plate cannot be null")
-  @Size(max = 20)
-  String licensePlate;
+    @NotBlank(message = "License Plate cannot be null")
+    @Size(max = 20, message = "License Plate too long")
+    String licensePlate;
 
-  @NotNull(message = "Current Battery cannot be null")
-  @Min(0)
-  @Max(100)
-  Integer currentBattery;
+    @NotBlank(message = "Color cannot be null")
+    @Size(max = 50)
+    String color;
 
-  @NotBlank(message = "Status cannot be null")
-  String vehicleStatus;
+    @NotNull(message = "Current Battery cannot be null")
+    @Min(value = 0, message = "Battery cannot be negative")
+    @Max(value = 100, message = "Battery cannot exceed 100%")
+    Integer currentBattery;
 
-  @NotNull @Positive double pricePerHour;
+    @NotNull(message = "Status cannot be null")
+    VehicleStatusEnum vehicleStatus;
 
+    @NotNull(message = "Price is required")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
+    BigDecimal pricePerHour; // <--- Dùng BigDecimal
 
-  MultipartFile imageFile;
+    MultipartFile imageFile;
 }

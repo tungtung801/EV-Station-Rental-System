@@ -1,5 +1,6 @@
 package spring_boot.project_swp.mapper;
 
+import java.util.List; // Nhớ import List
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
@@ -10,19 +11,24 @@ import spring_boot.project_swp.dto.response.DiscountResponse;
 import spring_boot.project_swp.entity.Discount;
 
 @Mapper(
-    componentModel = MappingConstants.ComponentModel.SPRING,
-    unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        componentModel = MappingConstants.ComponentModel.SPRING,
+        unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface DiscountMapper {
 
-  @Mapping(target = "discountId", ignore = true)
-  @Mapping(target = "currentUsage", ignore = true)
-  @Mapping(target = "rentalDiscounts", ignore = true)
-  Discount toDiscount(DiscountRequest request);
+    // --- CREATE ---
+    @Mapping(target = "discountId", ignore = true)
+    @Mapping(target = "currentUsage", ignore = true) // Mặc định 0
+    // ĐÃ XÓA DÒNG rentalDiscounts VÌ FIELD NÀY KHÔNG CÒN TỒN TẠI
+    Discount toDiscount(DiscountRequest request);
 
-  DiscountResponse toDiscountResponse(Discount discount);
+    // --- RESPONSE ---
+    DiscountResponse toDiscountResponse(Discount discount);
 
-  @Mapping(target = "discountId", ignore = true)
-  @Mapping(target = "currentUsage", ignore = true)
-  @Mapping(target = "rentalDiscounts", ignore = true)
-  void updateDiscountFromRequest(DiscountRequest request, @MappingTarget Discount discount);
+    // Thêm hàm này để Controller gọi API Get All
+    List<DiscountResponse> toDiscountResponseList(List<Discount> discounts);
+
+    // --- UPDATE ---
+    @Mapping(target = "discountId", ignore = true)
+    @Mapping(target = "currentUsage", ignore = true) // Không cho update số lượt dùng qua API này
+    void updateDiscountFromRequest(DiscountRequest request, @MappingTarget Discount discount);
 }

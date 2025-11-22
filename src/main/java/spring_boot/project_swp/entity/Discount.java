@@ -3,7 +3,6 @@ package spring_boot.project_swp.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -16,48 +15,48 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Discount {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "DiscountId")
-  Long discountId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "DiscountId")
+    Long discountId;
 
-  @Column(name = "Code", length = 50, unique = true, nullable = false)
-  String code;
+    @Column(name = "Code", length = 50, unique = true, nullable = false)
+    String code; // VD: SALE50, TET2025
 
-  @Column(name = "Description", columnDefinition = "TEXT")
-  String description;
+    @Column(name = "Description", columnDefinition = "NVARCHAR(MAX)") // Sửa TEXT thành NVARCHAR để hỗ trợ tiếng Việt
+    String description;
 
-  @Column(name = "AmountPercentage", precision = 5, scale = 2)
-  BigDecimal amountPercentage;
+    // --- SỬA LẠI CHO KHỚP VỚI LOGIC SERVICE ---
+    @Enumerated(EnumType.STRING)
+    @Column(name = "DiscountType", nullable = false)
+    DiscountTypeEnum discountType; // PERCENTAGE hoặc FIXED_AMOUNT
 
-  @Column(name = "AmountFixed", precision = 10, scale = 2)
-  BigDecimal amountFixed;
+    @Column(name = "Value", nullable = false, precision = 10, scale = 2)
+    BigDecimal value; // Giá trị (VD: 10 nếu là %, 50000 nếu là tiền)
+    // ------------------------------------------
 
-  @Column(name = "StartDate", nullable = false)
-  LocalDateTime startDate;
+    @Column(name = "MaxDiscountAmount", precision = 10, scale = 2)
+    BigDecimal maxDiscountAmount; // VD: Giảm 10% nhưng tối đa 200k
 
-  @Column(name = "EndDate", nullable = false)
-  LocalDateTime endDate;
+    @Column(name = "MinRentalDuration")
+    Integer minRentalDuration; // Điều kiện: Thuê tối thiểu mấy ngày mới được dùng
 
-  @Column(name = "MinRentalDuration")
-  Integer minRentalDuration;
+    @Column(name = "UsageLimit")
+    Integer usageLimit; // Tổng số lượng mã (VD: 100 mã)
 
-  @Column(name = "MaxDiscountAmount", precision = 10, scale = 2)
-  BigDecimal maxDiscountAmount;
+    @Column(name = "CurrentUsage")
+    @Builder.Default
+    Integer currentUsage = 0; // Đã dùng bao nhiêu mã
 
-  @Column(name = "UsageLimit")
-  Integer usageLimit;
+    @Column(name = "StartDate", nullable = false)
+    LocalDateTime startDate;
 
-  @Column(name = "CurrentUsage")
-  @Builder.Default
-  Integer currentUsage = 0; // Default value
+    @Column(name = "EndDate", nullable = false)
+    LocalDateTime endDate;
 
-  @Column(name = "IsActive", nullable = false)
-  @Builder.Default
-  Boolean isActive = true; // Default value
+    @Column(name = "IsActive", nullable = false)
+    @Builder.Default
+    Boolean isActive = true;
 
-  @OneToMany(mappedBy = "discount", cascade = CascadeType.ALL, orphanRemoval = true)
-  @ToString.Exclude // <--- THÊM
-  @EqualsAndHashCode.Exclude // <--- THÊM
-  List<RentalDiscounts> rentalDiscounts;
+    // ĐÃ XÓA List<RentalDiscounts> rentalDiscounts -> VÌ NÓ KHÔNG CÒN TỒN TẠI
 }

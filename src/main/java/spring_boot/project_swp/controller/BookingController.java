@@ -93,4 +93,20 @@ public class BookingController {
       @PathVariable Long vehicleId) {
     return ResponseEntity.ok(bookingService.get3OnGoingBookingsOfVehicle(vehicleId));
   }
+
+
+    // 1. API CHO KHÁCH HÀNG (My Bookings)
+    @GetMapping("/my-bookings")
+    @Operation(summary = "Get booking history of current user (Customer)")
+    public ResponseEntity<List<BookingResponse>> getMyBookings() {
+        return ResponseEntity.ok(bookingService.getMyBookings());
+    }
+
+    // 2. API CHO ADMIN (Vehicle Schedule)
+    @GetMapping("/vehicle/{vehicleId}")
+    @Operation(summary = "Get full schedule of a vehicle (Admin/Staff)")
+    // Anh có thể thêm @PreAuthorize("hasAnyAuthority('Admin', 'Staff')") nếu muốn chặt chẽ
+    public ResponseEntity<List<BookingResponse>> getVehicleSchedule(@PathVariable Long vehicleId) {
+        return ResponseEntity.ok(bookingService.getVehicleSchedule(vehicleId));
+    }
 }

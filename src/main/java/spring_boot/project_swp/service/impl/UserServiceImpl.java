@@ -262,9 +262,7 @@ public class UserServiceImpl implements UserService {
   private void createEmptyProfile(User user) {
     UserProfile profile = new UserProfile();
     profile.setUser(user);
-    // Nếu em chưa đổi tên Enum NULL -> dùng UserProfileStatusEnum.NULL
-    // Nếu đã đổi -> Dùng UserProfileStatusEnum.UNVERIFIED hoặc PENDING
-    profile.setStatus(UserProfileStatusEnum.PENDING);
+    profile.setStatus(UserProfileStatusEnum.UNVERIFIED);
     userProfileRepository.save(profile);
   }
 }

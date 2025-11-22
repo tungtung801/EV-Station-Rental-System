@@ -1,5 +1,6 @@
 package spring_boot.project_swp.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
@@ -142,4 +143,60 @@ public class VehicleServiceImpl implements VehicleService {
             .orElseThrow(() -> new NotFoundException("Vehicle not found"));
     return vehicleMapper.toVehicleResponse(vehicle);
   }
+
+    @Override
+    public List<VehicleResponse> searchAvailableVehicles(Long stationId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate) {
+        // 1. Lấy tất cả xe AVAILABLE ở trạm (Dữ liệu thô)
+        List<Vehicle> allVehicles = vehicleRepository.findByStation_StationIdAndVehicleStatus(
+                stationId,
+                spring_boot.project_swp.entity.VehicleStatusEnum.AVAILABLE
+        );
+
+        List<Vehicle> availableVehicles = new ArrayList<>();
+
+        // 2. Vòng lặp kiểm tra từng xe
+        for (Vehicle vehicle : allVehicles) {
+            boolean isBusy = false;
+
+            // CHECK TRÊN DANH SÁCH BOOKING (KẾ HOẠCH)
+            if (vehicle.getBookings() != null && !vehicle.getBookings().isEmpty()) {
+                for (spring_boot.project_swp.entity.Booking booking : vehicle.getBookings()) {
+
+                    // Chỉ check những đơn ĐANG HOẠT ĐỘNG
+                    // Loại bỏ: CANCELLED (đã hủy), COMPLETED (đã xong)
+                    String status = booking.getStatus().name();
+
+                    // Các trạng thái này coi là "Đang chiếm giữ xe"
+                    if (status.equals("PENDING") || status.equals("CONFIRMED") || status.equals("IN_PROGRESS")) {
+
+                        // LOGIC CHECK TRÙNG LỊCH (OVERLAP)
+                        // Dùng startTime và endTime của Booking (Đây là ngày dự kiến chuẩn nhất)
+
+                        java.time.LocalDateTime bookedStart = booking.getStartTime();
+                        java.time.LocalDateTime bookedEnd = booking.getEndTime();
+
+                        // Công thức Overlap: (StartA <= EndB) AND (EndA >= StartB)
+                        boolean isOverlap = !endDate.isBefore(bookedStart) && !startDate.isAfter(bookedEnd);
+
+                        if (isOverlap) {
+                            isBusy = true; // Xe bận
+                            break; // Thoát vòng lặp ngay
+                        }
+                    }
+                }
+            }
+
+            // 3. Nếu không bận -> Thêm vào kết quả
+            if (!isBusy) {
+                availableVehicles.add(vehicle);
+            }
+        }
+
+        // 4. Map sang Response
+        List<VehicleResponse> responses = new ArrayList<>();
+        for (Vehicle v : availableVehicles) {
+            responses.add(vehicleMapper.toVehicleResponse(v));
+        }
+        return responses;
+    }
 }

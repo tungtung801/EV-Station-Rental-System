@@ -1,18 +1,11 @@
 package spring_boot.project_swp.dto.request;
 
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
+import spring_boot.project_swp.entity.DiscountTypeEnum; // Nhớ import
 
 @Data
 @NoArgsConstructor
@@ -21,40 +14,36 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class DiscountRequest {
 
-  @NotBlank(message = "Code cannot be blank")
-  @Size(max = 50, message = "Code must not exceed 50 characters")
-  String code;
+    @NotBlank(message = "Code cannot be blank")
+    @Size(max = 50, message = "Code must not exceed 50 characters")
+    String code;
 
-  String description;
+    String description;
 
-  @DecimalMin(
-      value = "0.0",
-      inclusive = true,
-      message = "Percentage amount must be greater than or equal to 0")
-  BigDecimal amountPercentage;
+    // --- SỬA ĐOẠN NÀY ---
+    @NotNull(message = "Discount type is required")
+    DiscountTypeEnum discountType; // PERCENTAGE hoặc FIXED_AMOUNT
 
-  @DecimalMin(
-      value = "0.0",
-      inclusive = true,
-      message = "Fixed amount must be greater than or equal to 0")
-  BigDecimal amountFixed;
+    @NotNull(message = "Value is required")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Value must be positive")
+    BigDecimal value; // 10% hoặc 50.000đ
+    // --------------------
 
-  @NotNull(message = "Start date cannot be null")
-  @FutureOrPresent(message = "Start date must be in the present or future")
-  LocalDateTime startDate;
+    @NotNull(message = "Start date cannot be null")
+    // @FutureOrPresent // Có thể bỏ nếu muốn tạo mã áp dụng ngay lập tức
+    LocalDateTime startDate;
 
-  @NotNull(message = "End date cannot be null")
-  LocalDateTime endDate;
+    @NotNull(message = "End date cannot be null")
+    LocalDateTime endDate;
 
-  Integer minRentalDuration;
+    @Min(value = 0)
+    Integer minRentalDuration;
 
-  @DecimalMin(
-      value = "0.0",
-      inclusive = true,
-      message = "Maximum discount amount must be greater than or equal to 0")
-  BigDecimal maxDiscountAmount;
+    @DecimalMin(value = "0.0", inclusive = true)
+    BigDecimal maxDiscountAmount;
 
-  Integer usageLimit;
+    @Min(value = 1)
+    Integer usageLimit;
 
-  Boolean isActive;
+    Boolean isActive; // Mặc định true nếu null
 }

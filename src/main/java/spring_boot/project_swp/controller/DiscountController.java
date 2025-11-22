@@ -9,14 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import spring_boot.project_swp.dto.request.DiscountRequest;
 import spring_boot.project_swp.dto.response.DiscountResponse;
 import spring_boot.project_swp.service.DiscountService;
@@ -24,54 +17,47 @@ import spring_boot.project_swp.service.DiscountService;
 @RestController
 @RequestMapping("/api/discounts")
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
-@Tag(name = "Discount APIs", description = "APIs for managing discounts")
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Tag(name = "Discount Management", description = "Admin APIs for Coupons")
 public class DiscountController {
 
-  final DiscountService discountService;
+    DiscountService discountService;
 
-  @PostMapping
-  @Operation(
-      summary = "Create a new discount",
-      description = "Creates a new discount with the provided details.")
-  public ResponseEntity<DiscountResponse> createDiscount(
-      @RequestBody @Valid DiscountRequest request) {
-    return new ResponseEntity<>(discountService.createDiscount(request), HttpStatus.CREATED);
-  }
+    @PostMapping
+    @Operation(summary = "Create new discount (Admin)")
+    public ResponseEntity<DiscountResponse> createDiscount(@Valid @RequestBody DiscountRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(discountService.createDiscount(request));
+    }
 
-  @GetMapping("/{discountId}")
-  @Operation(summary = "Get discount by ID", description = "Retrieves a discount by its unique ID.")
-  public ResponseEntity<DiscountResponse> getDiscountById(@PathVariable Long discountId) {
-    return new ResponseEntity<>(discountService.getDiscountById(discountId), HttpStatus.OK);
-  }
+    @GetMapping
+    @Operation(summary = "Get all discounts")
+    public ResponseEntity<List<DiscountResponse>> getAllDiscounts() {
+        return ResponseEntity.ok(discountService.getAllDiscounts());
+    }
 
-  @GetMapping
-  @Operation(summary = "Get all discounts", description = "Retrieves a list of all discounts.")
-  public ResponseEntity<List<DiscountResponse>> getAllDiscounts() {
-    return new ResponseEntity<>(discountService.getAllDiscounts(), HttpStatus.OK);
-  }
+    @GetMapping("/{id}")
+    @Operation(summary = "Get discount by ID")
+    public ResponseEntity<DiscountResponse> getDiscountById(@PathVariable Long id) {
+        return ResponseEntity.ok(discountService.getDiscountById(id));
+    }
 
-  @PutMapping("/{discountId}")
-  @Operation(
-      summary = "Update an existing discount",
-      description = "Updates an existing discount with the provided details.")
-  public ResponseEntity<DiscountResponse> updateDiscount(
-      @PathVariable Long discountId, @RequestBody @Valid DiscountRequest request) {
-    return new ResponseEntity<>(discountService.updateDiscount(discountId, request), HttpStatus.OK);
-  }
+    @GetMapping("/code/{code}")
+    @Operation(summary = "Get discount by Code (Check valid)")
+    public ResponseEntity<DiscountResponse> getDiscountByCode(@PathVariable String code) {
+        return ResponseEntity.ok(discountService.getDiscountByCode(code));
+    }
 
-  @DeleteMapping("/{discountId}")
-  @Operation(summary = "Delete a discount", description = "Deletes a discount by its ID.")
-  public ResponseEntity<Void> deleteDiscount(@PathVariable Long discountId) {
-    discountService.deleteDiscount(discountId);
-    return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-  }
+    @PutMapping("/{id}")
+    @Operation(summary = "Update discount (Admin)")
+    public ResponseEntity<DiscountResponse> updateDiscount(
+            @PathVariable Long id, @Valid @RequestBody DiscountRequest request) {
+        return ResponseEntity.ok(discountService.updateDiscount(id, request));
+    }
 
-  @GetMapping("/code/{code}")
-  @Operation(
-      summary = "Get discount by code",
-      description = "Retrieves a discount by its unique code.")
-  public ResponseEntity<DiscountResponse> getDiscountByCode(@PathVariable String code) {
-    return new ResponseEntity<>(discountService.getDiscountByCode(code), HttpStatus.OK);
-  }
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete/Deactivate discount (Admin)")
+    public ResponseEntity<Void> deleteDiscount(@PathVariable Long id) {
+        discountService.deleteDiscount(id);
+        return ResponseEntity.noContent().build();
+    }
 }

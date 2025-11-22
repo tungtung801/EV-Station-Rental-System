@@ -24,252 +24,154 @@ import spring_boot.project_swp.security.CustomUserDetailsService;
 import spring_boot.project_swp.security.JwtAuthenticationFilter;
 
 @Configuration
-@RequiredArgsConstructor
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-  private final CustomUserDetailsService customUserDetailsService;
-  private final CustomAuthEntryPoint customAuthEntryPoint;
-  private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomUserDetailsService customUserDetailsService;
+    private final CustomAuthEntryPoint customAuthEntryPoint;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-  @Bean
-  public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
-  }
+    // --- 1. CÁC BEAN CƠ BẢN ---
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
-  @Bean
-  public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration)
-      throws Exception {
-    return configuration.getAuthenticationManager();
-  }
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration)
+            throws Exception {
+        return configuration.getAuthenticationManager();
+    }
 
-  @Bean
-  public DaoAuthenticationProvider authenticationProvider() {
-    DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-    authProvider.setUserDetailsService(customUserDetailsService);
-    authProvider.setPasswordEncoder(passwordEncoder());
-    return authProvider;
-  }
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(customUserDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
 
-  // ✅ BƯỚC 1: THÊM BEAN CẤU HÌNH CORS
-  @Bean
-  public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration configuration = new CorsConfiguration();
+    // --- 2. CẤU HÌNH CORS (QUAN TRỌNG: Hỗ trợ Localhost + Ngrok) ---
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
 
-    // Dùng allowedOriginPatterns để cho phép mọi subdomain của ngrok
-    configuration.setAllowedOriginPatterns(
-        List.of(
-            "http://localhost:5173", // Cho phép Vite dev server
-            "https://*.ngrok-free.app" // Cho phép bất kỳ URL nào của ngrok
-            ));
+        // Cho phép Frontend Local và Ngrok (để demo)
+        configuration.setAllowedOriginPatterns(
+                List.of(
+                        "http://localhost:5173",      // Vite React
+                        "http://localhost:3000",      // Create React App
+                        "https://*.ngrok-free.app",   // Ngrok Public URL
+                        "https://*.ngrok-free.dev"
+                ));
 
-    // Hoặc dùng allowedOrigins nếu bạn muốn chỉ định URL ngrok cụ thể
-    // configuration.setAllowedOrigins(List.of(
-    //         "http://localhost:5173",
-    //         "https://5741c8de4ef9.ngrok-free.app"
-    // ));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(List.of("*")); // Cho phép mọi Header (Authorization, Content-Type...)
+        configuration.setAllowCredentials(true); // Cho phép gửi Cookie/Auth Header
 
-    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-    configuration.setAllowedHeaders(List.of("*"));
-    configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", configuration); // Áp dụng cho tất cả các đường dẫn
-    return source;
-  }
+    // --- 3. CẤU HÌNH FILTER CHAIN (PHÂN QUYỀN CHI TIẾT) ---
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                // Kích hoạt CORS từ Bean bên trên
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-  @Bean
-  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    http
-        // Áp dụng cấu hình CORS bạn vừa định nghĩa ở trên
-        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-        // Tắt CSRF nếu FE dùng React, Vue, Next
-        .csrf(AbstractHttpConfigurer::disable)
-        .exceptionHandling(exception -> exception.authenticationEntryPoint(customAuthEntryPoint))
-        .sessionManagement(
-            session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        // các API không cần phân quyền
-        .authorizeHttpRequests(
-            auth ->
-                auth.requestMatchers(
-                        "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/api/auth/**")
-                    .permitAll()
+                // Tắt CSRF (Vì dùng JWT stateless)
+                .csrf(AbstractHttpConfigurer::disable)
 
-                    // Cho phép truy cập public vào thư mục uploads để hiển thị ảnh
-                    .requestMatchers("/uploads/**")
-                    .permitAll()
+                // Xử lý lỗi 401 Unauthorized (trả về JSON thay vì HTML mặc định)
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(customAuthEntryPoint))
 
-                    // RoleController
-                    .requestMatchers("/api/roles/**")
-                    .hasAuthority("Admin")
+                // Không dùng Session (Stateless)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                    // UserController (plural base path is /api/users)
-                    .requestMatchers(
-                        "/api/user/**") // NOTE: seems unused (singular); kept if legacy
-                    .hasAnyAuthority("Admin", "User")
-                    .requestMatchers(HttpMethod.POST, "/api/users/upload-image")
-                    .hasAnyAuthority("User", "Staff", "Admin")
-                    .requestMatchers(HttpMethod.GET, "/api/users/*")
-                    .hasAnyAuthority("User", "Staff", "Admin")
-                    .requestMatchers(HttpMethod.PUT, "/api/users/*")
-                    .hasAnyAuthority("User", "Staff", "Admin")
-                    .requestMatchers("/api/users/user", "/api/users/staff", "/api/users/delete/**")
-                    .hasAnyAuthority("Admin", "Staff")
+                // --- PHÂN QUYỀN URL (AUTHORIZATION) ---
+                .authorizeHttpRequests(auth -> auth
 
-                    // UserProfileController
-                    // Specific patterns BEFORE any broader multi-level patterns
-                    .requestMatchers(
-                        HttpMethod.GET, "/api/user-profiles", "/api/user-profiles/pending")
-                    .hasAnyAuthority("Staff", "Admin")
-                    .requestMatchers(
-                        HttpMethod.GET, "/api/user-profiles/*", "/api/user-profiles/user/*")
-                    .hasAnyAuthority("User", "Admin")
-                    .requestMatchers(HttpMethod.GET, "/api/user-profiles/status/*")
-                    .hasAnyAuthority("User", "Admin", "Staff")
-                    .requestMatchers(HttpMethod.PUT, "/api/user-profiles")
-                    .hasAnyAuthority("User", "Admin")
-                    .requestMatchers(HttpMethod.PUT, "/api/user-profiles/*") // update by id
-                    .hasAnyAuthority("User", "Admin")
-                    .requestMatchers(
-                        HttpMethod.PUT,
-                        "/api/user-profiles/*/approve",
-                        "/api/user-profiles/*/reject")
-                    .hasAnyAuthority("Admin", "Staff")
-                    .requestMatchers(HttpMethod.DELETE, "/api/user-profiles/*")
-                    .hasAuthority("Admin")
+                        // 1. PUBLIC ENDPOINTS (Ai cũng vào được)
+                        .requestMatchers(
+                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", // Swagger Docs
+                                "/api/auth/**",           // Login, Register
+                                "/uploads/**",            // Xem ảnh (Static resources)
+                                "/vnpay_return"           // Return URL thanh toán (sau này dùng)
+                        ).permitAll()
 
-                    // VehicleModelController
-                    .requestMatchers("/api/vehicle-models/**")
-                    .hasAuthority("Admin")
+                        // 2. MODULE USER (Quản lý người dùng)
+                        // - Tạo Staff: Chỉ Admin được làm
+                        .requestMatchers(HttpMethod.POST, "/api/users/staff").hasAuthority("Admin")
+                        // - Xóa User: Chỉ Admin
+                        .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasAuthority("Admin")
+                        // - Xem danh sách User/Staff: Admin và Staff
+                        .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/staff").hasAnyAuthority("Admin", "Staff")
+                        // - Xem chi tiết/Sửa user: Chính chủ (User), Staff hoặc Admin đều được
+                        .requestMatchers("/api/users/**").hasAnyAuthority("User", "Staff", "Admin")
 
-                    // VehicleController - CHO PHÉP NGƯỜI DÙNG KHÔNG CẦN ĐĂNG NHẬP XEM VEHICLES
-                    .requestMatchers(
-                        HttpMethod.GET,
-                        "/api/vehicles",
-                        "/api/vehicles/*",
-                        "/api/vehicles/*/active-bookings")
-                    .permitAll()
-                    .requestMatchers("/api/vehicles/**")
-                    .hasAuthority("Admin")
-
-                    // Vehicle ongoing bookings reused via booking controller mapping
-                    .requestMatchers(HttpMethod.GET, "/api/bookings/vehicle/*/ongoing")
-                    .hasAnyAuthority("Admin", "Staff", "User")
-
-                    // StationController (reordered: allow GET first, then admin for mutations)
-                    .requestMatchers(
-                        HttpMethod.GET,
-                        "/api/station",
-                        "/api/station/location/*",
-                        "/api/station/city/*",
-                        "/api/station/city/*/district/*")
-                    .hasAnyAuthority("User", "Admin", "Staff")
-                    .requestMatchers("/api/station/**")
-                    .hasAuthority("Admin")
-
-                    // LocationController (reordered similarly)
-                    .requestMatchers(
-                        HttpMethod.GET,
-                        "/api/location",
-                        "/api/location/*",
-                        "/api/location/getCities",
-                        "/api/location/getDistricts/*",
-                        "/api/location/getWards/*")
-                    .hasAnyAuthority("User", "Admin", "Staff")
-                    .requestMatchers("/api/location/**")
-                    .hasAuthority("Admin")
-
-                    // BookingController
-                    .requestMatchers(HttpMethod.POST, "/api/bookings")
-                    .hasAnyAuthority("User", "Admin", "Staff")
-                    .requestMatchers(
-                        HttpMethod.GET, "/api/bookings", "/api/bookings/*", "/api/bookings/user/*")
-                    .hasAnyAuthority("User", "Admin", "Staff")
-                    .requestMatchers(
-                        HttpMethod.GET,
-                        "/api/bookings/count-completed-rentals",
-                        "/api/bookings/user/count-completed-rentals/*")
-                    .hasAuthority("Admin")
-                    .requestMatchers(HttpMethod.PUT, "/api/bookings/*/cancel")
-                    .hasAuthority("User")
-                    .requestMatchers(HttpMethod.PUT, "/api/bookings/*/confirm-deposit")
-                    .hasAnyAuthority("Admin", "Staff")
-                    .requestMatchers(HttpMethod.PATCH, "/api/bookings/*/status")
-                    .hasAnyAuthority("Admin", "Staff", "User")
-
-                    // RentalController
-                    .requestMatchers(HttpMethod.POST, "/api/rentals")
-                    .hasAuthority("User")
-                    .requestMatchers(HttpMethod.GET, "/api/rentals", "/api/rentals/*")
-                    .hasAnyAuthority("User", "Admin", "Staff")
-                    .requestMatchers(
-                        HttpMethod.GET, "/api/rentals/renter/*", "/api/rentals/vehicle/*")
-                    .hasAnyAuthority("Admin", "Staff")
-                    .requestMatchers(HttpMethod.PUT, "/api/rentals/*")
-                    .hasAnyAuthority("Admin", "Staff")
-                    .requestMatchers(HttpMethod.DELETE, "/api/rentals/*")
-                    .hasAuthority("Admin")
-
-                    // RentalDiscount
-                    .requestMatchers(HttpMethod.POST, "/api/rental-discounts")
-                    .hasAuthority("Admin")
-                    .requestMatchers(HttpMethod.DELETE, "/api/rental-discounts/*/*")
-                    .hasAuthority("Admin")
-                    .requestMatchers(HttpMethod.GET, "/api/rental-discounts")
-                    .hasAnyAuthority("Admin", "Staff")
-                    .requestMatchers(
-                        HttpMethod.GET,
-                        "/api/rental-discounts/rental/*",
-                        "/api/rental-discounts/discount/*")
-                    .hasAuthority("Admin")
-
-                    // Incident Report
-                        .requestMatchers(HttpMethod.POST, "/api/incident-reports", "/api/incident-reports/*")
-                        .hasAnyAuthority("User", "Staff", "Admin") // <-- Cho phép cả Staff và Admin
-
-                        .requestMatchers(HttpMethod.GET, "/api/incident-reports", "/api/incident-reports/*")
-                        .hasAnyAuthority("Admin", "Staff", "User") // <-- Cho phép xem (nếu cần)
-
-                        .requestMatchers(HttpMethod.PUT, "/api/incident-reports/*")
+                        // 3. MODULE USER PROFILE (Hồ sơ lái xe)
+                        // - Xem danh sách chờ duyệt (Pending): Admin và Staff (để duyệt)
+                        .requestMatchers("/api/user-profiles/pending").hasAnyAuthority("Admin", "Staff")
+                        // - Duyệt (Approve) hoặc Từ chối (Reject): Admin và Staff
+                        .requestMatchers(HttpMethod.PUT, "/api/user-profiles/*/approve", "/api/user-profiles/*/reject")
                         .hasAnyAuthority("Admin", "Staff")
+                        // - User tự update hồ sơ của mình (Up bằng lái, CCCD)
+                        .requestMatchers(HttpMethod.PUT, "/api/user-profiles").hasAnyAuthority("User", "Admin")
+                        // - Xem chi tiết hồ sơ: Ai có quyền đăng nhập cũng xem được (để check)
+                        .requestMatchers("/api/user-profiles/**").hasAnyAuthority("User", "Staff", "Admin")
 
-                        .requestMatchers(HttpMethod.DELETE, "/api/incident-reports/*")
-                        .hasAuthority("Admin")
+                        // 4. MODULE ROLES (Chỉ Admin đụng vào)
+                        .requestMatchers("/api/roles/**").hasAuthority("Admin")
 
-                    // DiscountController
-                    .requestMatchers("/api/discounts/**")
-                    .hasAuthority("Admin")
+                        // 5. MODULE XE (VEHICLES)
+                        // - Khách xem xe (List, Search, Detail): Public
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/vehicles",          // <--- THÊM CÁI NÀY (Get All)
+                                "/api/vehicles/search",   // Tìm kiếm
+                                "/api/vehicles/{id}"      // Xem chi tiết
+                        ).permitAll()
 
-                    // PaymentController (updated to reflect actual mappings)
-                    .requestMatchers(HttpMethod.POST, "/api/payments")
-                    .hasAuthority("User")
-                    .requestMatchers(HttpMethod.PUT, "/api/payments/*/confirm")
-                    .hasAnyAuthority("Admin", "Staff")
-                    .requestMatchers(HttpMethod.PATCH, "/api/payments/*/status")
-                    .hasAuthority("Admin")
-                    .requestMatchers(HttpMethod.GET, "/api/payments/*") // includes /{id}
-                    .hasAnyAuthority("Admin", "Staff", "User")
-                    .requestMatchers(HttpMethod.GET, "/api/payments")
-                    .hasAnyAuthority("Admin", "Staff")
-                    .requestMatchers(HttpMethod.GET, "/api/payments/booking/*")
-                    .hasAnyAuthority("Admin", "Staff", "User")
-                    .requestMatchers("/vnpay_return")
-                    .permitAll()
+                        // - Thêm/Sửa/Xóa xe: Chỉ Admin và Staff
+                        .requestMatchers(HttpMethod.POST, "/api/vehicles/**").hasAnyAuthority("Admin", "Staff")
+                        .requestMatchers(HttpMethod.PUT, "/api/vehicles/**").hasAnyAuthority("Admin", "Staff")
+                        .requestMatchers(HttpMethod.DELETE, "/api/vehicles/**").hasAuthority("Admin")
 
-                    // VehicleCheck endpoints
-                    .requestMatchers(HttpMethod.POST, "/api/vehiclechecks")
-                    .hasAnyAuthority("Admin", "Staff")
-                    .requestMatchers(HttpMethod.GET, "/api/vehiclechecks", "/api/vehiclechecks/*")
-                    .hasAnyAuthority("Admin", "Staff")
-                    .requestMatchers(HttpMethod.PUT, "/api/vehiclechecks/*")
-                    .hasAnyAuthority("Admin", "Staff")
-                    .requestMatchers(HttpMethod.DELETE, "/api/vehiclechecks/*")
-                    .hasAuthority("Admin")
-                    .anyRequest()
-                    .authenticated());
+                        // 6. MODULE ĐỊA ĐIỂM (STATION/LOCATION)
+                        .requestMatchers(HttpMethod.GET, "/api/station/**", "/api/location/**").permitAll() // Xem trạm thì ai cũng xem được
+                        .requestMatchers("/api/station/**", "/api/location/**").hasAuthority("Admin") // Sửa đổi thì chỉ Admin
 
-    http.authenticationProvider(authenticationProvider());
-    http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-    return http.build();
-  }
+                        // 7. MODULE BOOKING (ĐẶT XE) - Quan trọng
+                        .requestMatchers(HttpMethod.POST, "/api/bookings").hasAuthority("User") // Chỉ khách được đặt
+                        .requestMatchers(HttpMethod.GET, "/api/bookings/my-bookings").hasAuthority("User") // Khách xem đơn mình
+                        .requestMatchers(HttpMethod.GET, "/api/bookings/**").hasAnyAuthority("Admin", "Staff") // Admin xem hết
+
+                        // --- 8. MODULE RENTAL (QUAN TRỌNG: Vận hành) ---
+                        // Giao xe và Nhận xe: Chỉ Staff và Admin được làm
+                        .requestMatchers("/api/rentals/**").hasAnyAuthority("Admin", "Staff")
+
+                        // --- 9. MODULE PAYMENT (Thanh toán bổ sung) ---
+                        // Tạo thanh toán: Khách (trả tiền thuê), Staff (thu tiền phạt)
+                        .requestMatchers(HttpMethod.POST, "/api/payments").hasAnyAuthority("User", "Staff", "Admin")
+
+                        // --- 10. MODULE DISCOUNT (Khuyến mãi) ---
+                        // Xem mã: Ai đăng nhập cũng xem được (để chọn mã)
+                        .requestMatchers(HttpMethod.GET, "/api/discounts/**").authenticated()
+                        // Tạo/Sửa/Xóa mã: Chỉ Admin
+                        .requestMatchers("/api/discounts/**").hasAuthority("Admin")
+
+                        // --- 11. END ---
+                        .anyRequest().authenticated()
+                );
+
+        // Thêm Filter JWT vào trước Filter xác thực gốc của Spring
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        // Cấu hình Authentication Provider
+        http.authenticationProvider(authenticationProvider());
+
+        return http.build();
+    }
 }

@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import spring_boot.project_swp.entity.UserProfileStatusEnum;
 
 @Data
 @AllArgsConstructor
@@ -16,5 +17,6 @@ public class UserLoginResponse {
   String email;
   String phoneNumber;
   String roleName;
+  UserProfileStatusEnum kycStatus;
   String accessToken;
 }

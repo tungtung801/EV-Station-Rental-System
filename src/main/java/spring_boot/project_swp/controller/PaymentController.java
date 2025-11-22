@@ -25,55 +25,55 @@ import spring_boot.project_swp.service.UserService;
 @Tag(name = "Payment APIs", description = "APIs for managing payments")
 public class PaymentController {
 
-  PaymentService paymentService;
-  UserService userService; // Để lấy Staff ID từ token
+    PaymentService paymentService;
+    UserService userService;
 
-  // 1. Tạo thanh toán (Dùng chung cho cả Offline/Online nếu muốn tạo tay)
-  @PostMapping
-  @Operation(summary = "Create a new payment")
-  public ResponseEntity<PaymentResponse> createPayment(@Valid @RequestBody PaymentRequest request) {
-    return new ResponseEntity<>(paymentService.createPayment(request), HttpStatus.CREATED);
-  }
+    // 1. Tạo thanh toán (Thủ công)
+    @PostMapping
+    @Operation(summary = "Create a new payment manually")
+    public ResponseEntity<PaymentResponse> createPayment(@Valid @RequestBody PaymentRequest request) {
+        return new ResponseEntity<>(paymentService.createPayment(request), HttpStatus.CREATED);
+    }
 
-  // 2. Staff xác nhận đã nhận tiền (Cho Offline)
-  @PutMapping("/{paymentId}/confirm")
-  @Operation(summary = "Confirm payment (Staff only)")
-  public ResponseEntity<PaymentResponse> confirmPayment(@PathVariable Long paymentId) {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    String staffEmail = authentication.getName();
-    Long staffId = userService.getUserByEmail(staffEmail).getUserId();
+    // 2. Staff xác nhận đã nhận tiền (Offline/Cash)
+    @PutMapping("/{paymentId}/confirm")
+    @Operation(summary = "Confirm payment (Staff only)")
+    public ResponseEntity<PaymentResponse> confirmPayment(@PathVariable Long paymentId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String staffEmail = authentication.getName();
 
-    return ResponseEntity.ok(paymentService.confirmPayment(paymentId, staffId));
-  }
+        // Lấy ID nhân viên từ Email (UserService đã có hàm này)
+        Long staffId = userService.getUserByEmail(staffEmail).getUserId();
 
-  // 3. Update trạng thái (Admin/System)
-  @PatchMapping("/{paymentId}/status")
-  @Operation(summary = "Update payment status manually")
-  public ResponseEntity<PaymentResponse> updatePaymentStatus(
-      @PathVariable Long paymentId, @Valid @RequestBody PaymentStatusUpdateRequest request) {
-    return ResponseEntity.ok(paymentService.updatePaymentStatus(paymentId, request));
-  }
+        return ResponseEntity.ok(paymentService.confirmPayment(paymentId, staffId));
+    }
 
-  // 4. Get By ID
-  @GetMapping("/{paymentId}")
-  @Operation(summary = "Get payment by ID")
-  public ResponseEntity<PaymentResponse> getPaymentById(@PathVariable Long paymentId) {
-    // Em nhớ thêm hàm getById vào Service nhé (dễ mà, findById thôi)
-    // Nếu chưa có thì dùng tạm getAll rồi filter, hoặc viết thêm 1 dòng trong service
-    // Tạm thời return null để code compile được nếu em lười viết service
-    return null;
-  }
+    // 3. Update trạng thái (Dành cho Callback từ System/Admin)
+    @PatchMapping("/{paymentId}/status")
+    @Operation(summary = "Update payment status manually")
+    public ResponseEntity<PaymentResponse> updatePaymentStatus(
+            @PathVariable Long paymentId, @Valid @RequestBody PaymentStatusUpdateRequest request) {
+        return ResponseEntity.ok(paymentService.updatePaymentStatus(paymentId, request));
+    }
 
-  // 5. Get All
-  @GetMapping
-  @Operation(summary = "Get all payments")
-  public ResponseEntity<List<PaymentResponse>> getAllPayments() {
-    return ResponseEntity.ok(paymentService.getAllPayments());
-  }
+    // 4. Get By ID (ĐÃ SỬA: Gọi Service đàng hoàng)
+    @GetMapping("/{paymentId}")
+    @Operation(summary = "Get payment by ID")
+    public ResponseEntity<PaymentResponse> getPaymentById(@PathVariable Long paymentId) {
+        return ResponseEntity.ok(paymentService.getPaymentById(paymentId));
+    }
 
-  // 6. Get by Booking
-  @GetMapping("/booking/{bookingId}")
-  public ResponseEntity<List<PaymentResponse>> getPaymentsByBooking(@PathVariable Long bookingId) {
-    return ResponseEntity.ok(paymentService.getPaymentsByBookingId(bookingId));
-  }
+    // 5. Get All (Admin)
+    @GetMapping
+    @Operation(summary = "Get all payments")
+    public ResponseEntity<List<PaymentResponse>> getAllPayments() {
+        return ResponseEntity.ok(paymentService.getAllPayments());
+    }
+
+    // 6. Get by Booking (User xem lịch sử thanh toán đơn hàng)
+    @GetMapping("/booking/{bookingId}")
+    @Operation(summary = "Get payments for a specific booking")
+    public ResponseEntity<List<PaymentResponse>> getPaymentsByBooking(@PathVariable Long bookingId) {
+        return ResponseEntity.ok(paymentService.getPaymentsByBookingId(bookingId));
+    }
 }

@@ -3,10 +3,13 @@ package spring_boot.project_swp.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor; // <--- SỬA
 import lombok.experimental.FieldDefaults;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -62,6 +65,24 @@ public class VehicleController {
   public ResponseEntity<VehicleResponse> getVehicleById(@PathVariable Long id) {
     return ResponseEntity.ok(vehicleService.findById(id));
   }
+
+    @GetMapping("/search")
+    @Operation(summary = "Search available vehicles (Customer)")
+    public ResponseEntity<List<VehicleResponse>> searchVehicles(
+            @RequestParam Long stationId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+
+        // Validate ngày tháng chút cho chắc
+        if (startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("Start date must be before end date");
+        }
+        if (startDate.isBefore(LocalDateTime.now())) {
+            // throw new IllegalArgumentException("Start date cannot be in the past"); // Tùy logic
+        }
+
+        return ResponseEntity.ok(vehicleService.searchAvailableVehicles(stationId, startDate, endDate));
+    }
 
   // API này phụ thuộc vào BookingService (Em nhớ làm phần Booking tiếp theo nhé)
   @GetMapping("/{vehicleId}/active-bookings")

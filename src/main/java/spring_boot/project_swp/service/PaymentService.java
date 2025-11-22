@@ -18,4 +18,6 @@ public interface PaymentService {
   List<PaymentResponse> getPaymentsByBookingId(Long bookingId);
 
   List<PaymentResponse> getAllPayments();
+
+    PaymentResponse getPaymentById(Long paymentId);
 }

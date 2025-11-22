@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import spring_boot.project_swp.entity.BookingTypeEnum;
+import spring_boot.project_swp.entity.PaymentMethodEnum;
 
 @Data
 @NoArgsConstructor
@@ -19,6 +20,9 @@ public class BookingRequest {
   @NotNull(message = "Booking type cannot be null")
   BookingTypeEnum bookingType; // ONLINE / OFFLINE
 
+    @NotNull(message = "Payment method is required")
+    PaymentMethodEnum paymentMethod; // VNPAY / CASH / WALLET
+
   @NotNull(message = "Start time cannot be null")
   @FutureOrPresent
   LocalDateTime startTime;
@@ -26,4 +30,6 @@ public class BookingRequest {
   @NotNull(message = "End time cannot be null")
   @FutureOrPresent
   LocalDateTime endTime;
+
+  String discountCode;
 }

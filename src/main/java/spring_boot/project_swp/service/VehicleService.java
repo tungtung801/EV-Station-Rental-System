@@ -20,4 +20,5 @@ public interface VehicleService {
 
     // Nếu muốn tách hàm upload ảnh riêng thì thêm vào, còn ko thì thôi
     // String uploadImage(Long id, MultipartFile file);
+    List<VehicleResponse> searchAvailableVehicles(Long stationId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate);
 }

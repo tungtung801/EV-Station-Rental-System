@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
+
 @Entity
 @Table(name = "VehicleModels")
 @Data
@@ -31,4 +33,8 @@ public class VehicleModel {
 
   @Column(name = "Description", length = 500)
   String description;
+
+    @OneToMany(mappedBy = "vehicleModel", fetch = FetchType.LAZY)
+    @ToString.Exclude
+    private List<Vehicle> vehicles;
 }

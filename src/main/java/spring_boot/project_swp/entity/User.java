@@ -36,10 +36,6 @@ public class User {
   @Builder.Default
   Boolean accountStatus = true; // True: Active, False: Locked
 
-  // --- PHẦN KYC (Xác minh danh tính) ---
-  @Column(name = "IsVerified", nullable = false)
-  @Builder.Default
-  Boolean isVerified = false;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "VerifiedBy") // Người duyệt (Staff/Admin)

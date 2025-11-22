@@ -18,6 +18,7 @@ public interface UserMapper {
 
   // --- LOGIN ---
   @Mapping(source = "role.roleName", target = "roleName")
+  @Mapping(source = "profile.status", target = "kycStatus")
   UserLoginResponse toUserLoginResponse(User user);
 
   // --- REGISTER ---

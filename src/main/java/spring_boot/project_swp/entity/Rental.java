@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import lombok.*; // Dùng *
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -16,85 +16,94 @@ import org.hibernate.annotations.CreationTimestamp;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Rental {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "RentalId")
-  Long rentalId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "RentalId")
+    Long rentalId;
 
-  @OneToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "BookingId", nullable = false, unique = true)
-  @ToString.Exclude
-  @EqualsAndHashCode.Exclude // Thêm cái này
-  Booking booking;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "BookingId", nullable = false, unique = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    Booking booking;
 
-  // Giữ lại UserId, VehicleId để query nhanh (De-normalization)
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "UserId", nullable = false)
-  @ToString.Exclude
-  @EqualsAndHashCode.Exclude
-  User renter;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "UserId", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    User renter;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "VehicleId", nullable = false)
-  @ToString.Exclude
-  @EqualsAndHashCode.Exclude
-  Vehicle vehicle;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "VehicleId", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    Vehicle vehicle;
 
-  // Trạm giao/nhận
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "PickupStationId", nullable = false)
-  @ToString.Exclude
-  @EqualsAndHashCode.Exclude
-  Station pickupStation;
+    // Trạm giao/nhận
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "PickupStationId", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    Station pickupStation;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "ReturnStationId")
-  @ToString.Exclude
-  @EqualsAndHashCode.Exclude
-  Station returnStation;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ReturnStationId")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    Station returnStation;
 
-  // Nhân viên giao/nhận
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "PickupStaffId")
-  @ToString.Exclude
-  @EqualsAndHashCode.Exclude
-  User pickupStaff;
+    // Nhân viên giao/nhận
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "PickupStaffId")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    User pickupStaff;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "ReturnStaffId")
-  @ToString.Exclude
-  @EqualsAndHashCode.Exclude
-  User returnStaff;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ReturnStaffId")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    User returnStaff;
 
-  @Column(name = "StartActual")
-  LocalDateTime startActual; // Giờ nhận xe thực tế
+    @Column(name = "StartActual")
+    LocalDateTime startActual;
 
-  @Column(name = "EndActual")
-  LocalDateTime endActual; // Giờ trả xe thực tế
+    @Column(name = "EndActual")
+    LocalDateTime endActual;
 
-  @Column(name = "Total", precision = 19, scale = 4)
-  BigDecimal total;
+    @Column(name = "Total", precision = 19, scale = 4)
+    BigDecimal total;
 
-  @Enumerated(EnumType.STRING)
-  @Column(name = "Status", length = 50)
-  @Builder.Default
-  RentalStatusEnum status = RentalStatusEnum.PENDING_PICKUP;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Status", length = 50)
+    @Builder.Default
+    RentalStatusEnum status = RentalStatusEnum.PENDING_PICKUP;
 
-  @Column(name = "ContractUrl", length = 500) // Tăng length lên
-  String contractUrl;
+    @Column(name = "ContractUrl", length = 500)
+    String contractUrl;
 
-  @CreationTimestamp
-  @Column(name = "CreatedAt", nullable = false, updatable = false)
-  LocalDateTime createdAt;
+    // --- [BỔ SUNG CÁC TRƯỜNG THIẾU] ---
 
-  // List Payment (Bỏ JsonIgnore đi nhé)
-  @OneToMany(mappedBy = "rental", cascade = CascadeType.ALL, orphanRemoval = true)
-  @ToString.Exclude
-  @EqualsAndHashCode.Exclude
-  List<Payment> payments;
+    @Column(name = "PickupNote", length = 500)
+    String pickupNote; // Ghi chú lúc giao xe
 
-  @OneToMany(mappedBy = "rental", cascade = CascadeType.ALL, orphanRemoval = true)
-  @ToString.Exclude
-  @EqualsAndHashCode.Exclude
-  List<RentalDiscounts> rentalDiscounts;
+    @Column(name = "ReturnNote", length = 500)
+    String returnNote; // Ghi chú lúc trả xe
+
+    @Column(name = "StartOdometer")
+    Integer startOdometer; // Số km lúc đi
+
+    @Column(name = "EndOdometer")
+    Integer endOdometer; // Số km lúc về
+
+    // ----------------------------------
+
+    @CreationTimestamp
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
+    LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "rental", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    List<Payment> payments;
 }

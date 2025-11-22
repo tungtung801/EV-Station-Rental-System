@@ -20,4 +20,6 @@ public interface BookingService {
 
   // Hàm lấy lịch bận của xe
   List<BookingResponse> get3OnGoingBookingsOfVehicle(Long vehicleId);
+    List<BookingResponse> getMyBookings();
+    List<BookingResponse> getVehicleSchedule(Long vehicleId);
 }

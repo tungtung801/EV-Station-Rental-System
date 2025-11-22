@@ -40,4 +40,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
   // 3. Tìm đơn theo status và StartTime (cho NO-SHOW detection)
   List<Booking> findByStatusAndStartTimeBefore(
       BookingStatusEnum status, LocalDateTime time);
+    // 1. CHO KHÁCH HÀNG: Xem lịch sử của chính mình
+    // Sắp xếp: Đơn mới nhất (vừa đặt) lên đầu (OrderByCreatedAtDesc)
+    List<Booking> findByUser_UserIdOrderByCreatedAtDesc(Long userId);
+
+    // 2. CHO ADMIN: Xem lịch của một chiếc xe cụ thể
+    // Logic: Lấy tất cả đơn của xe này TRỪ đơn đã HỦY (Cancelled)
+    // Để Admin biết xe này bận những ngày nào
+    List<Booking> findByVehicle_VehicleIdAndStatusNot(Long vehicleId, BookingStatusEnum status);
 }

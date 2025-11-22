@@ -1,113 +1,115 @@
 package spring_boot.project_swp.vnpay;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.io.UnsupportedEncodingException;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import spring_boot.project_swp.dto.request.BookingStatusUpdateRequest;
 import spring_boot.project_swp.dto.request.PaymentStatusUpdateRequest;
-import spring_boot.project_swp.entity.BookingStatusEnum;
 import spring_boot.project_swp.entity.PaymentStatusEnum;
-import spring_boot.project_swp.service.BookingService;
 import spring_boot.project_swp.service.PaymentService;
 
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "VNPay APIs")
+@Slf4j
 public class VNPayReturnController {
 
-  @Value("${vnpay.hashSecret}")
-  private String hashSecret;
+    @Value("${vnpay.hashSecret}")
+    private String hashSecret;
 
-  final PaymentService paymentService;
-  final BookingService bookingService;
+    // CHỈ CẦN GỌI PAYMENT SERVICE LÀ ĐỦ
+    // BookingService và Rental logic đã nằm trong PaymentService rồi
+    final PaymentService paymentService;
 
-  @GetMapping("/vnpay_return")
-  public ResponseEntity<String> handleVNPayReturn(@RequestParam Map<String, String> allParams) {
-    // 1. Lấy và Xóa SecureHash ra khỏi params để check chữ ký
-    String vnp_SecureHash = allParams.get("vnp_SecureHash");
-    if (allParams.containsKey("vnp_SecureHashType")) {
-      allParams.remove("vnp_SecureHashType");
-    }
-    allParams.remove("vnp_SecureHash");
+    @GetMapping("/vnpay_return")
+    public void handleVNPayReturn(
+            @RequestParam Map<String, String> allParams,
+            HttpServletResponse response) throws IOException {
 
-    // 2. Sắp xếp tham số và tạo chuỗi hash data
-    List<String> fieldNames = new ArrayList<>(allParams.keySet());
-    Collections.sort(fieldNames);
-    StringBuilder hashData = new StringBuilder();
-    Iterator<String> itr = fieldNames.iterator();
-    while (itr.hasNext()) {
-      String fieldName = itr.next();
-      String fieldValue = allParams.get(fieldName);
-      if ((fieldValue != null) && (fieldValue.length() > 0)) {
-        // Build hash data
-        hashData.append(fieldName);
-        hashData.append('=');
-        try {
-          hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
-        } catch (UnsupportedEncodingException e) {
-          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Encoding Error");
+        // 1. Lấy và Validate Checksum (Chữ ký bảo mật)
+        String vnp_SecureHash = allParams.get("vnp_SecureHash");
+        if (allParams.containsKey("vnp_SecureHashType")) {
+            allParams.remove("vnp_SecureHashType");
         }
-        if (itr.hasNext()) {
-          hashData.append('&');
+        allParams.remove("vnp_SecureHash");
+
+        // Sắp xếp tham số
+        List<String> fieldNames = new ArrayList<>(allParams.keySet());
+        Collections.sort(fieldNames);
+        StringBuilder hashData = new StringBuilder();
+        Iterator<String> itr = fieldNames.iterator();
+        while (itr.hasNext()) {
+            String fieldName = itr.next();
+            String fieldValue = allParams.get(fieldName);
+            if ((fieldValue != null) && (fieldValue.length() > 0)) {
+                hashData.append(fieldName);
+                hashData.append('=');
+                try {
+                    hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
+                } catch (Exception e) {
+                    log.error("Encoding error: {}", e.getMessage());
+                }
+                if (itr.hasNext()) {
+                    hashData.append('&');
+                }
+            }
         }
-      }
-    }
 
-    // 3. Validate Chữ ký (Checksum)
-    String calculatedHash = VnpayUtils.hmacSHA512(hashSecret, hashData.toString());
+        String calculatedHash = VnpayUtils.hmacSHA512(hashSecret, hashData.toString());
 
-    if (calculatedHash.equals(vnp_SecureHash)) {
-      // Checksum hợp lệ -> Kiểm tra trạng thái giao dịch
-      String vnp_ResponseCode = allParams.get("vnp_ResponseCode");
+        // URL Frontend để redirect về sau khi thanh toán
+        // Ví dụ: http://localhost:5173/payment-result
+        String frontendUrl = "http://localhost:5173/payment-result";
 
-      if ("00".equals(vnp_ResponseCode)) {
-        // Giao dịch THÀNH CÔNG (Success)
-        try {
-          // Parse ID từ các trường tham chiếu
-          String vnp_TxnRef = allParams.get("vnp_TxnRef"); // PAY_123_timestamp
-          Long paymentId = Long.parseLong(vnp_TxnRef.split("_")[1]);
+        if (calculatedHash.equals(vnp_SecureHash)) {
+            String vnp_ResponseCode = allParams.get("vnp_ResponseCode");
+            String vnp_TxnRef = allParams.get("vnp_TxnRef"); // Định dạng: PAY_{paymentId}_{timestamp}
 
-          // Lấy BookingID từ vnp_OrderInfo (Format: "Thanh toan Booking:123")
-          String orderInfo = allParams.get("vnp_OrderInfo");
-          Long bookingId = Long.parseLong(orderInfo.split(":")[1].trim());
+            // Lấy Payment ID từ TxnRef
+            Long paymentId = Long.parseLong(vnp_TxnRef.split("_")[1]);
 
-          // A. Update Payment -> SUCCESS
-          PaymentStatusUpdateRequest payReq = new PaymentStatusUpdateRequest();
-          payReq.setStatus(PaymentStatusEnum.SUCCESS);
-          paymentService.updatePaymentStatus(paymentId, payReq);
+            if ("00".equals(vnp_ResponseCode)) {
+                // --- GIAO DỊCH THÀNH CÔNG ---
+                log.info("VNPay Success: PaymentId={}", paymentId);
 
-          // B. Update Booking -> CONFIRMED
-          BookingStatusUpdateRequest bookReq = new BookingStatusUpdateRequest();
-          bookReq.setStatus(BookingStatusEnum.CONFIRMED);
+                // Gọi Service để update Payment -> Tự động kích hoạt Booking & Rental
+                PaymentStatusUpdateRequest updateReq = new PaymentStatusUpdateRequest();
+                updateReq.setStatus(PaymentStatusEnum.SUCCESS);
 
-          // Dùng email admin làm đại diện hệ thống update
-          bookingService.updateBookingStatus(bookingId, "admin@gmail.com", bookReq);
+                try {
+                    paymentService.updatePaymentStatus(paymentId, updateReq);
+                    // Redirect về Frontend báo thành công
+                    response.sendRedirect(frontendUrl + "?status=success&code=" + vnp_TxnRef);
+                } catch (Exception e) {
+                    log.error("Error updating payment status: {}", e.getMessage());
+                    response.sendRedirect(frontendUrl + "?status=error");
+                }
 
-          return ResponseEntity.ok(
-              "Thanh toán thành công! Đơn hàng #" + bookingId + " đã được xác nhận.");
+            } else {
+                // --- GIAO DỊCH THẤT BẠI ---
+                log.warn("VNPay Failed: Code={}, PaymentId={}", vnp_ResponseCode, paymentId);
 
-        } catch (Exception e) {
-          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-              .body("Lỗi xử lý dữ liệu: " + e.getMessage());
+                // Có thể update payment thành FAILED nếu muốn
+                PaymentStatusUpdateRequest updateReq = new PaymentStatusUpdateRequest();
+                updateReq.setStatus(PaymentStatusEnum.FAILED);
+                paymentService.updatePaymentStatus(paymentId, updateReq);
+
+                response.sendRedirect(frontendUrl + "?status=failed");
+            }
+        } else {
+            // --- SAI CHỮ KÝ (CÓ DẤU HIỆU GIAN LẬN) ---
+            log.error("VNPay Checksum Invalid!");
+            response.sendRedirect(frontendUrl + "?status=invalid_signature");
         }
-      } else {
-        // Giao dịch THẤT BẠI (Do thẻ lỗi, hủy, v.v...)
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-            .body("Giao dịch thất bại. Mã lỗi VNPay: " + vnp_ResponseCode);
-      }
-    } else {
-      // Checksum SAI -> Có dấu hiệu giả mạo
-      return ResponseEntity.status(HttpStatus.FORBIDDEN)
-          .body("Chữ ký không hợp lệ (Invalid Checksum)!");
     }
-  }
 }

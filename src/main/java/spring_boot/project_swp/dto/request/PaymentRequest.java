@@ -32,14 +32,5 @@ public class PaymentRequest {
   @NotNull(message = "Payment method cannot be null")
   PaymentMethodEnum paymentMethod;
 
-  Long confirmedById;
-
   String note;
-
-  String transactionCode;
-
-  Long payerId;
-
-  @NotNull(message = "User ID cannot be null")
-  Long userId;
 }

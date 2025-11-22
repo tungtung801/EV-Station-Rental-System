@@ -34,4 +34,6 @@ public class BookingResponse {
 
   // Rental info (Nếu có)
   RentalResponse rental;
+
+  String paymentUrl; // URL thanh toán (nếu có)
 }
