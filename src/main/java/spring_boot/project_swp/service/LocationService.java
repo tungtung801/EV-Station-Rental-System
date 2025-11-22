@@ -30,4 +30,6 @@ public interface LocationService {
   public List<LocationResponse> getDistrictsByCityId(Long cityId);
 
   public List<LocationResponse> getWardByDistrictId(Long districtId);
+
+  public Location findAndParseLocationFromAddress(String address);
 }

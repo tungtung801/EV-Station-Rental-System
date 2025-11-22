@@ -31,6 +31,7 @@ public class StationAddingRequest {
 
   StationStatusEnum isActive;
 
-  @NotNull(message = "Location ID cannot be null")
+  // Optional: If provided, will use this locationId directly.
+  // If null, system will auto-detect from address (Thành phố or Tỉnh)
   Long locationId;
 }

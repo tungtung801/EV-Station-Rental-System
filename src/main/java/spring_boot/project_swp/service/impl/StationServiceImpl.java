@@ -21,6 +21,7 @@ import spring_boot.project_swp.repository.LocationRepository;
 import spring_boot.project_swp.repository.RentalRepository;
 import spring_boot.project_swp.repository.StationRepository;
 import spring_boot.project_swp.repository.VehicleRepository;
+import spring_boot.project_swp.service.LocationService;
 import spring_boot.project_swp.service.StationService;
 
 @Service
@@ -31,6 +32,7 @@ public class StationServiceImpl implements StationService {
   private final StationMapper stationMapper;
   private final LocationRepository locationRepository;
   private final LocationMapper locationMapper;
+  private final LocationService locationService;
   private final RentalRepository rentalRepository;
   private final VehicleRepository vehicleRepository;
 
@@ -46,9 +48,8 @@ public class StationServiceImpl implements StationService {
 
   @Override
   public List<StationResponse> getAllStationsByLocationId(Long locationId) {
-    List<Station> stationByLocaitonList =
-        stationRepository.findByLocation_LocationIdAndIsActive(
-            locationId, StationStatusEnum.ACTIVE);
+    List<Station> stationByLocaitonList = stationRepository.findByLocation_LocationIdAndIsActive(
+        locationId, StationStatusEnum.ACTIVE);
     return stationMapper.toStationResponseList(stationByLocaitonList);
   }
 
@@ -57,10 +58,9 @@ public class StationServiceImpl implements StationService {
     if (id == null) {
       throw new ConflictException("StationID is required");
     }
-    Station station =
-        stationRepository
-            .findStationByStationId(id)
-            .orElseThrow(() -> new NotFoundException("Station does not exist"));
+    Station station = stationRepository
+        .findStationByStationId(id)
+        .orElseThrow(() -> new NotFoundException("Station does not exist"));
     return stationMapper.toStationResponse(station);
   }
 
@@ -69,10 +69,9 @@ public class StationServiceImpl implements StationService {
     if (name == null || name.trim().isEmpty()) {
       throw new ConflictException("StationName is required");
     }
-    Station station =
-        stationRepository
-            .findStationByStationName(name)
-            .orElseThrow(() -> new NotFoundException("Station does not exist"));
+    Station station = stationRepository
+        .findStationByStationName(name)
+        .orElseThrow(() -> new NotFoundException("Station does not exist"));
     return stationMapper.toStationResponse(station);
   }
 
@@ -100,12 +99,20 @@ public class StationServiceImpl implements StationService {
 
     newStation.setAvailableDocks(request.getTotalDocks());
 
-    Location location =
-        locationRepository
-            .findById(request.getLocationId())
-            .orElseThrow(
-                () ->
-                    new NotFoundException("Location not found with id " + request.getLocationId()));
+    // Location handling: Use provided locationId OR auto-detect from address
+    Location location;
+    if (request.getLocationId() != null) {
+      // Admin explicitly provided locationId
+      location = locationRepository
+          .findById(request.getLocationId())
+          .orElseThrow(
+              () -> new NotFoundException(
+                  "Location not found with id " + request.getLocationId()));
+    } else {
+      // Auto-detect from address (Thành phố or Tỉnh)
+      location = locationService.findAndParseLocationFromAddress(request.getAddress());
+    }
+
     newStation.setLocation(location);
 
     stationRepository.save(newStation);
@@ -115,21 +122,18 @@ public class StationServiceImpl implements StationService {
 
   @Override
   public StationResponse updateStation(Long stationId, StationUpdateRequest request) {
-    Station station =
-        stationRepository
-            .findStationByStationId(stationId)
-            .orElseThrow(() -> new NotFoundException("Station does not exist"));
+    Station station = stationRepository
+        .findStationByStationId(stationId)
+        .orElseThrow(() -> new NotFoundException("Station does not exist"));
 
     stationMapper.updateStationFromRequest(request, station);
 
     if (request.getLocationId() != null) {
-      Location newLocation =
-          locationRepository
-              .findByLocationId(request.getLocationId())
-              .orElseThrow(
-                  () ->
-                      new NotFoundException(
-                          "Location does not exist with id: " + request.getLocationId()));
+      Location newLocation = locationRepository
+          .findByLocationId(request.getLocationId())
+          .orElseThrow(
+              () -> new NotFoundException(
+                  "Location does not exist with id: " + request.getLocationId()));
       station.setLocation(newLocation);
     }
 
@@ -140,10 +144,9 @@ public class StationServiceImpl implements StationService {
 
   @Override
   public void deleteStationById(Long id) {
-    Station station =
-        stationRepository
-            .findStationByStationId(id)
-            .orElseThrow(() -> new NotFoundException("Station does not exist"));
+    Station station = stationRepository
+        .findStationByStationId(id)
+        .orElseThrow(() -> new NotFoundException("Station does not exist"));
 
     // Delete all related rentals first
     rentalRepository.deleteAll(station.getPickupRentals());
@@ -152,14 +155,16 @@ public class StationServiceImpl implements StationService {
     // Delete all related vehicles
     vehicleRepository.deleteAll(station.getVehicles());
 
-    // 3) Detach from parent Location to avoid being re-persisted by Location.stations cascade
+    // 3) Detach from parent Location to avoid being re-persisted by
+    // Location.stations cascade
     Location location = station.getLocation();
     if (location != null && location.getStations() != null) {
       location.getStations().removeIf(s -> s.getStationId() != null && s.getStationId().equals(id));
     }
     station.setLocation(null);
 
-    // 4) Hard delete the Station; JPA will cascade remove remaining dependents (e.g., Vehicles)
+    // 4) Hard delete the Station; JPA will cascade remove remaining dependents
+    // (e.g., Vehicles)
     stationRepository.delete(station);
   }
 
@@ -168,11 +173,10 @@ public class StationServiceImpl implements StationService {
     if (cityId == null) {
       throw new ConflictException("CityID is required");
     }
-    Location city =
-        locationRepository
-            .findByLocationId(cityId)
-            .orElseThrow(
-                () -> new NotFoundException("CityID does not exist or Invalid type name \"City\""));
+    Location city = locationRepository
+        .findByLocationId(cityId)
+        .orElseThrow(
+            () -> new NotFoundException("CityID does not exist or Invalid type name \"City\""));
     if (!city.getLocationType().equalsIgnoreCase("City")) {
       throw new NotFoundException("CityID does not exist or Invalid type name \"City\"");
     }
@@ -181,9 +185,8 @@ public class StationServiceImpl implements StationService {
     locationIds.add(cityId);
     collectChildrenIds(city, locationIds);
 
-    List<Station> stations =
-        stationRepository.findByLocation_LocationIdInAndIsActive(
-            new ArrayList<>(locationIds), StationStatusEnum.ACTIVE);
+    List<Station> stations = stationRepository.findByLocation_LocationIdInAndIsActive(
+        new ArrayList<>(locationIds), StationStatusEnum.ACTIVE);
     return stationMapper.toStationResponseList(stations);
   }
 
@@ -192,11 +195,10 @@ public class StationServiceImpl implements StationService {
     if (cityId == null || districtId == null) {
       throw new ConflictException("CityID or districtID is missing");
     }
-    Location district =
-        locationRepository
-            .findByLocationId(districtId)
-            .orElseThrow(
-                () -> new NotFoundException("The district is not belongs to the specificed city"));
+    Location district = locationRepository
+        .findByLocationId(districtId)
+        .orElseThrow(
+            () -> new NotFoundException("The district is not belongs to the specificed city"));
     if (!district.getParent().getLocationId().equals(cityId)) {
       throw new NotFoundException("The district is not belongs to the specificed city");
     }
@@ -205,9 +207,8 @@ public class StationServiceImpl implements StationService {
     locationIds.add(districtId);
     collectChildrenIds(district, locationIds);
 
-    List<Station> stations =
-        stationRepository.findByLocation_LocationIdInAndIsActive(
-            new ArrayList<>(locationIds), StationStatusEnum.ACTIVE);
+    List<Station> stations = stationRepository.findByLocation_LocationIdInAndIsActive(
+        new ArrayList<>(locationIds), StationStatusEnum.ACTIVE);
     return stationMapper.toStationResponseList(stations);
   }
 

@@ -58,41 +58,41 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     // 3. TẠO DỮ LIỆU LOCATION MẪU (HCM, Hà Nội, Đà Nẵng)
-    if (locationRepository.count() == 0) {
-      // Thành phố Hồ Chí Minh
-      Location hcm = Location.builder()
-          .locationName("Thành phố Hồ Chí Minh")
-          .locationType("City")
-          .latitude(new BigDecimal("10.78"))
-          .longitude(new BigDecimal("106.70"))
-          .radius(new BigDecimal("50.00"))
-          .isActive(true)
-          .build();
-      locationRepository.save(hcm);
-
-      // Hà Nội
-      Location hanoi = Location.builder()
-          .locationName("Hà Nội")
-          .locationType("City")
-          .latitude(new BigDecimal("21.03"))
-          .longitude(new BigDecimal("105.85"))
-          .radius(new BigDecimal("50.00"))
-          .isActive(true)
-          .build();
-      locationRepository.save(hanoi);
-
-      // Đà Nẵng
-      Location danang = Location.builder()
-          .locationName("Đà Nẵng")
-          .locationType("City")
-          .latitude(new BigDecimal("16.07"))
-          .longitude(new BigDecimal("108.23"))
-          .radius(new BigDecimal("50.00"))
-          .isActive(true)
-          .build();
-      locationRepository.save(danang);
-
-      System.out.println(">>> LOCATIONS CREATED: HCM, Hà Nội, Đà Nẵng");
-    }
+//    if (locationRepository.count() == 0) {
+//      // Thành phố Hồ Chí Minh
+//      Location hcm = Location.builder()
+//          .locationName("Thành phố Hồ Chí Minh")
+//          .locationType("City")
+//          .latitude(new BigDecimal("10.78"))
+//          .longitude(new BigDecimal("106.70"))
+//          .radius(new BigDecimal("50.00"))
+//          .isActive(true)
+//          .build();
+//      locationRepository.save(hcm);
+//
+//      // Hà Nội
+//      Location hanoi = Location.builder()
+//          .locationName("Hà Nội")
+//          .locationType("City")
+//          .latitude(new BigDecimal("21.03"))
+//          .longitude(new BigDecimal("105.85"))
+//          .radius(new BigDecimal("50.00"))
+//          .isActive(true)
+//          .build();
+//      locationRepository.save(hanoi);
+//
+//      // Đà Nẵng
+//      Location danang = Location.builder()
+//          .locationName("Đà Nẵng")
+//          .locationType("City")
+//          .latitude(new BigDecimal("16.07"))
+//          .longitude(new BigDecimal("108.23"))
+//          .radius(new BigDecimal("50.00"))
+//          .isActive(true)
+//          .build();
+//      locationRepository.save(danang);
+//
+//      System.out.println(">>> LOCATIONS CREATED: HCM, Hà Nội, Đà Nẵng");
+//    }
   }
 }
