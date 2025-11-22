@@ -30,236 +30,148 @@ public class BookingServiceImpl implements BookingService {
     final UserRepository userRepository;
     final VehicleRepository vehicleRepository;
     final UserProfileRepository userProfileRepository;
-    // --- [NEW] Thêm RentalRepository để lưu Rental ---
     final RentalRepository rentalRepository;
 
-    // 1. TẠO BOOKING
+    // 1. TẠO BOOKING (Giữ nguyên)
     @Override
     @Transactional
     public BookingResponse createBooking(String email, BookingRequest request) {
-        // 1.1. Lấy User từ Email
-        User user =
-                userRepository
-                        .findByEmail(email)
-                        .orElseThrow(() -> new NotFoundException("User not found: " + email));
-
-        // 1.2. Check KYC (Bắt buộc phải Verified mới được thuê)
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("User not found: " + email));
         checkUserKYC(user.getUserId());
 
-        // 1.3. Lấy Xe
-        Vehicle vehicle =
-                vehicleRepository
-                        .findById(request.getVehicleId())
-                        .orElseThrow(
-                                () -> new NotFoundException("Vehicle not found: " + request.getVehicleId()));
+        Vehicle vehicle = vehicleRepository.findById(request.getVehicleId())
+                .orElseThrow(() -> new NotFoundException("Vehicle not found: " + request.getVehicleId()));
 
-        // 1.4. Validate Thời gian (Không được book quá khứ, End > Start)
         validateBookingTime(request.getStartTime(), request.getEndTime());
 
-        // 1.5. Check Trùng lịch (Conflict)
-        boolean isBusy =
-                bookingRepository.existsByVehicle_VehicleIdAndStartTimeBeforeAndEndTimeAfterAndStatusNot(
-                        request.getVehicleId(),
-                        request.getEndTime(),
-                        request.getStartTime(),
-                        BookingStatusEnum.CANCELLED);
+        boolean isBusy = bookingRepository.existsByVehicle_VehicleIdAndStartTimeBeforeAndEndTimeAfterAndStatusNot(
+                request.getVehicleId(), request.getEndTime(), request.getStartTime(), BookingStatusEnum.CANCELLED);
 
-        if (isBusy) {
-            throw new ConflictException("Vehicle is busy in this time range!");
-        }
+        if (isBusy) throw new ConflictException("Vehicle is busy in this time range!");
 
-        // 1.6. Map dữ liệu
         Booking booking = bookingMapper.toBooking(request);
         booking.setUser(user);
         booking.setVehicle(vehicle);
-
-        // 1.7. Tính Tiền (TotalAmount)
-        BigDecimal total =
-                calculateTotalAmount(
-                        request.getStartTime(),
-                        request.getEndTime(),
-                        vehicle.getPricePerHour());
-        booking.setTotalAmount(total);
-
-        // 1.8. Set Trạng thái ban đầu
+        booking.setTotalAmount(calculateTotalAmount(request.getStartTime(), request.getEndTime(), vehicle.getPricePerHour()));
         booking.setStatus(BookingStatusEnum.PENDING);
 
-        Booking savedBooking = bookingRepository.save(booking);
-        return bookingMapper.toBookingResponse(savedBooking);
+        return bookingMapper.toBookingResponse(bookingRepository.save(booking));
     }
 
-    // 2. LẤY CHI TIẾT BOOKING
+    // ... (Các hàm getBookingById, getAllBookings, getBookingsByUserId giữ nguyên) ...
     @Override
     public BookingResponse getBookingById(Long bookingId) {
-        Booking booking =
-                bookingRepository
-                        .findById(bookingId)
-                        .orElseThrow(() -> new NotFoundException("Booking not found: " + bookingId));
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new NotFoundException("Booking not found: " + bookingId));
         return bookingMapper.toBookingResponse(booking);
     }
 
-    // 3. LẤY DANH SÁCH BOOKING (Cho Admin/Staff)
     @Override
     public List<BookingResponse> getAllBookings(String staffEmail, Long stationId) {
-        User staff =
-                userRepository
-                        .findByEmail(staffEmail)
-                        .orElseThrow(() -> new NotFoundException("Staff not found"));
-
+        User staff = userRepository.findByEmail(staffEmail).orElseThrow(() -> new NotFoundException("Staff not found"));
         List<Booking> bookings;
-
-        // Nếu là Admin: Lấy hết
         if ("Admin".equalsIgnoreCase(staff.getRole().getRoleName())) {
             bookings = bookingRepository.findAll();
+        } else {
+            Long targetStationId = (stationId != null) ? stationId : (staff.getStation() != null ? staff.getStation().getStationId() : null);
+            if (targetStationId == null) bookings = new ArrayList<>();
+            else bookings = bookingRepository.findByVehicle_Station_StationId(targetStationId);
         }
-        // Nếu có trạm cụ thể hoặc là Staff: Lọc theo trạm
-        else {
-            Long targetStationId =
-                    (stationId != null)
-                            ? stationId
-                            : (staff.getStation() != null ? staff.getStation().getStationId() : null);
-
-            if (targetStationId == null) {
-                // Cho phép xem hết nếu Staff chưa gán trạm (hoặc trả rỗng tùy logic)
-                bookings = new ArrayList<>();
-            } else {
-                bookings = bookingRepository.findByVehicle_Station_StationId(targetStationId);
-            }
-        }
-
         List<BookingResponse> responses = new ArrayList<>();
-        for (Booking b : bookings) {
-            responses.add(bookingMapper.toBookingResponse(b));
-        }
+        for (Booking b : bookings) responses.add(bookingMapper.toBookingResponse(b));
         return responses;
     }
 
-    // 4. LẤY DANH SÁCH CỦA TÔI (Cho Customer)
     @Override
     public List<BookingResponse> getBookingsByUserId(Long userId) {
         List<Booking> bookings = bookingRepository.findByUserUserId(userId);
         List<BookingResponse> responses = new ArrayList<>();
-        for (Booking b : bookings) {
-            responses.add(bookingMapper.toBookingResponse(b));
-        }
+        for (Booking b : bookings) responses.add(bookingMapper.toBookingResponse(b));
         return responses;
     }
 
-    // 5. CẬP NHẬT TRẠNG THÁI (Duyệt/Hủy/Hoàn thành)
+    @Override
+    public List<BookingResponse> get3OnGoingBookingsOfVehicle(Long vehicleId) {
+        List<Booking> bookings = bookingRepository.findTop3ByVehicleVehicleIdAndStatusNotAndEndTimeAfterOrderByStartTimeAsc(
+                vehicleId, BookingStatusEnum.CANCELLED, LocalDateTime.now());
+        List<BookingResponse> responses = new ArrayList<>();
+        for (Booking b : bookings) responses.add(bookingMapper.toBookingResponse(b));
+        return responses;
+    }
+
+    // 5. CẬP NHẬT TRẠNG THÁI (SỬA ĐỔI LOGIC TẠO RENTAL)
     @Override
     @Transactional
-    public BookingResponse updateBookingStatus(
-            Long bookingId, String email, BookingStatusUpdateRequest request) {
-        Booking booking =
-                bookingRepository
-                        .findById(bookingId)
-                        .orElseThrow(() -> new NotFoundException("Booking not found"));
+    public BookingResponse updateBookingStatus(Long bookingId, String email, BookingStatusUpdateRequest request) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new NotFoundException("Booking not found"));
 
-        // Lấy thông tin người thực hiện (Staff/Admin)
-        User staff = userRepository.findByEmail(email).orElse(null);
-
+        User staff = userRepository.findByEmail(email).orElse(null); // Người thực hiện (Staff/Admin)
         BookingStatusEnum newStatus = request.getStatus();
 
-        // Logic check chuyển trạng thái hợp lệ
-        if (booking.getStatus() == BookingStatusEnum.CANCELLED) {
-            throw new ConflictException("Cannot update a Cancelled booking");
-        }
-        if (booking.getStatus() == BookingStatusEnum.COMPLETED) {
-            throw new ConflictException("Cannot update a Completed booking");
-        }
+        if (booking.getStatus() == BookingStatusEnum.CANCELLED) throw new ConflictException("Cannot update a Cancelled booking");
+        if (booking.getStatus() == BookingStatusEnum.COMPLETED) throw new ConflictException("Cannot update a Completed booking");
 
         // Cập nhật trạng thái Booking
         booking.setStatus(newStatus);
         Booking savedBooking = bookingRepository.save(booking);
 
-        // --- [AUTO CREATE RENTAL LOGIC] ---
-        // Khi chuyển sang IN_PROGRESS (Giao xe), tự động tạo bản ghi Rental
-        if (newStatus == BookingStatusEnum.IN_PROGRESS) {
-            // Kiểm tra xem Rental đã tồn tại chưa để tránh tạo trùng
+        // --- [AUTO CREATE RENTAL LOGIC - NEW FLOW] ---
+        // Khi trạng thái chuyển sang CONFIRMED (Đã cọc/Đã thanh toán/Staff xác nhận) -> TẠO RENTAL
+        if (newStatus == BookingStatusEnum.CONFIRMED) {
             boolean rentalExists = rentalRepository.existsByBookingBookingId(bookingId);
 
             if (!rentalExists) {
                 Rental rental = Rental.builder()
                         .booking(booking)
-                        .renter(booking.getUser()) // Người thuê
-                        .vehicle(booking.getVehicle()) // Xe thuê
-                        // Trạm lấy xe (Lấy từ trạm hiện tại của xe hoặc logic booking)
+                        .renter(booking.getUser())
+                        .vehicle(booking.getVehicle())
                         .pickupStation(booking.getVehicle().getStation())
-                        .pickupStaff(staff) // Nhân viên thực hiện giao xe
-                        .startActual(LocalDateTime.now()) // Thời gian nhận xe thực tế
-                        // --- FIX: Dùng RentalStatusEnum.ACTIVE hoặc IN_PROGRESS tùy Enum của bạn ---
-                        // Ở đây tôi giả định bạn dùng ACTIVE cho Rental đang chạy
-                        .status(RentalStatusEnum.ACTIVE)
-                        .total(BigDecimal.ZERO) // Tạm thời 0, tính sau khi trả
+                        .pickupStaff(staff) // Nhân viên xác nhận đơn (có thể null nếu auto)
+                        // Chưa có StartActual vì chưa nhận xe
+                        .status(RentalStatusEnum.PENDING_PICKUP) // Trạng thái: Chờ nhận xe
+                        .total(booking.getTotalAmount()) // Lưu tạm tổng tiền dự kiến
                         .build();
 
                 rentalRepository.save(rental);
             }
         }
-        // ----------------------------------
+        // ---------------------------------------------
+
+        // Nếu Staff bấm "Giao xe" (IN_PROGRESS), ta cần update Rental từ PENDING_PICKUP -> ACTIVE
+        if (newStatus == BookingStatusEnum.IN_PROGRESS) {
+            Rental rental = rentalRepository.findByBooking_BookingId(bookingId).orElse(null);
+            if (rental != null && rental.getStatus() == RentalStatusEnum.PENDING_PICKUP) {
+                rental.setStatus(RentalStatusEnum.ACTIVE);
+                rental.setStartActual(LocalDateTime.now());
+                rental.setPickupStaff(staff); // Cập nhật nhân viên giao xe thực tế
+                rentalRepository.save(rental);
+            }
+        }
 
         return bookingMapper.toBookingResponse(savedBooking);
     }
 
-    // 6. LẤY 3 BOOKING SẮP TỚI CỦA XE
-    @Override
-    public List<BookingResponse> get3OnGoingBookingsOfVehicle(Long vehicleId) {
-        List<Booking> bookings =
-                bookingRepository.findTop3ByVehicleVehicleIdAndStatusNotAndEndTimeAfterOrderByStartTimeAsc(
-                        vehicleId, BookingStatusEnum.CANCELLED, LocalDateTime.now());
-
-        List<BookingResponse> responses = new ArrayList<>();
-        for (Booking b : bookings) {
-            responses.add(bookingMapper.toBookingResponse(b));
-        }
-        return responses;
-    }
-
-    // --- CÁC HÀM HỖ TRỢ (PRIVATE) ---
-
+    // --- Private helpers (Giữ nguyên) ---
     private void checkUserKYC(Long userId) {
-        UserProfile profile =
-                userProfileRepository
-                        .findByUserUserId(userId)
-                        .orElseThrow(() -> new NotFoundException("User Profile not found"));
-
-        if (profile.getStatus() != UserProfileStatusEnum.VERIFIED) {
-            throw new ConflictException("User account is not verified. Please upload KYC documents.");
-        }
+        UserProfile profile = userProfileRepository.findByUserUserId(userId).orElseThrow(() -> new NotFoundException("User Profile not found"));
+        if (profile.getStatus() != UserProfileStatusEnum.VERIFIED) throw new ConflictException("User account is not verified.");
     }
-
     private void validateBookingTime(LocalDateTime start, LocalDateTime end) {
-        if (start.isBefore(LocalDateTime.now())) {
-            // Cho phép sai số nhỏ (vd: 1-2 phút do độ trễ mạng) nếu cần
-            // throw new ConflictException("Start time must be in the future");
-        }
-        if (end.isBefore(start)) {
-            throw new ConflictException("End time must be after start time");
-        }
-        if (Duration.between(start, end).toDays() > 30) {
-            throw new ConflictException("Cannot book more than 30 days");
-        }
+        if (end.isBefore(start)) throw new ConflictException("End time must be after start time");
+        if (Duration.between(start, end).toDays() > 30) throw new ConflictException("Cannot book more than 30 days");
     }
-
-    private BigDecimal calculateTotalAmount(
-            LocalDateTime start, LocalDateTime end, BigDecimal pricePerHour) {
+    private BigDecimal calculateTotalAmount(LocalDateTime start, LocalDateTime end, BigDecimal pricePerHour) {
         long durationMinutes = Duration.between(start, end).toMinutes();
         if (durationMinutes < 60) durationMinutes = 60;
-
         long days = durationMinutes / (24 * 60);
         long remainingMinutes = durationMinutes % (24 * 60);
         long hours = (long) Math.ceil((double) remainingMinutes / 60);
-
         BigDecimal calculatedPricePerDay = pricePerHour.multiply(BigDecimal.valueOf(24));
         BigDecimal total = BigDecimal.ZERO;
-
-        if (days > 0) {
-            total = total.add(calculatedPricePerDay.multiply(BigDecimal.valueOf(days)));
-        }
-        if (hours > 0) {
-            total = total.add(pricePerHour.multiply(BigDecimal.valueOf(hours)));
-        }
-
+        if (days > 0) total = total.add(calculatedPricePerDay.multiply(BigDecimal.valueOf(days)));
+        if (hours > 0) total = total.add(pricePerHour.multiply(BigDecimal.valueOf(hours)));
         return total;
     }
 }
