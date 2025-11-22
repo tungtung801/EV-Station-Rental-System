@@ -271,7 +271,7 @@ public class UserServiceImpl implements UserService {
       if(user.getRole().getRoleName().equals(ROLE_STAFF)) {
           profile.setStatus(UserProfileStatusEnum.VERIFIED);
       } else {
-          profile.setStatus(UserProfileStatusEnum.PENDING);
+          profile.setStatus(UserProfileStatusEnum.UNVERIFIED);
       }
     userProfileRepository.save(profile);
   }
