@@ -11,6 +11,7 @@ import spring_boot.project_swp.dto.request.StationAddingRequest;
 import spring_boot.project_swp.dto.request.StationUpdateRequest;
 import spring_boot.project_swp.dto.response.StationResponse;
 import spring_boot.project_swp.entity.Location;
+import spring_boot.project_swp.entity.RentalStatusEnum;
 import spring_boot.project_swp.entity.Station;
 import spring_boot.project_swp.entity.StationStatusEnum;
 import spring_boot.project_swp.exception.ConflictException;
@@ -38,9 +39,9 @@ public class StationServiceImpl implements StationService {
 
   @Override
   public List<StationResponse> getAllStations() {
-    List<Station> activeStations = stationRepository.findByIsActive(StationStatusEnum.ACTIVE);
+    List<Station> allStations = stationRepository.findAll();
     List<StationResponse> stationResponses = new ArrayList<>();
-    for (Station station : activeStations) {
+    for (Station station : allStations) {
       stationResponses.add(stationMapper.toStationResponse(station));
     }
     return stationResponses;
@@ -91,12 +92,7 @@ public class StationServiceImpl implements StationService {
 
     Station newStation = stationMapper.toStation(request);
 
-    if (request.getIsActive() != null) {
-      newStation.setIsActive(request.getIsActive());
-    } else {
-      newStation.setIsActive(StationStatusEnum.ACTIVE);
-    }
-
+    // isActive is already mapped by StationMapper with default ACTIVE
     newStation.setAvailableDocks(request.getTotalDocks());
 
     // Location handling: Use provided locationId OR auto-detect from address
@@ -108,9 +104,23 @@ public class StationServiceImpl implements StationService {
           .orElseThrow(
               () -> new NotFoundException(
                   "Location not found with id " + request.getLocationId()));
+
+      // Check if location is active
+      if (!location.isActive()) {
+        throw new ConflictException(
+            "Cannot create station in an inactive location. "
+                + "Please select an active location.");
+      }
     } else {
       // Auto-detect from address (Thành phố or Tỉnh)
       location = locationService.findAndParseLocationFromAddress(request.getAddress());
+
+      // Verify the detected location is active
+      if (location != null && !location.isActive()) {
+        throw new ConflictException(
+            "Cannot create station in location '" + location.getLocationName() + "' because it is inactive. "
+                + "Please activate the location first.");
+      }
     }
 
     newStation.setLocation(location);
@@ -126,6 +136,43 @@ public class StationServiceImpl implements StationService {
         .findStationByStationId(stationId)
         .orElseThrow(() -> new NotFoundException("Station does not exist"));
 
+    // Check if trying to activate station when location is inactive
+    if (request.getIsActive() != null &&
+        request.getIsActive().equals(StationStatusEnum.ACTIVE)) {
+
+      Location currentLocation = station.getLocation();
+      if (currentLocation != null && !currentLocation.isActive()) {
+        throw new ConflictException(
+            "Cannot activate station: its location is currently inactive. "
+                + "Please activate the location first.");
+      }
+    }
+
+    // IMPORTANT: Deactivate vehicles BEFORE updating station status
+    // This ensures we can access the vehicles list before mapper updates isActive
+    // BUT only if they don't have active rentals
+    if (request.getIsActive() != null && request.getIsActive().equals(StationStatusEnum.INACTIVE)) {
+      if (station.getVehicles() != null && !station.getVehicles().isEmpty()) {
+        for (spring_boot.project_swp.entity.Vehicle vehicle : station.getVehicles()) {
+          // Check if vehicle has any active rental
+          boolean hasActiveRental = false;
+          if (vehicle.getRentals() != null && !vehicle.getRentals().isEmpty()) {
+            for (spring_boot.project_swp.entity.Rental rental : vehicle.getRentals()) {
+              if (rental.getStatus() != null && rental.getStatus().equals(RentalStatusEnum.ACTIVE)) {
+                hasActiveRental = true;
+                break;
+              }
+            }
+          }
+
+          if (!hasActiveRental) {
+            vehicle.setVehicleStatus(spring_boot.project_swp.entity.VehicleStatusEnum.INACTIVE);
+          }
+          // If has active rental, skip deactivation (vehicle stays as is)
+        }
+      }
+    }
+
     stationMapper.updateStationFromRequest(request, station);
 
     if (request.getLocationId() != null) {
@@ -134,6 +181,14 @@ public class StationServiceImpl implements StationService {
           .orElseThrow(
               () -> new NotFoundException(
                   "Location does not exist with id: " + request.getLocationId()));
+
+      // Check if new location is active
+      if (!newLocation.isActive()) {
+        throw new ConflictException(
+            "Cannot move station to an inactive location. "
+                + "Please select an active location.");
+      }
+
       station.setLocation(newLocation);
     }
 

@@ -9,6 +9,7 @@ import spring_boot.project_swp.dto.request.LocationAddingRequest;
 import spring_boot.project_swp.dto.request.LocationUpdateRequest;
 import spring_boot.project_swp.dto.response.LocationResponse;
 import spring_boot.project_swp.entity.Location;
+import spring_boot.project_swp.entity.Station;
 import spring_boot.project_swp.exception.ConflictException;
 import spring_boot.project_swp.exception.NotFoundException;
 import spring_boot.project_swp.mapper.LocationMapper;
@@ -63,6 +64,40 @@ public class LocationServiceImpl implements LocationService {
           .orElseThrow(() -> new NotFoundException("Parent location does not exist"));
       existtingLocation.setParent(parentLocation);
     }
+
+    // If location is being deactivated, deactivate all related stations and their vehicles
+    if (request.getActive() != null && !request.getActive()) {
+      List<Station> relatedStations = existtingLocation.getStations();
+      if (relatedStations != null && !relatedStations.isEmpty()) {
+        for (Station station : relatedStations) {
+          station.setIsActive(spring_boot.project_swp.entity.StationStatusEnum.INACTIVE);
+
+          // Also deactivate all vehicles in these stations (cascade effect)
+          // BUT only if they don't have active rentals
+          if (station.getVehicles() != null && !station.getVehicles().isEmpty()) {
+            for (spring_boot.project_swp.entity.Vehicle vehicle : station.getVehicles()) {
+              // Check if vehicle has any active rental
+              boolean hasActiveRental = false;
+              if (vehicle.getRentals() != null && !vehicle.getRentals().isEmpty()) {
+                for (spring_boot.project_swp.entity.Rental rental : vehicle.getRentals()) {
+                  if (rental.getStatus() != null &&
+                      rental.getStatus().equals(spring_boot.project_swp.entity.RentalStatusEnum.ACTIVE)) {
+                    hasActiveRental = true;
+                    break;
+                  }
+                }
+              }
+
+              if (!hasActiveRental) {
+                vehicle.setVehicleStatus(spring_boot.project_swp.entity.VehicleStatusEnum.INACTIVE);
+              }
+              // If has active rental, skip deactivation (vehicle stays as is)
+            }
+          }
+        }
+      }
+    }
+
     Location updatedLocation = locationRepository.save(existtingLocation);
     return locationMapper.toLocationResponse(updatedLocation);
   }

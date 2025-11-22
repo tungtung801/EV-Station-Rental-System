@@ -27,7 +27,7 @@ public interface LocationMapper {
 
   // For updating existing location
   @Mapping(target = "locationId", ignore = true)
-  @Mapping(target = "active", ignore = true)
+  @Mapping(target = "active", source = "active")
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "parent", source = "parentLocationId")
   @Mapping(target = "children", ignore = true)

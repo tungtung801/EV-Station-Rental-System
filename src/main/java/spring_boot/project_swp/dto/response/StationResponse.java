@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import spring_boot.project_swp.entity.StationStatusEnum;
 
 @Data
 @AllArgsConstructor
@@ -19,7 +20,7 @@ public class StationResponse {
   BigDecimal longitude;
   int totalDocks;
   int availableDocks;
-  boolean isActive;
+  StationStatusEnum isActive;
   String city;
   String district;
   String ward;

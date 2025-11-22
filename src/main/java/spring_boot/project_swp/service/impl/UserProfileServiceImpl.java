@@ -66,7 +66,15 @@ public class UserProfileServiceImpl implements UserProfileService {
         userProfileRepository.findAllByStatus(UserProfileStatusEnum.PENDING);
     List<UserProfileResponse> pendingUserProfiles = new ArrayList<>();
     for (UserProfile userProfile : userProfiles) {
-      pendingUserProfiles.add(userProfileMapper.toUserProfileResponse(userProfile));
+      // Filter: Exclude Admin and Staff - only show regular Users
+      if (userProfile.getUser() != null &&
+          userProfile.getUser().getRole() != null) {
+        String roleName = userProfile.getUser().getRole().getRoleName();
+        // Exclude "Admin" and "Staff" roles - only show "User" roles
+        if (roleName != null && !roleName.equalsIgnoreCase("Admin") && !roleName.equalsIgnoreCase("Staff")) {
+          pendingUserProfiles.add(userProfileMapper.toUserProfileResponse(userProfile));
+        }
+      }
     }
     return pendingUserProfiles;
   }
@@ -94,13 +102,37 @@ public class UserProfileServiceImpl implements UserProfileService {
     if (request.getDrivingLicenseFile() != null && !request.getDrivingLicenseFile().isEmpty()) {
       String drivingLicenseUrl = fileStorageService.saveFile(request.getDrivingLicenseFile());
       userProfile.setDrivingLicenseUrl(drivingLicenseUrl);
-      userProfile.setStatus(UserProfileStatusEnum.PENDING);
+
+      // Admin and Staff should always have VERIFIED status, not PENDING
+      User user = userProfile.getUser();
+      if (user != null && user.getRole() != null) {
+        String roleName = user.getRole().getRoleName();
+        if (roleName != null && (roleName.equalsIgnoreCase("Admin") || roleName.equalsIgnoreCase("Staff"))) {
+          userProfile.setStatus(UserProfileStatusEnum.VERIFIED);
+        } else {
+          userProfile.setStatus(UserProfileStatusEnum.PENDING);
+        }
+      } else {
+        userProfile.setStatus(UserProfileStatusEnum.PENDING);
+      }
     }
 
     if (request.getIdCardFile() != null && !request.getIdCardFile().isEmpty()) {
       String idCardUrl = fileStorageService.saveFile(request.getIdCardFile());
       userProfile.setIdCardUrl(idCardUrl);
-      userProfile.setStatus(UserProfileStatusEnum.PENDING);
+
+      // Admin and Staff should always have VERIFIED status, not PENDING
+      User user = userProfile.getUser();
+      if (user != null && user.getRole() != null) {
+        String roleName = user.getRole().getRoleName();
+        if (roleName != null && (roleName.equalsIgnoreCase("Admin") || roleName.equalsIgnoreCase("Staff"))) {
+          userProfile.setStatus(UserProfileStatusEnum.VERIFIED);
+        } else {
+          userProfile.setStatus(UserProfileStatusEnum.PENDING);
+        }
+      } else {
+        userProfile.setStatus(UserProfileStatusEnum.PENDING);
+      }
     }
 
     userProfileMapper.updateUserProfileFromRequest(request, userProfile);
