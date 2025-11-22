@@ -22,4 +22,5 @@ public interface RentalRepository extends JpaRepository<Rental, Long> {
       LocalDateTime endActual,
       LocalDateTime startActual,
       List<RentalStatusEnum> statuses);
+    boolean existsByBookingBookingId(Long bookingId);
 }

@@ -22,163 +22,165 @@ import spring_boot.project_swp.service.RentalService;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RentalServiceImpl implements RentalService {
 
-  final RentalRepository rentalRepository;
-  final BookingRepository bookingRepository;
-  final UserRepository userRepository;
-  final StationRepository stationRepository;
-  final VehicleRepository vehicleRepository;
-  final RentalMapper rentalMapper;
+    final RentalRepository rentalRepository;
+    final BookingRepository bookingRepository;
+    final UserRepository userRepository;
+    final StationRepository stationRepository;
+    final VehicleRepository vehicleRepository;
+    final RentalMapper rentalMapper;
 
-  @Override
-  @Transactional
-  public RentalResponse createRentalFromBooking(Long bookingId, Long staffId) {
-    Booking booking =
-        bookingRepository
-            .findById(bookingId)
-            .orElseThrow(() -> new NotFoundException("Booking not found"));
+    @Override
+    @Transactional
+    public RentalResponse createRentalFromBooking(Long bookingId, Long staffId) {
+        Booking booking =
+                bookingRepository
+                        .findById(bookingId)
+                        .orElseThrow(() -> new NotFoundException("Booking not found"));
 
-    // Chỉ tạo Rental nếu Booking đã CONFIRMED (đã chốt/đã thanh toán)
-    if (booking.getStatus() != BookingStatusEnum.CONFIRMED) {
-      throw new ConflictException("Booking must be CONFIRMED to create rental");
+        // Chỉ tạo Rental nếu Booking đã CONFIRMED (đã chốt/đã thanh toán)
+        if (booking.getStatus() != BookingStatusEnum.CONFIRMED) {
+            throw new ConflictException("Booking must be CONFIRMED to create rental");
+        }
+
+        User staff =
+                userRepository
+                        .findById(staffId)
+                        .orElseThrow(() -> new NotFoundException("Staff not found"));
+
+        Rental rental = new Rental();
+        rental.setBooking(booking);
+        rental.setRenter(booking.getUser());
+        rental.setVehicle(booking.getVehicle());
+        rental.setPickupStation(booking.getVehicle().getStation()); // Mặc định lấy tại trạm của xe
+        rental.setPickupStaff(staff);
+        rental.setStatus(RentalStatusEnum.PENDING_PICKUP); // Chờ khách đến
+
+        // Sao chép giá tiền từ Booking sang (Tạm thời chưa tính phí phát sinh)
+        rental.setTotal(booking.getTotalAmount());
+
+        return rentalMapper.toRentalResponse(rentalRepository.save(rental));
     }
 
-    User staff =
-        userRepository
-            .findById(staffId)
-            .orElseThrow(() -> new NotFoundException("Staff not found"));
+    @Override
+    @Transactional
+    public RentalResponse createRentalFromBookingAuto(Long bookingId) {
+        Booking booking =
+                bookingRepository
+                        .findById(bookingId)
+                        .orElseThrow(() -> new NotFoundException("Booking not found"));
 
-    Rental rental = new Rental();
-    rental.setBooking(booking);
-    rental.setRenter(booking.getUser());
-    rental.setVehicle(booking.getVehicle());
-    rental.setPickupStation(booking.getVehicle().getStation()); // Mặc định lấy tại trạm của xe
-    rental.setPickupStaff(staff);
-    rental.setStatus(RentalStatusEnum.PENDING_PICKUP); // Chờ khách đến
+        // Chỉ tạo Rental nếu Booking đã CONFIRMED (đã chốt/đã thanh toán)
+        if (booking.getStatus() != BookingStatusEnum.CONFIRMED) {
+            throw new ConflictException("Booking must be CONFIRMED to create rental");
+        }
 
-    // Sao chép giá tiền từ Booking sang (Tạm thời chưa tính phí phát sinh)
-    rental.setTotal(booking.getTotalAmount());
+        // Tìm Admin user để làm staff (auto-create)
+        User adminStaff =
+                userRepository
+                        .findByEmail("admin@gmail.com")
+                        .orElseThrow(() -> new NotFoundException("Admin user not found for auto rental creation"));
 
-    return rentalMapper.toRentalResponse(rentalRepository.save(rental));
-  }
+        Rental rental = new Rental();
+        rental.setBooking(booking);
+        rental.setRenter(booking.getUser());
+        rental.setVehicle(booking.getVehicle());
+        rental.setPickupStation(booking.getVehicle().getStation()); // Mặc định lấy tại trạm của xe
+        rental.setPickupStaff(adminStaff); // Set admin as staff
+        rental.setStatus(RentalStatusEnum.PENDING_PICKUP); // Chờ khách đến
 
-  @Override
-  @Transactional
-  public RentalResponse createRentalFromBookingAuto(Long bookingId) {
-    Booking booking =
-        bookingRepository
-            .findById(bookingId)
-            .orElseThrow(() -> new NotFoundException("Booking not found"));
+        // Sao chép giá tiền từ Booking sang (Tạm thời chưa tính phí phát sinh)
+        rental.setTotal(booking.getTotalAmount());
 
-    // Chỉ tạo Rental nếu Booking đã CONFIRMED (đã chốt/đã thanh toán)
-    if (booking.getStatus() != BookingStatusEnum.CONFIRMED) {
-      throw new ConflictException("Booking must be CONFIRMED to create rental");
+        return rentalMapper.toRentalResponse(rentalRepository.save(rental));
     }
 
-    // Tìm Admin user để làm staff (auto-create)
-    User adminStaff =
-        userRepository
-            .findByEmail("admin@gmail.com")
-            .orElseThrow(() -> new NotFoundException("Admin user not found for auto rental creation"));
+    @Override
+    @Transactional
+    public RentalResponse confirmPickup(Long rentalId, RentalConfirmPickupRequest request) {
+        Rental rental =
+                rentalRepository
+                        .findById(rentalId)
+                        .orElseThrow(() -> new NotFoundException("Rental not found"));
 
-    Rental rental = new Rental();
-    rental.setBooking(booking);
-    rental.setRenter(booking.getUser());
-    rental.setVehicle(booking.getVehicle());
-    rental.setPickupStation(booking.getVehicle().getStation()); // Mặc định lấy tại trạm của xe
-    rental.setPickupStaff(adminStaff); // Set admin as staff
-    rental.setStatus(RentalStatusEnum.PENDING_PICKUP); // Chờ khách đến
+        if (rental.getStatus() != RentalStatusEnum.PENDING_PICKUP) {
+            throw new ConflictException("Rental is not pending pickup");
+        }
 
-    // Sao chép giá tiền từ Booking sang (Tạm thời chưa tính phí phát sinh)
-    rental.setTotal(booking.getTotalAmount());
+        rental.setContractUrl(request.getContractUrl());
+        rental.setStartActual(LocalDateTime.now());
+        // --- FIX: Đổi sang ACTIVE cho đồng bộ ---
+        rental.setStatus(RentalStatusEnum.ACTIVE);
 
-    return rentalMapper.toRentalResponse(rentalRepository.save(rental));
-  }
+        // Update Booking -> IN_PROGRESS
+        Booking booking = rental.getBooking();
+        booking.setStatus(BookingStatusEnum.IN_PROGRESS);
+        bookingRepository.save(booking);
 
-  @Override
-  @Transactional
-  public RentalResponse confirmPickup(Long rentalId, RentalConfirmPickupRequest request) {
-    Rental rental =
-        rentalRepository
-            .findById(rentalId)
-            .orElseThrow(() -> new NotFoundException("Rental not found"));
+        // Update Vehicle -> Rented (Đang cho thuê)
+        Vehicle vehicle = rental.getVehicle();
+        vehicle.setVehicleStatus("Rented");
+        vehicleRepository.save(vehicle);
 
-    if (rental.getStatus() != RentalStatusEnum.PENDING_PICKUP) {
-      throw new ConflictException("Rental is not pending pickup");
+        return rentalMapper.toRentalResponse(rentalRepository.save(rental));
     }
 
-    rental.setContractUrl(request.getContractUrl());
-    rental.setStartActual(LocalDateTime.now());
-    rental.setStatus(RentalStatusEnum.IN_PROGRESS);
+    @Override
+    @Transactional
+    public RentalResponse returnVehicle(Long rentalId, Long returnStationId, Long staffId) {
+        Rental rental =
+                rentalRepository
+                        .findById(rentalId)
+                        .orElseThrow(() -> new NotFoundException("Rental not found"));
 
-    // Update Booking -> IN_PROGRESS
-    Booking booking = rental.getBooking();
-    booking.setStatus(BookingStatusEnum.IN_PROGRESS);
-    bookingRepository.save(booking);
+        // --- FIX: Kiểm tra trạng thái ACTIVE thay vì IN_PROGRESS (nếu enum chỉ có ACTIVE) ---
+        if (rental.getStatus() != RentalStatusEnum.ACTIVE) {
+            throw new ConflictException("Rental is not in progress");
+        }
 
-    // Update Vehicle -> Rented (Đang cho thuê)
-    Vehicle vehicle = rental.getVehicle();
-    vehicle.setVehicleStatus("Rented");
-    vehicleRepository.save(vehicle);
+        Station returnStation =
+                stationRepository
+                        .findById(returnStationId)
+                        .orElseThrow(() -> new NotFoundException("Return station not found"));
+        User staff =
+                userRepository
+                        .findById(staffId)
+                        .orElseThrow(() -> new NotFoundException("Staff not found"));
 
-    return rentalMapper.toRentalResponse(rentalRepository.save(rental));
-  }
+        rental.setEndActual(LocalDateTime.now());
+        rental.setReturnStation(returnStation);
+        rental.setReturnStaff(staff);
+        rental.setStatus(RentalStatusEnum.COMPLETED);
 
-  @Override
-  @Transactional
-  public RentalResponse returnVehicle(Long rentalId, Long returnStationId, Long staffId) {
-    Rental rental =
-        rentalRepository
-            .findById(rentalId)
-            .orElseThrow(() -> new NotFoundException("Rental not found"));
+        // Update Booking -> COMPLETED
+        Booking booking = rental.getBooking();
+        booking.setStatus(BookingStatusEnum.COMPLETED);
+        bookingRepository.save(booking);
 
-    if (rental.getStatus() != RentalStatusEnum.IN_PROGRESS) {
-      throw new ConflictException("Rental is not in progress");
+        // Update Vehicle -> Available (Và cập nhật vị trí mới)
+        Vehicle vehicle = rental.getVehicle();
+        vehicle.setVehicleStatus("Available");
+        vehicle.setStation(returnStation); // Xe đổi trạm về nơi trả
+        vehicleRepository.save(vehicle);
+
+        return rentalMapper.toRentalResponse(rentalRepository.save(rental));
     }
 
-    Station returnStation =
-        stationRepository
-            .findById(returnStationId)
-            .orElseThrow(() -> new NotFoundException("Return station not found"));
-    User staff =
-        userRepository
-            .findById(staffId)
-            .orElseThrow(() -> new NotFoundException("Staff not found"));
-
-    rental.setEndActual(LocalDateTime.now());
-    rental.setReturnStation(returnStation);
-    rental.setReturnStaff(staff);
-    rental.setStatus(RentalStatusEnum.COMPLETED);
-
-    // Update Booking -> COMPLETED
-    Booking booking = rental.getBooking();
-    booking.setStatus(BookingStatusEnum.COMPLETED);
-    bookingRepository.save(booking);
-
-    // Update Vehicle -> Available (Và cập nhật vị trí mới)
-    Vehicle vehicle = rental.getVehicle();
-    vehicle.setVehicleStatus("Available");
-    vehicle.setStation(returnStation); // Xe đổi trạm về nơi trả
-    vehicleRepository.save(vehicle);
-
-    return rentalMapper.toRentalResponse(rentalRepository.save(rental));
-  }
-
-  @Override
-  public RentalResponse getRentalById(Long rentalId) {
-    Rental rental =
-        rentalRepository
-            .findById(rentalId)
-            .orElseThrow(() -> new NotFoundException("Rental not found"));
-    return rentalMapper.toRentalResponse(rental);
-  }
-
-  @Override
-  public List<RentalResponse> getAllRentals() {
-    List<Rental> rentals = rentalRepository.findAll();
-    List<RentalResponse> responses = new ArrayList<>();
-    for (Rental r : rentals) {
-      responses.add(rentalMapper.toRentalResponse(r));
+    @Override
+    public RentalResponse getRentalById(Long rentalId) {
+        Rental rental =
+                rentalRepository
+                        .findById(rentalId)
+                        .orElseThrow(() -> new NotFoundException("Rental not found"));
+        return rentalMapper.toRentalResponse(rental);
     }
-    return responses;
-  }
+
+    @Override
+    public List<RentalResponse> getAllRentals() {
+        List<Rental> rentals = rentalRepository.findAll();
+        List<RentalResponse> responses = new ArrayList<>();
+        for (Rental r : rentals) {
+            responses.add(rentalMapper.toRentalResponse(r));
+        }
+        return responses;
+    }
 }

@@ -224,15 +224,17 @@ public class SecurityConfig {
                     .hasAuthority("Admin")
 
                     // Incident Report
-                    .requestMatchers(
-                        HttpMethod.POST, "/api/incident-reports", "/api/incident-reports/*")
-                    .hasAuthority("User")
-                    .requestMatchers(HttpMethod.GET, "/api/incident-reports")
-                    .hasAnyAuthority("Admin", "Staff")
-                    .requestMatchers(HttpMethod.PUT, "/api/incident-reports/*")
-                    .hasAnyAuthority("Admin", "Staff")
-                    .requestMatchers(HttpMethod.DELETE, "/api/incident-reports/*")
-                    .hasAuthority("Admin")
+                        .requestMatchers(HttpMethod.POST, "/api/incident-reports", "/api/incident-reports/*")
+                        .hasAnyAuthority("User", "Staff", "Admin") // <-- Cho phép cả Staff và Admin
+
+                        .requestMatchers(HttpMethod.GET, "/api/incident-reports", "/api/incident-reports/*")
+                        .hasAnyAuthority("Admin", "Staff", "User") // <-- Cho phép xem (nếu cần)
+
+                        .requestMatchers(HttpMethod.PUT, "/api/incident-reports/*")
+                        .hasAnyAuthority("Admin", "Staff")
+
+                        .requestMatchers(HttpMethod.DELETE, "/api/incident-reports/*")
+                        .hasAuthority("Admin")
 
                     // DiscountController
                     .requestMatchers("/api/discounts/**")
