@@ -90,4 +90,25 @@ public class VehicleController {
   public ResponseEntity<List<BookingResponse>> get3OnGoingBookings(@PathVariable Long vehicleId) {
     return ResponseEntity.ok(bookingService.get3OnGoingBookingsOfVehicle(vehicleId));
   }
+
+  @GetMapping("/search-by-location")
+  @Operation(summary = "Search vehicles by location (city, district, ward)")
+  public ResponseEntity<List<VehicleResponse>> searchVehiclesByLocation(
+          @RequestParam Long locationId) {
+    return ResponseEntity.ok(vehicleService.findVehiclesByLocation(locationId));
+  }
+
+  @GetMapping("/search-by-model")
+  @Operation(summary = "Search vehicles by model name or brand")
+  public ResponseEntity<List<VehicleResponse>> searchVehiclesByModel(
+          @RequestParam String modelName) {
+    return ResponseEntity.ok(vehicleService.findVehiclesByModel(modelName));
+  }
+
+  @GetMapping("/search-by-name")
+  @Operation(summary = "Search vehicles by license plate or model name")
+  public ResponseEntity<List<VehicleResponse>> searchVehiclesByName(
+          @RequestParam String query) {
+    return ResponseEntity.ok(vehicleService.findVehiclesByName(query));
+  }
 }

@@ -15,7 +15,11 @@ public interface UserProfileService {
 
   List<UserProfileResponse> getAllPendingUserProfiles();
 
-  // Update thông tin (Gồm cả up ảnh bằng lái/CCCD)
+  List<UserProfileResponse> getAllVerifiedUserProfiles();
+
+  List<UserProfileResponse> getAllRejectedUserProfiles();
+
+  // ...existing code...
   UserProfileResponse updateUserProfile(Long userId, UserProfileRequest request);
 
   void deleteUserProfile(Long profileId);

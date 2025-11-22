@@ -55,7 +55,18 @@ public class UserProfileServiceImpl implements UserProfileService {
     List<UserProfile> userProfiles = userProfileRepository.findAll();
     List<UserProfileResponse> userProfileResponses = new ArrayList<>();
     for (UserProfile userProfile : userProfiles) {
-      userProfileResponses.add(userProfileMapper.toUserProfileResponse(userProfile));
+      // Filter: Exclude Admin and Staff - only show regular Users
+      if (userProfile.getUser() != null) {
+        User user = userProfile.getUser();
+        String email = user.getEmail();
+        String roleName = user.getRole() != null ? user.getRole().getRoleName() : null;
+
+        // Exclude by email and role (Admin and Staff)
+        if (email != null && !email.equalsIgnoreCase("admin@gmail.com") &&
+            roleName != null && !roleName.equalsIgnoreCase("Admin") && !roleName.equalsIgnoreCase("Staff")) {
+          userProfileResponses.add(userProfileMapper.toUserProfileResponse(userProfile));
+        }
+      }
     }
     return userProfileResponses;
   }
@@ -66,9 +77,64 @@ public class UserProfileServiceImpl implements UserProfileService {
         userProfileRepository.findAllByStatus(UserProfileStatusEnum.PENDING);
     List<UserProfileResponse> pendingUserProfiles = new ArrayList<>();
     for (UserProfile userProfile : userProfiles) {
-      pendingUserProfiles.add(userProfileMapper.toUserProfileResponse(userProfile));
+      // Filter: Exclude Admin and Staff - only show regular Users
+      if (userProfile.getUser() != null) {
+        User user = userProfile.getUser();
+        String email = user.getEmail();
+        String roleName = user.getRole() != null ? user.getRole().getRoleName() : null;
+
+        // Exclude by email and role (Admin and Staff)
+        if (email != null && !email.equalsIgnoreCase("admin@gmail.com") &&
+            roleName != null && !roleName.equalsIgnoreCase("Admin") && !roleName.equalsIgnoreCase("Staff")) {
+          pendingUserProfiles.add(userProfileMapper.toUserProfileResponse(userProfile));
+        }
+      }
     }
     return pendingUserProfiles;
+  }
+
+  @Override
+  public List<UserProfileResponse> getAllVerifiedUserProfiles() {
+    List<UserProfile> userProfiles =
+        userProfileRepository.findAllByStatus(UserProfileStatusEnum.VERIFIED);
+    List<UserProfileResponse> verifiedUserProfiles = new ArrayList<>();
+    for (UserProfile userProfile : userProfiles) {
+      // Filter: Exclude Admin and Staff - only show regular Users
+      if (userProfile.getUser() != null) {
+        User user = userProfile.getUser();
+        String email = user.getEmail();
+        String roleName = user.getRole() != null ? user.getRole().getRoleName() : null;
+
+        // Exclude by email and role (Admin and Staff)
+        if (email != null && !email.equalsIgnoreCase("admin@gmail.com") &&
+            roleName != null && !roleName.equalsIgnoreCase("Admin") && !roleName.equalsIgnoreCase("Staff")) {
+          verifiedUserProfiles.add(userProfileMapper.toUserProfileResponse(userProfile));
+        }
+      }
+    }
+    return verifiedUserProfiles;
+  }
+
+  @Override
+  public List<UserProfileResponse> getAllRejectedUserProfiles() {
+    List<UserProfile> userProfiles =
+        userProfileRepository.findAllByStatus(UserProfileStatusEnum.REJECTED);
+    List<UserProfileResponse> rejectedUserProfiles = new ArrayList<>();
+    for (UserProfile userProfile : userProfiles) {
+      // Filter: Exclude Admin and Staff - only show regular Users
+      if (userProfile.getUser() != null) {
+        User user = userProfile.getUser();
+        String email = user.getEmail();
+        String roleName = user.getRole() != null ? user.getRole().getRoleName() : null;
+
+        // Exclude by email and role (Admin and Staff)
+        if (email != null && !email.equalsIgnoreCase("admin@gmail.com") &&
+            roleName != null && !roleName.equalsIgnoreCase("Admin") && !roleName.equalsIgnoreCase("Staff")) {
+          rejectedUserProfiles.add(userProfileMapper.toUserProfileResponse(userProfile));
+        }
+      }
+    }
+    return rejectedUserProfiles;
   }
 
   @Override

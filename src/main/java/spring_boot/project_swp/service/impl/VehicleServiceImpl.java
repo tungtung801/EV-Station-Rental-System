@@ -199,4 +199,77 @@ public class VehicleServiceImpl implements VehicleService {
         }
         return responses;
     }
+
+  @Override
+  public List<VehicleResponse> findVehiclesByLocation(Long locationId) {
+    // Get all stations for this location (including child locations)
+    List<Station> stationsInLocation = stationRepository.findByLocation_LocationId(locationId);
+    List<VehicleResponse> vehicleResponses = new ArrayList<>();
+
+    for (Station station : stationsInLocation) {
+      if (station.getVehicles() != null && !station.getVehicles().isEmpty()) {
+        for (Vehicle vehicle : station.getVehicles()) {
+          vehicleResponses.add(vehicleMapper.toVehicleResponse(vehicle));
+        }
+      }
+    }
+    return vehicleResponses;
+  }
+
+  @Override
+  public List<VehicleResponse> findVehiclesByModel(String modelName) {
+    // Search by model name or brand (case-insensitive)
+    List<VehicleModel> models = vehicleModelRepository.findAll();
+    List<Long> matchingModelIds = new ArrayList<>();
+
+    for (VehicleModel model : models) {
+      if ((model.getModelName() != null && model.getModelName().toLowerCase().contains(modelName.toLowerCase())) ||
+          (model.getBrand() != null && model.getBrand().toLowerCase().contains(modelName.toLowerCase()))) {
+        matchingModelIds.add(model.getModelId());
+      }
+    }
+
+    List<Vehicle> vehicles = new ArrayList<>();
+    for (Long modelId : matchingModelIds) {
+      List<Vehicle> vehiclesForModel = vehicleRepository.findByVehicleModel_ModelId(modelId);
+      if (vehiclesForModel != null) {
+        vehicles.addAll(vehiclesForModel);
+      }
+    }
+
+    List<VehicleResponse> responses = new ArrayList<>();
+    for (Vehicle vehicle : vehicles) {
+      responses.add(vehicleMapper.toVehicleResponse(vehicle));
+    }
+    return responses;
+  }
+
+  @Override
+  public List<VehicleResponse> findVehiclesByName(String query) {
+    // Search by license plate or model name (case-insensitive)
+    List<Vehicle> allVehicles = vehicleRepository.findAll();
+    List<VehicleResponse> matchingVehicles = new ArrayList<>();
+
+    for (Vehicle vehicle : allVehicles) {
+      boolean matches = false;
+
+      // Check license plate
+      if (vehicle.getLicensePlate() != null &&
+          vehicle.getLicensePlate().toLowerCase().contains(query.toLowerCase())) {
+        matches = true;
+      }
+
+      // Check model name
+      if (!matches && vehicle.getVehicleModel() != null &&
+          vehicle.getVehicleModel().getModelName() != null &&
+          vehicle.getVehicleModel().getModelName().toLowerCase().contains(query.toLowerCase())) {
+        matches = true;
+      }
+
+      if (matches) {
+        matchingVehicles.add(vehicleMapper.toVehicleResponse(vehicle));
+      }
+    }
+    return matchingVehicles;
+  }
 }

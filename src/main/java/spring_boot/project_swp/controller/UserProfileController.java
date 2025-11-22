@@ -51,6 +51,18 @@ public class UserProfileController {
     return ResponseEntity.ok(userProfileService.getAllPendingUserProfiles());
   }
 
+  @GetMapping("/verified")
+  @Operation(summary = "Get all verified user profiles")
+  public ResponseEntity<List<UserProfileResponse>> getAllVerifiedUserProfiles() {
+    return ResponseEntity.ok(userProfileService.getAllVerifiedUserProfiles());
+  }
+
+  @GetMapping("/rejected")
+  @Operation(summary = "Get all rejected user profiles")
+  public ResponseEntity<List<UserProfileResponse>> getAllRejectedUserProfiles() {
+    return ResponseEntity.ok(userProfileService.getAllRejectedUserProfiles());
+  }
+
   @PutMapping
   @Operation(
       summary = "Update user profile (and Upload Docs)",

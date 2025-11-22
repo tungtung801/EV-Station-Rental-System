@@ -20,4 +20,6 @@ public interface StationRepository extends JpaRepository<Station, Long> {
 
   public List<Station> findByLocation_LocationIdInAndIsActive(
       List<Long> locationIds, StationStatusEnum isActive);
+
+  public List<Station> findByLocation_LocationId(Long locationId);
 }
