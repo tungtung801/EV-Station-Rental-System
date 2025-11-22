@@ -1,5 +1,6 @@
 package spring_boot.project_swp.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
@@ -103,10 +104,12 @@ public class UserServiceImpl implements UserService {
                 () ->
                     new NotFoundException("Station not found with id: " + request.getStationId()));
     user.setStation(station);
+    user.setIsVerified(true);
+    user.setVerifiedAt(LocalDateTime.now());
+    user.setVerifiedBy(userRepository.findByEmail("admin@gmail.com").orElse(null));
 
     User savedUser = userRepository.save(user);
     createEmptyProfile(savedUser);
-
     return new UserRegistrationResponse(savedUser.getUserId(), savedUser.getEmail());
   }
 
@@ -264,7 +267,12 @@ public class UserServiceImpl implements UserService {
     profile.setUser(user);
     // Nếu em chưa đổi tên Enum NULL -> dùng UserProfileStatusEnum.NULL
     // Nếu đã đổi -> Dùng UserProfileStatusEnum.UNVERIFIED hoặc PENDING
-    profile.setStatus(UserProfileStatusEnum.PENDING);
+
+      if(user.getRole().getRoleName().equals(ROLE_STAFF)) {
+          profile.setStatus(UserProfileStatusEnum.VERIFIED);
+      } else {
+          profile.setStatus(UserProfileStatusEnum.PENDING);
+      }
     userProfileRepository.save(profile);
   }
 }
