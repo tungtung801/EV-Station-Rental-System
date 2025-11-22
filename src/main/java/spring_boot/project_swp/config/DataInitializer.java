@@ -55,6 +55,18 @@ public class DataInitializer implements CommandLineRunner {
       userProfileRepository.save(profile);
 
       System.out.println(">>> ADMIN CREATED: admin@gmail.com / 123456");
+    } else {
+      // IMPORTANT: Ensure existing admin profile always has VERIFIED status
+      // (Prevents admin from appearing in pending review list)
+      User adminUser = userRepository.findByEmail("admin@gmail.com").orElse(null);
+      if (adminUser != null) {
+        UserProfile adminProfile = userProfileRepository.findByUserUserId(adminUser.getUserId()).orElse(null);
+        if (adminProfile != null && !adminProfile.getStatus().equals(UserProfileStatusEnum.VERIFIED)) {
+          adminProfile.setStatus(UserProfileStatusEnum.VERIFIED);
+          userProfileRepository.save(adminProfile);
+          System.out.println(">>> ADMIN PROFILE STATUS RESET TO VERIFIED");
+        }
+      }
     }
 
     // 3. TẠO DỮ LIỆU LOCATION MẪU (HCM, Hà Nội, Đà Nẵng)

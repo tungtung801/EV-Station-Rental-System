@@ -146,7 +146,8 @@ public class SecurityConfig {
                         // 7. MODULE BOOKING (ĐẶT XE) - Quan trọng
                         .requestMatchers(HttpMethod.POST, "/api/bookings").hasAuthority("User") // Chỉ khách được đặt
                         .requestMatchers(HttpMethod.GET, "/api/bookings/my-bookings").hasAuthority("User") // Khách xem đơn mình
-                        .requestMatchers(HttpMethod.GET, "/api/bookings/**").hasAnyAuthority("Admin", "Staff") // Admin xem hết
+                        .requestMatchers(HttpMethod.GET, "/api/bookings/user/**").hasAuthority("User") // User xem lịch sử booking của mình
+                        .requestMatchers(HttpMethod.GET, "/api/bookings/**").hasAnyAuthority("User", "Admin", "Staff") // Admin xem hết
 
                         // --- 8. MODULE RENTAL (QUAN TRỌNG: Vận hành) ---
                         // Giao xe và Nhận xe: Chỉ Staff và Admin được làm
