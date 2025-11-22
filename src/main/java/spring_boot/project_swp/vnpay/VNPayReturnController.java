@@ -9,13 +9,13 @@ import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import spring_boot.project_swp.dto.request.PaymentStatusUpdateRequest;
+import spring_boot.project_swp.entity.Payment; // Import Payment Entity
 import spring_boot.project_swp.entity.PaymentStatusEnum;
+import spring_boot.project_swp.repository.PaymentRepository; // Import Repository
 import spring_boot.project_swp.service.PaymentService;
 
 @RestController
@@ -27,23 +27,22 @@ public class VNPayReturnController {
     @Value("${vnpay.hashSecret}")
     private String hashSecret;
 
-    // CHỈ CẦN GỌI PAYMENT SERVICE LÀ ĐỦ
-    // BookingService và Rental logic đã nằm trong PaymentService rồi
     final PaymentService paymentService;
+
+    // [NEW] Thêm Repository để lấy thông tin xe và booking
+    final PaymentRepository paymentRepository;
 
     @GetMapping("/vnpay_return")
     public void handleVNPayReturn(
             @RequestParam Map<String, String> allParams,
             HttpServletResponse response) throws IOException {
 
-        // 1. Lấy và Validate Checksum (Chữ ký bảo mật)
         String vnp_SecureHash = allParams.get("vnp_SecureHash");
         if (allParams.containsKey("vnp_SecureHashType")) {
             allParams.remove("vnp_SecureHashType");
         }
         allParams.remove("vnp_SecureHash");
 
-        // Sắp xếp tham số
         List<String> fieldNames = new ArrayList<>(allParams.keySet());
         Collections.sort(fieldNames);
         StringBuilder hashData = new StringBuilder();
@@ -66,48 +65,60 @@ public class VNPayReturnController {
         }
 
         String calculatedHash = VnpayUtils.hmacSHA512(hashSecret, hashData.toString());
-
-        // URL Frontend để redirect về sau khi thanh toán
-        // Ví dụ: http://localhost:5173/payment-result
         String frontendUrl = "http://localhost:5173/payment-result";
 
         if (calculatedHash.equals(vnp_SecureHash)) {
             String vnp_ResponseCode = allParams.get("vnp_ResponseCode");
-            String vnp_TxnRef = allParams.get("vnp_TxnRef"); // Định dạng: PAY_{paymentId}_{timestamp}
+            String vnp_TxnRef = allParams.get("vnp_TxnRef");
 
-            // Lấy Payment ID từ TxnRef
+            // Lấy Payment ID
             Long paymentId = Long.parseLong(vnp_TxnRef.split("_")[1]);
 
+            // [NEW] Lấy thông tin Payment từ DB để biết bookingId và carId
+            Payment payment = paymentRepository.findById(paymentId).orElse(null);
+            Long bookingId = null;
+            Long carId = null;
+
+            if (payment != null && payment.getBooking() != null) {
+                bookingId = payment.getBooking().getBookingId();
+                // Lấy ID xe để Frontend biết đường quay về
+                carId = payment.getBooking().getVehicle().getVehicleId();
+            }
+
             if ("00".equals(vnp_ResponseCode)) {
-                // --- GIAO DỊCH THÀNH CÔNG ---
                 log.info("VNPay Success: PaymentId={}", paymentId);
 
-                // Gọi Service để update Payment -> Tự động kích hoạt Booking & Rental
                 PaymentStatusUpdateRequest updateReq = new PaymentStatusUpdateRequest();
                 updateReq.setStatus(PaymentStatusEnum.SUCCESS);
 
                 try {
                     paymentService.updatePaymentStatus(paymentId, updateReq);
-                    // Redirect về Frontend báo thành công
-                    response.sendRedirect(frontendUrl + "?status=success&code=" + vnp_TxnRef);
+
+                    // [NEW] Gửi kèm carId và bookingId về Frontend
+                    String redirectUrl = frontendUrl + "?status=success"
+                            + "&carId=" + (carId != null ? carId : "")
+                            + "&bookingId=" + (bookingId != null ? bookingId : "");
+
+                    response.sendRedirect(redirectUrl);
                 } catch (Exception e) {
                     log.error("Error updating payment status: {}", e.getMessage());
                     response.sendRedirect(frontendUrl + "?status=error");
                 }
 
             } else {
-                // --- GIAO DỊCH THẤT BẠI ---
                 log.warn("VNPay Failed: Code={}, PaymentId={}", vnp_ResponseCode, paymentId);
 
-                // Có thể update payment thành FAILED nếu muốn
                 PaymentStatusUpdateRequest updateReq = new PaymentStatusUpdateRequest();
                 updateReq.setStatus(PaymentStatusEnum.FAILED);
                 paymentService.updatePaymentStatus(paymentId, updateReq);
 
-                response.sendRedirect(frontendUrl + "?status=failed");
+                // [NEW] Cũng gửi kèm ID để quay về trang xe dù lỗi
+                String redirectUrl = frontendUrl + "?status=failed"
+                        + "&carId=" + (carId != null ? carId : "");
+
+                response.sendRedirect(redirectUrl);
             }
         } else {
-            // --- SAI CHỮ KÝ (CÓ DẤU HIỆU GIAN LẬN) ---
             log.error("VNPay Checksum Invalid!");
             response.sendRedirect(frontendUrl + "?status=invalid_signature");
         }
