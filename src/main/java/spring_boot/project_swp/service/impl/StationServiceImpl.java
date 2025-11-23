@@ -92,9 +92,6 @@ public class StationServiceImpl implements StationService {
 
     Station newStation = stationMapper.toStation(request);
 
-    // isActive is already mapped by StationMapper with default ACTIVE
-    newStation.setAvailableDocks(request.getTotalDocks());
-
     // Location handling: Use provided locationId OR auto-detect from address
     Location location;
     if (request.getLocationId() != null) {

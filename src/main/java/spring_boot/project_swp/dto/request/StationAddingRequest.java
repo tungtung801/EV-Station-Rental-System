@@ -26,9 +26,6 @@ public class StationAddingRequest {
   @NotNull(message = "Longitude cannot be null")
   BigDecimal longitude;
 
-  @Min(value = 1, message = "Total docks must be greater than 0")
-  int totalDocks;
-
   StationStatusEnum isActive = StationStatusEnum.ACTIVE;
 
   // Optional: If provided, will use this locationId directly.

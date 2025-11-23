@@ -35,12 +35,6 @@ public class Station {
   @Column(name = "Longitude", precision = 10, scale = 2)
   BigDecimal longitude;
 
-  @Column(name = "TotalDocks", columnDefinition = "int")
-  int totalDocks;
-
-  @Column(name = "AvailableDocks", columnDefinition = "int")
-  int availableDocks;
-
   @Column(name = "IsActive", nullable = false)
   @Enumerated(EnumType.STRING)
   StationStatusEnum isActive;

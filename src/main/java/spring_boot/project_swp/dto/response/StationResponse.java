@@ -18,8 +18,6 @@ public class StationResponse {
   String address;
   BigDecimal latitude;
   BigDecimal longitude;
-  int totalDocks;
-  int availableDocks;
   StationStatusEnum isActive;
   String city;
   String district;
