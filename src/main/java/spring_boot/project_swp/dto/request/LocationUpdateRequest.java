@@ -24,4 +24,6 @@ public class LocationUpdateRequest {
   BigDecimal radius;
 
   Long parentLocationId;
+
+  Boolean active = true; // Default to active (true) if not specified in request
 }

@@ -29,7 +29,7 @@ public class StationAddingRequest {
   @Min(value = 1, message = "Total docks must be greater than 0")
   int totalDocks;
 
-  StationStatusEnum isActive;
+  StationStatusEnum isActive = StationStatusEnum.ACTIVE;
 
   // Optional: If provided, will use this locationId directly.
   // If null, system will auto-detect from address (Thành phố or Tỉnh)

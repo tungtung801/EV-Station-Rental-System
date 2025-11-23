@@ -12,6 +12,7 @@ import spring_boot.project_swp.dto.request.VehicleRequest;
 import spring_boot.project_swp.dto.request.VehicleUpdateRequest;
 import spring_boot.project_swp.dto.response.VehicleResponse;
 import spring_boot.project_swp.entity.Station;
+import spring_boot.project_swp.entity.StationStatusEnum;
 import spring_boot.project_swp.entity.Vehicle;
 import spring_boot.project_swp.entity.VehicleModel;
 import spring_boot.project_swp.exception.ConflictException;
@@ -61,6 +62,13 @@ public class VehicleServiceImpl implements VehicleService {
                                 .getStationId())); // Sửa findStationByStationId -> findById (Jpa
                                                    // chuẩn)
 
+    // Check if station is active
+    if (station.getIsActive() == null || !station.getIsActive().equals(StationStatusEnum.ACTIVE)) {
+      throw new ConflictException(
+          "Cannot add vehicle to an inactive station. "
+              + "Please select an active station.");
+    }
+
     vehicle.setVehicleModel(model);
     vehicle.setStation(station);
 
@@ -105,6 +113,14 @@ public class VehicleServiceImpl implements VehicleService {
           stationRepository
               .findById(request.getStationId())
               .orElseThrow(() -> new NotFoundException("Station not found"));
+
+      // Check if station is active
+      if (station.getIsActive() == null || !station.getIsActive().equals(StationStatusEnum.ACTIVE)) {
+        throw new ConflictException(
+            "Cannot assign vehicle to an inactive station. "
+                + "Please select an active station.");
+      }
+
       existingVehicle.setStation(station);
     }
 

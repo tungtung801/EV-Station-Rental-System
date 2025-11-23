@@ -14,44 +14,63 @@ import spring_boot.project_swp.dto.response.StationResponse;
 import spring_boot.project_swp.dto.response.VehicleResponse;
 import spring_boot.project_swp.entity.Location;
 import spring_boot.project_swp.entity.Station;
+import spring_boot.project_swp.entity.StationStatusEnum;
 
 @Mapper(
-    componentModel = MappingConstants.ComponentModel.SPRING,
-    uses = {MapperUtils.class},
-    unmappedTargetPolicy = ReportingPolicy.IGNORE,
-    nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+        componentModel = MappingConstants.ComponentModel.SPRING,
+        uses = {MapperUtils.class},
+        unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface StationMapper {
 
-  Station toStation(StationAddingRequest request);
+    @Mapping(target = "isActive", source = "isActive")
+    Station toStation(StationAddingRequest request);
 
-  StationResponse toStationResponse(Station station);
+    StationResponse toStationResponse(Station station);
 
-  List<StationResponse> toStationResponseList(List<Station> stations);
+    List<StationResponse> toStationResponseList(List<Station> stations);
 
-  // Map từ StationUpdateRequest sang Station entity (cho update)
-  @Mapping(target = "stationId", ignore = true)
-  @Mapping(target = "location", source = "locationId")
-  void updateStationFromRequest(StationUpdateRequest request, @MappingTarget Station station);
+    // Map từ StationUpdateRequest sang Station entity (cho update)
+    @Mapping(target = "stationId", ignore = true)
+    @Mapping(target = "location", source = "locationId")
+    void updateStationFromRequest(StationUpdateRequest request, @MappingTarget Station station);
 
-  @AfterMapping // tự động gọi đến mapper này sau khi chuyeenr doi thành ResponseDto
-  default void mapLocationDetails(@MappingTarget StationResponse response, Station station) {
-    Location currentlocation = station.getLocation();
-
-    while (currentlocation != null) {
-      String locationName = currentlocation.getLocationName();
-      String locationType = currentlocation.getLocationType();
-
-      if ("Ward".equalsIgnoreCase(locationType)) {
-        response.setWard(locationName);
-      } else if ("District".equalsIgnoreCase(locationType)) {
-        response.setDistrict(locationName);
-      } else if ("City".equalsIgnoreCase(locationType)) {
-        response.setCity(locationName);
-      }
-
-      currentlocation = currentlocation.getParent();
+    // ✅ AfterMapping để set default ACTIVE nếu isActive null
+    @AfterMapping
+    default void ensureActiveDefault(@MappingTarget Station station, StationAddingRequest request) {
+        if (station.getIsActive() == null) {
+            station.setIsActive(StationStatusEnum.ACTIVE);
+        }
     }
-  }
 
-  VehicleResponse.StationInfo toStationInfo(Station station);
+    // ✅ AfterMapping cho update - set ACTIVE nếu null
+    @AfterMapping
+    default void ensureActiveDefaultOnUpdate(@MappingTarget Station station, StationUpdateRequest request) {
+        if (station.getIsActive() == null) {
+            station.setIsActive(StationStatusEnum.ACTIVE);
+        }
+    }
+
+    @AfterMapping // tự động gọi đến mapper này sau khi chuyeenr doi thành ResponseDto
+    default void mapLocationDetails(@MappingTarget StationResponse response, Station station) {
+        Location currentlocation = station.getLocation();
+
+        while (currentlocation != null) {
+            String locationName = currentlocation.getLocationName();
+            String locationType = currentlocation.getLocationType();
+
+            if ("Ward".equalsIgnoreCase(locationType)) {
+                response.setWard(locationName);
+            } else if ("District".equalsIgnoreCase(locationType)) {
+                response.setDistrict(locationName);
+            } else if ("City".equalsIgnoreCase(locationType)) {
+                response.setCity(locationName);
+            }
+
+            currentlocation = currentlocation.getParent();
+        }
+    }
+
+    VehicleResponse.StationInfo toStationInfo(Station station);
 }
+
