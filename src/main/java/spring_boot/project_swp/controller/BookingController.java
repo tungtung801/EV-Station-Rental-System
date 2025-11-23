@@ -109,4 +109,13 @@ public class BookingController {
     public ResponseEntity<List<BookingResponse>> getVehicleSchedule(@PathVariable Long vehicleId) {
         return ResponseEntity.ok(bookingService.getVehicleSchedule(vehicleId));
     }
+
+    // 3. API CHO STAFF (Pending Bookings at their Station)
+    @GetMapping("/pending-at-my-station")
+    @Operation(summary = "Get pending bookings needing approval at staff's station")
+    public ResponseEntity<List<BookingResponse>> getPendingBookingsForStaff() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        return ResponseEntity.ok(bookingService.getPendingBookingsForStaff(email));
+    }
 }

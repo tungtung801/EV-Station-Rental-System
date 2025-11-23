@@ -126,7 +126,7 @@ public class UserServiceImpl implements UserService {
     }
 
     if (!user.getAccountStatus()) {
-      throw new ConflictException("Account is locked");
+      throw new ConflictException("Your account has been locked. Please contact administrator for support");
     }
 
     String jwtToken = jwtService.generateToken(user);

@@ -16,6 +16,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
   // Tìm booking theo trạm (cho Staff)
   List<Booking> findByVehicle_Station_StationId(Long stationId);
 
+  // Lấy booking chưa duyệt (PENDING) ở station cụ thể (cho Staff duyệt)
+  List<Booking> findByVehicle_Station_StationIdAndStatusOrderByCreatedAtDesc(
+      Long stationId, BookingStatusEnum status);
+
   // 1. Query check trùng lịch (Conflict)
   // Logic: Tìm những booking CÓ dính dáng đến khoảng thời gian [start, end]
   // VÀ trạng thái KHÔNG PHẢI là Cancelled (tức là booking đó vẫn còn hiệu lực)

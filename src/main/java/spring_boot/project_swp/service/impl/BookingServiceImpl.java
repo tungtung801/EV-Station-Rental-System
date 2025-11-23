@@ -136,6 +136,20 @@ public class BookingServiceImpl implements BookingService {
         User staff = userRepository.findByEmail(email).orElse(null);
         BookingStatusEnum newStatus = request.getStatus();
 
+        // ========== VALIDATION: Staff chỉ được duyệt booking nếu xe ở station của họ ==========
+        if (staff != null && staff.getStation() != null) {
+            Vehicle vehicle = booking.getVehicle();
+            if (vehicle == null || vehicle.getStation() == null) {
+                throw new ConflictException("Vehicle does not have a station assigned");
+            }
+
+            // Check staff station = vehicle station
+            if (!staff.getStation().getStationId().equals(vehicle.getStation().getStationId())) {
+                throw new ConflictException("You can only approve bookings for vehicles at your assigned station. "
+                        + "This vehicle is at station: " + vehicle.getStation().getStationName());
+            }
+        }
+
         // Validate chuyển trạng thái
         if (booking.getStatus() == BookingStatusEnum.CANCELLED || booking.getStatus() == BookingStatusEnum.COMPLETED) {
             throw new ConflictException("Cannot update a finished booking");
@@ -316,5 +330,35 @@ public class BookingServiceImpl implements BookingService {
         if (hours > 0) total = total.add(pricePerHour.multiply(BigDecimal.valueOf(hours)));
 
         return total;
+    }
+
+    @Override
+    public List<BookingResponse> getPendingBookingsForStaff(String email) {
+        User staff = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("Staff not found"));
+
+        // Admin thấy tất cả booking PENDING
+        if (staff.getRole().getRoleName().equalsIgnoreCase("Admin")) {
+            List<Booking> allPending = bookingRepository.findAll();
+            List<Booking> pendingOnly = new ArrayList<>();
+            for (Booking booking : allPending) {
+                if (booking.getStatus() == BookingStatusEnum.PENDING) {
+                    pendingOnly.add(booking);
+                }
+            }
+            return bookingMapper.toBookingResponseList(pendingOnly);
+        }
+
+        // Staff chỉ thấy booking PENDING ở station của họ
+        if (staff.getStation() == null) {
+            throw new ConflictException("You are not assigned to any station");
+        }
+
+        List<Booking> pendingBookings = bookingRepository
+                .findByVehicle_Station_StationIdAndStatusOrderByCreatedAtDesc(
+                        staff.getStation().getStationId(),
+                        BookingStatusEnum.PENDING);
+
+        return bookingMapper.toBookingResponseList(pendingBookings);
     }
 }

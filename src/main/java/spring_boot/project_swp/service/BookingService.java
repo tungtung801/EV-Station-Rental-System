@@ -22,4 +22,7 @@ public interface BookingService {
   List<BookingResponse> get3OnGoingBookingsOfVehicle(Long vehicleId);
     List<BookingResponse> getMyBookings();
     List<BookingResponse> getVehicleSchedule(Long vehicleId);
+
+    // Lấy booking PENDING cần duyệt ở station của staff
+    List<BookingResponse> getPendingBookingsForStaff(String email);
 }
