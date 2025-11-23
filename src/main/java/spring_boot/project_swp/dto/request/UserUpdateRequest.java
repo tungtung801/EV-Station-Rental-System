@@ -31,4 +31,7 @@ public class UserUpdateRequest {
 
   @Size(min = 6, message = "Password must be at least 6 characters long")
   String password;
+
+  // Cho phép cập nhật station cho staff
+  Long stationId;
 }

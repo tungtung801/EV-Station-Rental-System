@@ -203,6 +203,14 @@ public class UserServiceImpl implements UserService {
       user.setPassword(passwordEncoder.encode(request.getPassword()));
     }
 
+    // Cập nhật station nếu stationId được cung cấp
+    if (request.getStationId() != null) {
+      Station station = stationRepository
+          .findById(request.getStationId())
+          .orElseThrow(() -> new NotFoundException("Station not found with id: " + request.getStationId()));
+      user.setStation(station);
+    }
+
     User saved = userRepository.save(user);
     return userMapper.toUserResponse(saved);
   }

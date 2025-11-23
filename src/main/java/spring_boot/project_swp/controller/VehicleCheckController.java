@@ -2,14 +2,15 @@ package spring_boot.project_swp.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import spring_boot.project_swp.dto.request.VehicleCheckRequest;
 import spring_boot.project_swp.dto.response.VehicleCheckResponse;
 import spring_boot.project_swp.service.VehicleCheckService;
@@ -23,14 +24,24 @@ public class VehicleCheckController {
 
   final VehicleCheckService vehicleCheckService;
 
-  @PostMapping
+  @PostMapping(consumes = {"multipart/form-data"})
   @Operation(
       summary = "Create a new vehicle check",
-      description = "Creates a new vehicle check record.")
+      description = "Creates a new vehicle check record with image uploads. Staff ID is auto-detected from JWT token, Check Type is auto-detected based on rental stage.")
   public ResponseEntity<VehicleCheckResponse> createVehicleCheck(
-      @RequestBody @Valid VehicleCheckRequest request) {
+      @AuthenticationPrincipal String email,
+      @RequestParam Long rentalId,
+      @RequestParam(required = false) String notes,
+      @RequestParam(required = false) List<MultipartFile> images) {
+
+    VehicleCheckRequest request = VehicleCheckRequest.builder()
+        .rentalId(rentalId)
+        .notes(notes)
+        .images(images)
+        .build();
+
     return new ResponseEntity<>(
-        vehicleCheckService.createVehicleCheck(request), HttpStatus.CREATED);
+        vehicleCheckService.createVehicleCheck(email, request), HttpStatus.CREATED);
   }
 
   @GetMapping("/{id}")
@@ -54,8 +65,19 @@ public class VehicleCheckController {
       summary = "Update vehicle check",
       description = "Updates an existing vehicle check record.")
   public ResponseEntity<VehicleCheckResponse> updateVehicleCheck(
-      @PathVariable Long id, @RequestBody @Valid VehicleCheckRequest request) {
-    return new ResponseEntity<>(vehicleCheckService.updateVehicleCheck(id, request), HttpStatus.OK);
+      @PathVariable Long id,
+      @AuthenticationPrincipal String email,
+      @RequestParam Long rentalId,
+      @RequestParam(required = false) String notes,
+      @RequestParam(required = false) List<MultipartFile> images) {
+
+    VehicleCheckRequest request = VehicleCheckRequest.builder()
+        .rentalId(rentalId)
+        .notes(notes)
+        .images(images)
+        .build();
+
+    return new ResponseEntity<>(vehicleCheckService.updateVehicleCheck(id, email, request), HttpStatus.OK);
   }
 
   @DeleteMapping("/{id}")
