@@ -156,6 +156,24 @@ public class BookingServiceImpl implements BookingService {
         booking.setStatus(newStatus);
         Booking savedBooking = bookingRepository.save(booking);
 
+        // Khi booking OFFLINE được confirm -> Payment tự động SUCCESS
+        if (newStatus == BookingStatusEnum.CONFIRMED && booking.getBookingType() == BookingTypeEnum.OFFLINE) {
+            try {
+                // Tìm payment của booking này
+                List<Payment> payments = paymentRepository.findByBooking_BookingId(bookingId);
+                for (Payment payment : payments) {
+                    if (payment.getStatus() == PaymentStatusEnum.PENDING) {
+                        payment.setStatus(PaymentStatusEnum.SUCCESS);
+                        payment.setConfirmedBy(staff);
+                        payment.setConfirmedAt(LocalDateTime.now());
+                        paymentRepository.save(payment);
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Auto-confirm payment failed: {}", e.getMessage());
+            }
+        }
+
         // AUTO CREATE RENTAL: Khi trạng thái chuyển sang CONFIRMED
         if (newStatus == BookingStatusEnum.CONFIRMED) {
             try {
