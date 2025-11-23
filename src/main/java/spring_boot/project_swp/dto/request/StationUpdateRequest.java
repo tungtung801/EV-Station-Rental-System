@@ -22,11 +22,6 @@ public class StationUpdateRequest {
 
   BigDecimal longitude;
 
-  @Min(value = 1, message = "TotalDocs must greater than 0")
-  Integer totalDocks;
-
-  Integer availableDocks;
-
   StationStatusEnum isActive;
 
   Long locationId;
