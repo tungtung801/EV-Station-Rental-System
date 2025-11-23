@@ -16,60 +16,60 @@ import java.math.BigDecimal;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class DataInitializer implements CommandLineRunner {
 
-  final RoleRepository roleRepository;
-  final UserRepository userRepository;
-  final UserProfileRepository userProfileRepository;
-  final LocationRepository locationRepository;
-  final PasswordEncoder passwordEncoder;
+    final RoleRepository roleRepository;
+    final UserRepository userRepository;
+    final UserProfileRepository userProfileRepository;
+    final LocationRepository locationRepository;
+    final PasswordEncoder passwordEncoder;
 
-  @Override
-  @Transactional
-  public void run(String... args) throws Exception {
-    // 1. TẠO CÁC ROLE CƠ BẢN (Nếu database chưa có)
-    if (roleRepository.count() == 0) {
-      roleRepository.save(Role.builder().roleName("Admin").build());
-      roleRepository.save(Role.builder().roleName("Staff").build());
-      roleRepository.save(Role.builder().roleName("User").build());
-    }
-
-    // 2. TẠO TÀI KHOẢN ADMIN MẶC ĐỊNH (admin@gmail.com / 123456)
-    if (!userRepository.existsByEmailOrPhoneNumber("admin@gmail.com", null)) {
-      User admin = new User();
-      admin.setFullName("System Admin");
-      admin.setEmail("admin@gmail.com");
-      admin.setPhoneNumber("0000000000");
-      admin.setPassword(passwordEncoder.encode("123456")); // Password
-      admin.setAccountStatus(true);
-
-      // Gán quyền Admin
-      Role adminRole = roleRepository.findByRoleName("Admin").orElseThrow();
-      admin.setRole(adminRole);
-
-      User savedAdmin = userRepository.save(admin);
-
-      // Tạo Profile mặc định cho Admin (Status = VERIFIED)
-      // Phải có cái này để tránh lỗi NullPointerException khi Admin đăng nhập
-      UserProfile profile = new UserProfile();
-      profile.setUser(savedAdmin);
-      profile.setStatus(UserProfileStatusEnum.VERIFIED);
-      userProfileRepository.save(profile);
-
-      System.out.println(">>> ADMIN CREATED: admin@gmail.com / 123456");
-    } else {
-      // IMPORTANT: Ensure existing admin profile always has VERIFIED status
-      // (Prevents admin from appearing in pending review list)
-      User adminUser = userRepository.findByEmail("admin@gmail.com").orElse(null);
-      if (adminUser != null) {
-        UserProfile adminProfile = userProfileRepository.findByUserUserId(adminUser.getUserId()).orElse(null);
-        if (adminProfile != null && !adminProfile.getStatus().equals(UserProfileStatusEnum.VERIFIED)) {
-          adminProfile.setStatus(UserProfileStatusEnum.VERIFIED);
-          userProfileRepository.save(adminProfile);
-          System.out.println(">>> ADMIN PROFILE STATUS RESET TO VERIFIED");
+    @Override
+    @Transactional
+    public void run(String... args) throws Exception {
+        // 1. TẠO CÁC ROLE CƠ BẢN (Nếu database chưa có)
+        if (roleRepository.count() == 0) {
+            roleRepository.save(Role.builder().roleName("Admin").build());
+            roleRepository.save(Role.builder().roleName("Staff").build());
+            roleRepository.save(Role.builder().roleName("User").build());
         }
-      }
-    }
 
-    // 3. TẠO DỮ LIỆU LOCATION MẪU (HCM, Hà Nội, Đà Nẵng)
+        // 2. TẠO TÀI KHOẢN ADMIN MẶC ĐỊNH (admin@gmail.com / 123456)
+        if (!userRepository.existsByEmailOrPhoneNumber("admin@gmail.com", null)) {
+            User admin = new User();
+            admin.setFullName("System Admin");
+            admin.setEmail("admin@gmail.com");
+            admin.setPhoneNumber("0000000000");
+            admin.setPassword(passwordEncoder.encode("123456")); // Password
+            admin.setAccountStatus(true);
+
+            // Gán quyền Admin
+            Role adminRole = roleRepository.findByRoleName("Admin").orElseThrow();
+            admin.setRole(adminRole);
+
+            User savedAdmin = userRepository.save(admin);
+
+            // Tạo Profile mặc định cho Admin (Status = VERIFIED)
+            // Phải có cái này để tránh lỗi NullPointerException khi Admin đăng nhập
+            UserProfile profile = new UserProfile();
+            profile.setUser(savedAdmin);
+            profile.setStatus(UserProfileStatusEnum.VERIFIED);
+            userProfileRepository.save(profile);
+
+            System.out.println(">>> ADMIN CREATED: admin@gmail.com / 123456");
+        } else {
+            // IMPORTANT: Ensure existing admin profile always has VERIFIED status
+            // (Prevents admin from appearing in pending review list)
+            User adminUser = userRepository.findByEmail("admin@gmail.com").orElse(null);
+            if (adminUser != null) {
+                UserProfile adminProfile = userProfileRepository.findByUserUserId(adminUser.getUserId()).orElse(null);
+                if (adminProfile != null && !adminProfile.getStatus().equals(UserProfileStatusEnum.VERIFIED)) {
+                    adminProfile.setStatus(UserProfileStatusEnum.VERIFIED);
+                    userProfileRepository.save(adminProfile);
+                    System.out.println(">>> ADMIN PROFILE STATUS RESET TO VERIFIED");
+                }
+            }
+        }
+
+        // 3. TẠO DỮ LIỆU LOCATION MẪU (HCM, Hà Nội, Đà Nẵng)
 //    if (locationRepository.count() == 0) {
 //      // Thành phố Hồ Chí Minh
 //      Location hcm = Location.builder()
@@ -106,5 +106,5 @@ public class DataInitializer implements CommandLineRunner {
 //
 //      System.out.println(">>> LOCATIONS CREATED: HCM, Hà Nội, Đà Nẵng");
 //    }
-  }
+    }
 }
