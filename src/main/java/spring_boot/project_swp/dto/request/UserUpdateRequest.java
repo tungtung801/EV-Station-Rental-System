@@ -34,4 +34,7 @@ public class UserUpdateRequest {
 
   // Cho phép cập nhật station cho staff
   Long stationId;
+
+  // Cho phép admin ban/unban khách hàng (true = active, false = locked)
+  Boolean accountStatus;
 }

@@ -211,6 +211,11 @@ public class UserServiceImpl implements UserService {
       user.setStation(station);
     }
 
+    // Cập nhật accountStatus nếu được cung cấp (Admin ban/unban khách hàng)
+    if (request.getAccountStatus() != null) {
+      user.setAccountStatus(request.getAccountStatus());
+    }
+
     User saved = userRepository.save(user);
     return userMapper.toUserResponse(saved);
   }
