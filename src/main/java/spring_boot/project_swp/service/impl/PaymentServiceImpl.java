@@ -90,6 +90,11 @@ public class PaymentServiceImpl implements PaymentService {
 
         payment.setStatus(request.getStatus());
 
+        // Lưu transaction code từ VNPay nếu có
+        if (request.getTransactionCode() != null && !request.getTransactionCode().isEmpty()) {
+            payment.setTransactionCode(request.getTransactionCode());
+        }
+
         if (request.getStatus() == PaymentStatusEnum.SUCCESS) {
             payment.setConfirmedAt(LocalDateTime.now());
             // Logic xử lý sau khi tiền về (không có staffId vì là hệ thống tự động)

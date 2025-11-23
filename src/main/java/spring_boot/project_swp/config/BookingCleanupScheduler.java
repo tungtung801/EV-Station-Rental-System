@@ -11,7 +11,9 @@ import org.springframework.stereotype.Component;
 import spring_boot.project_swp.entity.Booking;
 import spring_boot.project_swp.entity.BookingStatusEnum;
 import spring_boot.project_swp.entity.BookingTypeEnum;
+import spring_boot.project_swp.entity.VehicleStatusEnum;
 import spring_boot.project_swp.repository.BookingRepository;
+import spring_boot.project_swp.repository.VehicleRepository;
 
 @Component
 @RequiredArgsConstructor
@@ -20,6 +22,7 @@ import spring_boot.project_swp.repository.BookingRepository;
 public class BookingCleanupScheduler {
 
   final BookingRepository bookingRepository;
+  final VehicleRepository vehicleRepository;
 
   @Scheduled(fixedRate = 300000) // Chạy mỗi 5 phút
   public void cleanupBookings() {
@@ -38,6 +41,13 @@ public class BookingCleanupScheduler {
     for (Booking b : unpaidOnlineBookings) {
       b.setStatus(BookingStatusEnum.CANCELLED);
       bookingRepository.save(b);
+
+      // Giải phóng xe
+      if (b.getVehicle() != null && b.getVehicle().getVehicleStatus() != VehicleStatusEnum.AVAILABLE) {
+        b.getVehicle().setVehicleStatus(VehicleStatusEnum.AVAILABLE);
+        vehicleRepository.save(b.getVehicle());
+      }
+
       log.info("-> Hủy đơn Online chưa thanh toán: ID {}", b.getBookingId());
     }
 
@@ -54,8 +64,15 @@ public class BookingCleanupScheduler {
 
     for (Booking b : noShowBookings) {
       b.setStatus(BookingStatusEnum.CANCELLED);
-      // Có thể thêm logic phạt tiền ở đây nếu muốn (với đơn đã trả tiền)
       bookingRepository.save(b);
+
+      // Giải phóng xe
+      if (b.getVehicle() != null && b.getVehicle().getVehicleStatus() != VehicleStatusEnum.AVAILABLE) {
+        b.getVehicle().setVehicleStatus(VehicleStatusEnum.AVAILABLE);
+        vehicleRepository.save(b.getVehicle());
+      }
+
+      // Có thể thêm logic phạt tiền ở đây nếu muốn (với đơn đã trả tiền)
       log.info("-> Hủy đơn No-Show (Quá giờ nhận xe): ID {}", b.getBookingId());
     }
 

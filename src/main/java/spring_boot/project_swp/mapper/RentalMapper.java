@@ -27,6 +27,7 @@ public interface RentalMapper {
     @Mapping(source = "pickupStaff.fullName", target = "pickupStaffName")
     @Mapping(source = "returnStaff.userId", target = "returnStaffId")
     @Mapping(source = "returnStaff.fullName", target = "returnStaffName")
+    @Mapping(source = "returnCheck.checkId", target = "returnCheckId")
     RentalResponse toRentalResponse(Rental rental);
 
     // Thêm phương thức để Map List

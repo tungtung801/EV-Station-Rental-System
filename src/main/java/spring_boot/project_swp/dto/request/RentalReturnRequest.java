@@ -14,12 +14,16 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RentalReturnRequest {
 
+    // ID của Vehicle Check (bắt buộc - staff phải check xe trước)
+    @NotNull(message = "Vehicle check ID is required")
+    Long checkId;
+
     // Số Km cuối cùng (BẮT BUỘC KHÔNG NULL và KHÔNG ÂM)
     @NotNull(message = "Return Odometer is required")
     @Min(value = 0, message = "Odometer must be positive")
     Integer returnOdometer;
 
-    // Phụ phí (Có thể là 0, nên phải dùng inclusive=true)
+    // Phụ phí bổ sung khác (không bao gồm phí vượt km & phí trễ)
     @DecimalMin(value = "0.0", inclusive = true, message = "Surcharge amount must be zero or positive")
     BigDecimal surcharge;
 

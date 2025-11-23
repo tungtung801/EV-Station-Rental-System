@@ -27,6 +27,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
   List<Booking> findTop3ByVehicleVehicleIdAndStatusNotAndEndTimeAfterOrderByStartTimeAsc(
       Long vehicleId, BookingStatusEnum status, LocalDateTime now);
 
+  // 2B. Query lấy 3 booking ONGOING (PENDING, CONFIRMED, IN_PROGRESS)
+  // LOẠI TRỪ COMPLETED, CANCELLED
+  // Dùng custom query qua @Query nếu Spring Data không support
+  List<Booking> findTop3ByVehicleVehicleIdAndStatusInAndEndTimeAfterOrderByStartTimeAsc(
+      Long vehicleId, List<BookingStatusEnum> statuses, LocalDateTime now);
+
   // 1. Tìm đơn Online quá hạn thanh toán (Dựa vào CreatedAt)
   List<Booking> findByStatusAndBookingTypeAndCreatedAtBefore(
       BookingStatusEnum status, BookingTypeEnum bookingType, LocalDateTime time);

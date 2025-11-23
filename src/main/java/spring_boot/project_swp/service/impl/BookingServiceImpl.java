@@ -135,9 +135,16 @@ public class BookingServiceImpl implements BookingService {
             throw new ConflictException("Cannot update a finished booking");
         }
 
-        // Logic Hủy đơn -> Hoàn lại mã giảm giá (nếu cần)
+        // Logic Hủy đơn -> Hoàn lại mã giảm giá (nếu cần) + Giải phóng xe
         if (newStatus == BookingStatusEnum.CANCELLED) {
             // (Optional) Logic cộng lại số lượng discount nếu hủy
+
+            // Giải phóng xe nếu đã bị chiếm dụng
+            Vehicle vehicle = booking.getVehicle();
+            if (vehicle != null && vehicle.getVehicleStatus() != VehicleStatusEnum.AVAILABLE) {
+                vehicle.setVehicleStatus(VehicleStatusEnum.AVAILABLE);
+                vehicleRepository.save(vehicle);
+            }
         }
 
         booking.setStatus(newStatus);
@@ -179,7 +186,16 @@ public class BookingServiceImpl implements BookingService {
         if (!vehicleRepository.existsById(vehicleId)) throw new NotFoundException("Vehicle not found");
         // Lấy tất cả đơn trừ đơn Hủy
         List<Booking> list = bookingRepository.findByVehicle_VehicleIdAndStatusNot(vehicleId, BookingStatusEnum.CANCELLED);
-        return bookingMapper.toBookingResponseList(list);
+
+        // Lọc bỏ COMPLETED bookings
+        List<Booking> filteredList = new ArrayList<>();
+        for (Booking booking : list) {
+            if (booking.getStatus() != BookingStatusEnum.COMPLETED) {
+                filteredList.add(booking);
+            }
+        }
+
+        return bookingMapper.toBookingResponseList(filteredList);
     }
 
     @Override
@@ -211,9 +227,16 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public List<BookingResponse> get3OnGoingBookingsOfVehicle(Long vehicleId) {
+        // Lấy ONLY active bookings: PENDING, CONFIRMED, IN_PROGRESS
+        // Exclude: COMPLETED, CANCELLED
+        List<BookingStatusEnum> activeStatuses = List.of(
+            BookingStatusEnum.PENDING,
+            BookingStatusEnum.CONFIRMED,
+            BookingStatusEnum.IN_PROGRESS
+        );
         return bookingMapper.toBookingResponseList(
-                bookingRepository.findTop3ByVehicleVehicleIdAndStatusNotAndEndTimeAfterOrderByStartTimeAsc(
-                        vehicleId, BookingStatusEnum.CANCELLED, LocalDateTime.now())
+                bookingRepository.findTop3ByVehicleVehicleIdAndStatusInAndEndTimeAfterOrderByStartTimeAsc(
+                        vehicleId, activeStatuses, LocalDateTime.now())
         );
     }
 

@@ -91,6 +91,13 @@ public class VNPayReturnController {
                 PaymentStatusUpdateRequest updateReq = new PaymentStatusUpdateRequest();
                 updateReq.setStatus(PaymentStatusEnum.SUCCESS);
 
+                // Lấy mã giao dịch VNPay từ response
+                String transactionCode = allParams.get("vnp_TransactionNo");
+                if (transactionCode != null && !transactionCode.isEmpty()) {
+                    updateReq.setTransactionCode(transactionCode);
+                    log.info("VNPay Transaction Code: {}", transactionCode);
+                }
+
                 try {
                     paymentService.updatePaymentStatus(paymentId, updateReq);
 

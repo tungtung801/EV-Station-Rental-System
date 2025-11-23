@@ -96,6 +96,12 @@ public class Rental {
     @Column(name = "EndOdometer")
     Integer endOdometer; // Số km lúc về
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ReturnCheckId")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    VehicleChecks returnCheck; // Kiểm tra xe lúc trả
+
     // ----------------------------------
 
     @CreationTimestamp

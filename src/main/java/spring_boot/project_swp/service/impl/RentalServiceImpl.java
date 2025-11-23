@@ -35,6 +35,7 @@ public class RentalServiceImpl implements RentalService {
     final StationRepository stationRepository;
     final VehicleRepository vehicleRepository;
     final PaymentRepository paymentRepository;
+    final VehicleCheckRepository vehicleCheckRepository;
     final RentalMapper rentalMapper;
     final FileStorageService fileStorageService; // Inject thêm cái này để up ảnh
 
@@ -116,6 +117,13 @@ public class RentalServiceImpl implements RentalService {
         rental.setStartActual(LocalDateTime.now());
         rental.setPickupStaff(staff);
         rental.setPickupNote(request.getPickupNote());
+        rental.setStartOdometer(request.getCurrentOdometer()); // SET ODOMETER LÚC GIAO
+
+        // VALIDATION: Kiểm tra StartOdometer hợp lệ
+        if (rental.getStartOdometer() != null && rental.getStartOdometer() < 0) {
+            throw new BadRequestException("Start odometer must be greater than or equal to 0");
+        }
+
         rental.setStatus(RentalStatusEnum.ACTIVE);
 
         // Update Booking -> IN_PROGRESS
@@ -141,6 +149,14 @@ public class RentalServiceImpl implements RentalService {
             throw new ConflictException("Rental is not ACTIVE");
         }
 
+        // VALIDATION: Kiểm tra Vehicle Check phải được tạo trước khi trả xe
+        VehicleChecks vehicleCheck = vehicleCheckRepository.findById(request.getCheckId())
+                .orElseThrow(() -> new NotFoundException("Vehicle check not found with ID: " + request.getCheckId()));
+
+        if (!vehicleCheck.getRental().getRentalId().equals(rentalId)) {
+            throw new BadRequestException("Vehicle check does not belong to this rental");
+        }
+
         Station returnStation = stationRepository.findById(returnStationId)
                 .orElseThrow(() -> new NotFoundException("Return station not found"));
         User staff = userRepository.findById(staffId).orElseThrow(() -> new NotFoundException("Staff not found"));
@@ -151,25 +167,39 @@ public class RentalServiceImpl implements RentalService {
         rental.setEndActual(endActualTime);
         rental.setReturnStation(returnStation);
         rental.setReturnStaff(staff);
+        rental.setReturnCheck(vehicleCheck);
         rental.setStatus(RentalStatusEnum.COMPLETED);
 
         // 2. Cập nhật thông tin từ Request (Odometer & Note)
         if (request != null) {
             rental.setEndOdometer(request.getReturnOdometer());
             rental.setReturnNote(request.getReturnNote());
+
+            // VALIDATION: Kiểm tra EndOdometer >= StartOdometer
+            if (rental.getStartOdometer() != null && rental.getEndOdometer() != null) {
+                if (rental.getEndOdometer() < rental.getStartOdometer()) {
+                    throw new BadRequestException(
+                        "End odometer (" + rental.getEndOdometer() + ") must be greater than or equal to " +
+                        "start odometer (" + rental.getStartOdometer() + ")"
+                    );
+                }
+            }
         }
 
-        // 3. Tính toán Tiền (Late Fee + Surcharge)
+        // 3. Tính toán Tiền (Late Fee + Excess KM Fee + Surcharge)
         Booking booking = rental.getBooking();
         BigDecimal lateFee = calculateLateFee(booking.getEndTime(), endActualTime, rental.getVehicle().getPricePerHour());
 
-        // Lấy Surcharge từ request (nếu có)
-        BigDecimal surcharge = (request != null && request.getSurcharge() != null)
-                ? request.getSurcharge()
-                : BigDecimal.ZERO;
+        // Tính phí vượt km (350km/ngày → 3.000đ/km)
+        BigDecimal excessKmFee = calculateExcessKmFee(
+            rental.getStartOdometer(),
+            request.getReturnOdometer(),
+            booking.getStartTime(),
+            booking.getEndTime()
+        );
 
-        // Tổng tiền phát sinh thêm
-        BigDecimal totalExtraFee = lateFee.add(surcharge);
+        // Tổng tiền phát sinh thêm = Late Fee + Excess KM Fee
+        BigDecimal totalExtraFee = lateFee.add(excessKmFee);
 
         // Cập nhật Total = Total cũ + Extra Fee
         if (totalExtraFee.compareTo(BigDecimal.ZERO) > 0) {
@@ -180,11 +210,11 @@ public class RentalServiceImpl implements RentalService {
                     .rental(rental)
                     .booking(booking)
                     .payer(rental.getRenter())
-                    .amount(totalExtraFee) // Thu cả phí trễ và phí phụ thu
+                    .amount(totalExtraFee) // Thu phí trễ + phí vượt km
                     .paymentType(PaymentTypeEnum.PENALTY)
                     .paymentMethod(PaymentMethodEnum.CASH)
                     .status(PaymentStatusEnum.PENDING)
-                    .note("Late fee: " + lateFee + ", Surcharge: " + surcharge)
+                    .note("Late fee: " + lateFee + ", Excess KM fee: " + excessKmFee)
                     .build();
             paymentRepository.save(penalty);
         }
@@ -220,6 +250,39 @@ public class RentalServiceImpl implements RentalService {
             totalLateFee = totalLateFee.add(pricePerHour.multiply(BigDecimal.valueOf(24)));
         }
         return totalLateFee;
+    }
+
+    // Tính phí vượt km (3.000đ/km, giới hạn 350km/ngày)
+    private BigDecimal calculateExcessKmFee(Integer startOdometer, Integer endOdometer, LocalDateTime startTime, LocalDateTime endTime) {
+        // Kiểm tra dữ liệu
+        if (startOdometer == null || endOdometer == null) {
+            return BigDecimal.ZERO;
+        }
+
+        // Tính số km thực tế
+        long actualKm = endOdometer - startOdometer;
+        if (actualKm < 0) {
+            return BigDecimal.ZERO; // Không có km, không tính phí
+        }
+
+        // Tính số ngày (làm tròn lên)
+        Duration duration = Duration.between(startTime, endTime);
+        long days = duration.toDays();
+        if (duration.toHours() % 24 > 0) {
+            days++; // Làm tròn lên (ví dụ: 1.5 ngày = 2 ngày)
+        }
+        if (days == 0) days = 1; // Tối thiểu 1 ngày
+
+        // Giới hạn km
+        long maxKmAllowed = 350 * days;
+
+        // Tính phí nếu vượt
+        if (actualKm > maxKmAllowed) {
+            long excessKm = actualKm - maxKmAllowed;
+            return BigDecimal.valueOf(excessKm).multiply(BigDecimal.valueOf(3000));
+        }
+
+        return BigDecimal.ZERO;
     }
 
     @Override

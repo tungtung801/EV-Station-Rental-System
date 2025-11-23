@@ -31,6 +31,11 @@ public class RentalResponse {
   String returnStaffName;
   LocalDateTime startActual;
   LocalDateTime endActual;
+  Integer startOdometer;
+  Integer endOdometer;
+  String pickupNote;
+  String returnNote;
+  Long returnCheckId;
   java.math.BigDecimal total;
   RentalStatusEnum status;
   String contractUrl;

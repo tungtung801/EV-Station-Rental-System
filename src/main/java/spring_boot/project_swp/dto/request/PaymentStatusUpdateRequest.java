@@ -12,4 +12,6 @@ public class PaymentStatusUpdateRequest {
 
   @NotNull(message = "Payment status cannot be null")
   PaymentStatusEnum status;
+
+  String transactionCode;
 }
