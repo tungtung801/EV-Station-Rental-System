@@ -22,6 +22,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
   boolean existsByVehicle_VehicleIdAndStartTimeBeforeAndEndTimeAfterAndStatusNot(
       Long vehicleId, LocalDateTime endTime, LocalDateTime startTime, BookingStatusEnum status);
 
+  // 1B. Query check trùng lịch với multiple statuses (chỉ tính những booking còn hoạt động)
+  // Loại trừ CANCELLED và COMPLETED
+  boolean existsByVehicle_VehicleIdAndStartTimeBeforeAndEndTimeAfterAndStatusIn(
+      Long vehicleId, LocalDateTime endTime, LocalDateTime startTime, List<BookingStatusEnum> statuses);
+
   // 2. Query lấy 3 booking sắp tới (để hiện lịch)
   // Logic: Lấy top 3 booking có EndTime > hiện tại (chưa kết thúc) VÀ không bị hủy
   List<Booking> findTop3ByVehicleVehicleIdAndStatusNotAndEndTimeAfterOrderByStartTimeAsc(

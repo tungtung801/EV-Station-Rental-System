@@ -61,9 +61,15 @@ public class BookingServiceImpl implements BookingService {
         // C. Validate Time & Schedule
         validateBookingTime(request.getStartTime(), request.getEndTime());
 
-        // Check trùng lịch (Dùng query repository)
-        boolean isBusy = bookingRepository.existsByVehicle_VehicleIdAndStartTimeBeforeAndEndTimeAfterAndStatusNot(
-                request.getVehicleId(), request.getEndTime(), request.getStartTime(), BookingStatusEnum.CANCELLED);
+        // Check trùng lịch: Chỉ kiểm tra những booking với trạng thái hoạt động
+        // (PENDING, CONFIRMED, IN_PROGRESS) - loại trừ CANCELLED và COMPLETED
+        List<BookingStatusEnum> activeStatuses = List.of(
+                BookingStatusEnum.PENDING,
+                BookingStatusEnum.CONFIRMED,
+                BookingStatusEnum.IN_PROGRESS
+        );
+        boolean isBusy = bookingRepository.existsByVehicle_VehicleIdAndStartTimeBeforeAndEndTimeAfterAndStatusIn(
+                request.getVehicleId(), request.getEndTime(), request.getStartTime(), activeStatuses);
         if (isBusy) throw new ConflictException("Vehicle is busy in this time range!");
 
         // D. Tính tiền & Discount
