@@ -28,7 +28,8 @@ This project was developed as part of the Software Engineering course (SWP391) a
 * **Validation:** Verify booking requests and handle issues.
 
 ## 📂 Database Schema
-(Optional: You can add an image of your ERD diagram here if you have one, e.g., ![ERD](link-to-image))
+<img width="2060" height="262" alt="image" src="https://github.com/user-attachments/assets/8bd7bb41-8078-485a-83ac-baebaf5a19af" />
+
 
 ## 🤝 Contact
 * **Developer:** Nguyen Duy Tung
