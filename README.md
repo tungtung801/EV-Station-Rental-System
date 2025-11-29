@@ -28,7 +28,8 @@ This project was developed as part of the Software Engineering course (SWP391) a
 * **Validation:** Verify booking requests and handle issues.
 
 ## 📂 Database Schema
-<img width="2060" height="262" alt="image" src="https://github.com/user-attachments/assets/8bd7bb41-8078-485a-83ac-baebaf5a19af" />
+
+<img width="1046" height="987" alt="ERD_EV-Station-Based-Rental" src="https://github.com/user-attachments/assets/50e96cbc-023d-40d2-88ee-3e85f8ae629f" />
 
 
 ## 🤝 Contact
